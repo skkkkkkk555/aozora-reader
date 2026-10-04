@@ -2639,6 +2639,9 @@ input[type="range"]{accent-color:var(--apple-blue)}
 }
 .low-power .book-quote-loading::after{animation:none}
 
+
+/* Touch targets: avoid delayed click synthesis on mobile browsers. */
+button,.block[data-act],.tile[data-act],input,select,textarea,label{touch-action:manipulation}
 </style>
 </head>
 <body>
@@ -3054,8 +3057,8 @@ input[type="range"]{accent-color:var(--apple-blue)}
   </div>
 
   <!-- 共通シート (1枚) -->
-  <div class="sheet-scrim" id="scrim"></div>
-  <div class="sheet" id="sheet">
+  <div class="sheet-scrim" id="scrim" aria-hidden="true"></div>
+  <div class="sheet" id="sheet" aria-hidden="true">
     <div class="sheet-handle"></div>
     <div class="sheet-head"><span id="sheet-t" class="serif" style="font-size:var(--fs-h)"></span><button class="secondary sm-btn" data-act="close-sheet" style="width:44px; height:44px">✕</button></div>
     <div class="sheet-body" id="sheet-b"></div>
