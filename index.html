@@ -2629,6 +2629,52 @@ async function readResponseBytes(res,maxBytes){
   if(buf.byteLength>maxBytes)throw new Error('response-too-large');
   return buf;
 }
+const SEC_STATE={maxItems:5000,maxAuthors:2000,maxHistory:200,maxNotesPerBook:50,maxText:2000,maxMapKeys:5000};
+const safeStateKey=k=>typeof k==='string'&&k.length>0&&k.length<=80&&!['__proto__','prototype','constructor'].includes(k);
+const safeStateText=(v,max=SEC_STATE.maxText)=>typeof v==='string'?v.slice(0,max):'';
+const safeStateArray=(v,max=SEC_STATE.maxItems)=>Array.isArray(v)?v.filter(x=>typeof x==='string'&&x.length<=160).slice(0,max):[];
+function sanitizeStateMap(v,mapper,max=SEC_STATE.maxMapKeys){
+  const out={};if(!v||typeof v!=='object'||Array.isArray(v))return out;
+  let n=0;
+  for(const [k,val] of Object.entries(v)){
+    if(n>=max||!safeStateKey(k))continue;
+    const mapped=mapper(val);
+    if(mapped!==undefined){Object.defineProperty(out,k,{value:mapped,writable:true,enumerable:true,configurable:true});n++;}
+  }
+  return out;
+}
+function sanitizePersistedState(d){
+  if(!d||typeof d!=='object'||Array.isArray(d))return null;
+  let size=0;try{size=JSON.stringify(d).length;}catch{return null;}
+  if(size>SEC.maxStateChars)return null;
+  const out={};
+  out.fav=safeStateArray(d.fav);out.want=safeStateArray(d.want);out.done=safeStateArray(d.done);
+  out.favAuthors=safeStateArray(d.favAuthors,SEC_STATE.maxAuthors);
+  out.dead=safeStateArray(d.dead,SEC_STATE.maxItems);
+  out.searchHistory=safeStateArray(d.searchHistory,100);
+  out.hist=Array.isArray(d.hist)?d.hist.filter(x=>x&&safeStateKey(String(x.id))&&Number.isFinite(Number(x.t))).slice(0,SEC_STATE.maxHistory).map(x=>({id:String(x.id).slice(0,80),t:Math.max(0,Math.min(Number(x.t),Date.now()+86400000))})):[];
+  out.calData=sanitizeStateMap(d.calData,v=>Number.isFinite(Number(v))?Math.max(0,Math.min(1440,Math.round(Number(v)))):undefined);
+  out.pos=sanitizeStateMap(d.pos,v=>v&&typeof v==='object'?{f:Math.max(0,Math.min(1,Number(v.f)||0)),t:Math.max(0,Math.min(Number(v.t)||0,Date.now()+86400000))}:undefined);
+  out.bm=sanitizeStateMap(d.bm,v=>Array.isArray(v)?v.slice(0,SEC_STATE.maxNotesPerBook).filter(x=>x&&typeof x==='object').map(x=>({f:Math.max(0,Math.min(1,Number(x.f)||0)),s:safeStateText(x.s,500),t:Math.max(0,Math.min(Number(x.t)||0,Date.now()+86400000))})):[],SEC_STATE.maxMapKeys);
+  out.notes=sanitizeStateMap(d.notes,v=>Array.isArray(v)?v.slice(0,SEC_STATE.maxNotesPerBook).filter(x=>x&&typeof x==='object').map(x=>({s:safeStateText(x.s,500),m:safeStateText(x.m,2000),t:Math.max(0,Math.min(Number(x.t)||0,Date.now()+86400000))})):[],SEC_STATE.maxMapKeys);
+  out.hls=sanitizeStateMap(d.hls,v=>Array.isArray(v)?v.slice(0,SEC_STATE.maxNotesPerBook).filter(x=>x&&typeof x==='object').map(x=>({t:safeStateText(x.t,500),c:safeStateText(x.c,40),d:Math.max(0,Math.min(Number(x.d)||0,Date.now()+86400000))})):[],SEC_STATE.maxMapKeys);
+  if(d.st&&typeof d.st==='object'&&!Array.isArray(d.st)){
+    out.st={
+      fs:Math.max(14,Math.min(32,Number(d.st.fs)||18)),
+      lh:Math.max(1.6,Math.min(2.6,Number(d.st.lh)||2.1)),
+      theme:['auto','sepia','dark'].includes(d.st.theme)?d.st.theme:'auto',
+      font:['mincho','gothic'].includes(d.st.font)?d.st.font:'mincho',
+      warm:!!d.st.warm,kp:!!d.st.kp,offline:!!d.st.offline,lowSpec:!!d.st.lowSpec,ollamaEnabled:!!d.st.ollamaEnabled,
+      oUrl:safeStateText(d.st.oUrl,500),oHist:Array.isArray(d.st.oHist)?d.st.oHist.slice(-100):[],
+      oMod:safeStateText(d.st.oMod,120),v:d.st.v!==false,
+      rMode:['normal','focus','night'].includes(d.st.rMode)?d.st.rMode:'normal',
+      readSpeed:[350,500,750].includes(Number(d.st.readSpeed))?Number(d.st.readSpeed):500,
+      todayBook:d.st.todayBook&&safeStateKey(String(d.st.todayBook.id))?{id:String(d.st.todayBook.id).slice(0,80),date:safeStateText(d.st.todayBook.date,20)}:null
+    };
+  }
+  return out;
+}
+
 const isPrivateHost=host=>{
   const h=String(host||'').toLowerCase().replace(/^\[|\]$/g,'');
   if(h==='localhost'||h.endsWith('.localhost')||h.endsWith('.local')||h==='::1')return true;
@@ -2735,13 +2781,13 @@ const load=async()=>{
     const raw = localStorage.getItem('aozora_terminal_v17') || localStorage.getItem('aozora_terminal_v16') || 'null';
     if(raw.length>SEC.maxStateChars) throw new Error('state-too-large');
     const localState=raw!=='null'?JSON.parse(raw):null;
-    const d=localState || await idb.get('k','state');
+    const d=sanitizePersistedState(localState || await idb.get('k','state'));
     const savedSettingsRaw=localStorage.getItem('aozora_terminal_settings_v1');
     if(d){
-      fav=new Set(d.fav||[]); want=new Set(d.want||[]); done=new Set(d.done||[]);
-      favAuthors=new Set(d.favAuthors||[]);
-      dead=new Set(d.dead||[]); pos=d.pos||{}; bm=d.bm||{}; notes=d.notes||{}; hls=d.hls||{};
-      hist=d.hist||[]; calData=d.calData||{}; goalMin=d.goalMin||30; searchHistory=d.searchHistory||[];
+      fav=new Set(safeStateArray(d.fav)); want=new Set(safeStateArray(d.want)); done=new Set(safeStateArray(d.done));
+      favAuthors=new Set(safeStateArray(d.favAuthors,SEC_STATE.maxAuthors));
+      dead=new Set(safeStateArray(d.dead)); pos=d.pos||{}; bm=d.bm||{}; notes=d.notes||{}; hls=d.hls||{};
+      hist=Array.isArray(d.hist)?d.hist:[]; calData=d.calData||{}; goalMin=Math.max(10,Math.min(180,Number(d.goalMin)||30)); searchHistory=safeStateArray(d.searchHistory,100);
       st=Object.assign(st,d.st||{});
       if(d.st?.off!==undefined) st.offline=!!d.st.off;
       if(d.st?.ollamaEnabled!==undefined) st.ollamaEnabled=!!d.st.ollamaEnabled;
@@ -2965,6 +3011,8 @@ async function fetchCatalog(){
   if(!buf||buf.byteLength>SEC.maxCatalogBytes)throw new Error('catalog-too-large');
   const z=await JSZip.loadAsync(buf);
   const names=Object.keys(z.files);
+  const totalUncompressed=names.reduce((sum,n)=>sum+Number(z.files[n]?._data?.uncompressedSize||0),0);
+  if(totalUncompressed>SEC.maxCatalogText*2)throw new Error('catalog-uncompressed-too-large');
   if(names.length>60000)throw new Error('catalog-entries-too-many');
   const cf=names.find(n=>n.toLowerCase().endsWith('.csv'));
   if(!cf||!z.files[cf]||z.files[cf].dir)throw new Error('catalog-csv-missing');
@@ -3009,7 +3057,10 @@ async function parseCsv(csv){
       else if(ch===','){ cols.push(c); c=''; } else c+=ch;
     }
     cols.push(c);
-    const id=cols[col.id]; if(!id||!cols[col.x]?.endsWith('.zip')) continue;
+    const rawUrl=String(cols[col.x]||'').trim();
+    let parsedUrl=null;try{parsedUrl=new URL(rawUrl);}catch{}
+    if(!id||!parsedUrl||parsedUrl.protocol!=='https:'||parsedUrl.hostname!=='www.aozora.gr.jp'||!rawUrl.toLowerCase().endsWith('.zip'))continue;
+    const id=String(cols[col.id]).slice(0,80);
     const author=((cols[col.a]||'')+' '+(cols[col.am]||'')).trim();
     if(m.has(id)){
       const ex=m.get(id);
@@ -3024,7 +3075,7 @@ async function parseCsv(csv){
       k:cols[col.k]?.includes('新字新仮名')?1:0, c:isPublic ? 1 : 0,
       ndc:cols[col.ndc]||'',
       norm:(t+' '+tk+' '+author+' '+ak).replace(/[\s　]/g,'').toLowerCase(),
-      x:cols[col.x].replace('https://www.aozora.gr.jp/','').replace(/\.zip$/,'').replace(/\/([^\/]+)$/,'/$1/$1.txt')
+      x:cols[col.x].replace('https://www.aozora.gr.jp/','').replace(/\.zip$/,'').replace(/\/([^\/]+)$/,'/$1/$1.txt').replace(/^\/+|\.\.+/g,'')
     });
     if(i%2500===0){ $('c-bar').style.width=(70+Math.round(i/lines.length*28))+'%'; await new Promise(r=>setTimeout(r,0)); }
   }
@@ -3533,6 +3584,7 @@ function openBookDetail(w){
 
 /* ==================== 8. 本文取得 & パース ==================== */
 async function fetchHead(w){
+  if(!w||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))return '本文の取得をお試しください。';
   const c=await idb.get('docs',w.id); if(c?.plain) return c.plain.slice(0,90);
   const u=`https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${w.x}`;
   try {
@@ -3548,6 +3600,7 @@ async function fetchHead(w){
 
 let readerTok=0;
 async function fetchBody(w){
+  if(!w||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))throw new Error('invalid-book-path');
   const c=await idb.get('docs',w.id); if(c?.html){c.html=sanitizeReaderHtml(c.html);c.plain=toPlain(c.html);return c;}
   if(st.offline) throw new Error('オフラインです');
   const urls=[
@@ -4105,7 +4158,7 @@ function renderSettingsPage(){
     if(f.size>8*1024*1024){toast('バックアップが大きすぎます（最大8MB）');return;}
     r.onload=async()=>{
       try {
-        const d=JSON.parse(r.result);
+        const d=sanitizePersistedState(JSON.parse(r.result));if(!d)throw new Error('invalid-backup');
         fav=new Set(d.fav||[]); want=new Set(d.want||[]); done=new Set(d.done||[]);
         favAuthors=new Set(d.favAuthors||[]);
         pos=d.pos||{}; bm=d.bm||{}; notes=d.notes||{}; hls=d.hls||{};
