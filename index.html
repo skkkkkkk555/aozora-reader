@@ -2619,6 +2619,26 @@ input[type="range"]{accent-color:var(--apple-blue)}
   .reader-loading{padding:36px 18px}
 }
 
+
+/* ===== Async UX continuity ===== */
+.search-result-summary{
+  min-height:20px;margin:0 0 12px;color:var(--sub);font-size:13px;
+  opacity:0;transform:translateY(-3px);transition:opacity 220ms ease,transform 260ms var(--spring);
+}
+.search-result-summary.show{opacity:1;transform:none}
+.book-quote-loading{position:relative;overflow:hidden}
+.book-quote-loading::after{
+  content:"";position:absolute;inset:0;width:42%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.34),transparent);
+  transform:translateX(-140%);animation:loadingSweep 1.2s var(--ease) infinite;
+}
+.reader-error-state{animation:motionResultsDrop 340ms var(--spring) both}
+@media (prefers-reduced-motion:reduce){
+  .search-result-summary{transition:none}
+  .book-quote-loading::after{animation:none}
+}
+.low-power .book-quote-loading::after{animation:none}
+
 </style>
 </head>
 <body>
@@ -2908,6 +2928,7 @@ input[type="range"]{accent-color:var(--apple-blue)}
 
       <!-- 検索結果エリア -->
       <div id="search-results-area" style="display:none">
+  <div id="search-result-summary" class="search-result-summary" aria-live="polite"></div>
         <div class="tile-grid" id="search-tiles"></div>
         <div id="search-empty-msg" style="text-align:center; padding:60px 0; color:var(--sub); display:none">
           <div style="font-size:var(--fs-h); margin-bottom:8px">該当する作品がありません</div>
