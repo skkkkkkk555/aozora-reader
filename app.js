@@ -3133,19 +3133,23 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!isPhone())return;
     state.screen=name;
     const detail=phone('#phone-detail'),reader=phone('#phone-reader'),content=phone('#phone-content'),tabs=phone('.phone-tabbar');
-    if(detail)detail.hidden=true;
-    if(reader)reader.hidden=true;
-    if(content)content.hidden=false;
-    if(tabs)tabs.hidden=false;
+    if(detail){detail.hidden=true;detail.style.display='none';detail.setAttribute('aria-hidden','true');}
+    if(reader){reader.hidden=true;reader.style.display='none';reader.setAttribute('aria-hidden','true');}
+    if(content){content.hidden=false;content.style.display='block';}
+    if(tabs){tabs.hidden=false;tabs.style.display='flex';}
     phoneAll('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===name));
     ({home:renderPhoneHome,search:renderPhoneSearch,shelf:renderPhoneShelf,records:renderPhoneRecords,settings:renderPhoneSettings}[name]||renderPhoneHome)();
   }
   function openPhoneDetail(w){
     if(!w)return;
     state.work=w;
-    phone('#phone-content').hidden=true;phone('.phone-tabbar').hidden=true;
+    const content=phone('#phone-content'),tabs=phone('.phone-tabbar');
+    if(content){content.hidden=true;content.style.display='none';}
+    if(tabs){tabs.hidden=true;tabs.style.display='none';}
+    const r=phone('#phone-reader');
+    if(r){r.hidden=true;r.style.display='none';r.setAttribute('aria-hidden','true');}
     const d=phone('#phone-detail');if(!d)return;
-    d.hidden=false;d.setAttribute('aria-hidden','false');
+    d.hidden=false;d.style.display='block';d.setAttribute('aria-hidden','false');
     const f=Number(pos?.[w.id]?.f||0);
     const pct=Math.round(Math.max(0,Math.min(1,f))*100);
     d.innerHTML='<div class="phone-detail-nav"><button class="phone-circle-btn" data-phone-action="detail-back">‹</button><span style="font-weight:700">作品詳細</span><span style="width:40px"></span></div>'+
@@ -3170,9 +3174,12 @@ window.addEventListener('DOMContentLoaded',()=>{
   async function openPhoneReader(w){
     if(!w)return;
     state.work=w;state.reader=true;
-    phone('#phone-content').hidden=true;phone('.phone-tabbar').hidden=true;phone('#phone-detail').hidden=true;
+    const content=phone('#phone-content'),tabs=phone('.phone-tabbar'),detail=phone('#phone-detail');
+    if(content){content.hidden=true;content.style.display='none';}
+    if(tabs){tabs.hidden=true;tabs.style.display='none';}
+    if(detail){detail.hidden=true;detail.style.display='none';detail.setAttribute('aria-hidden','true');}
     const r=phone('#phone-reader');if(!r)return;
-    r.hidden=false;r.setAttribute('aria-hidden','false');
+    r.hidden=false;r.style.display='flex';r.setAttribute('aria-hidden','false');
     phone('#phone-reader-title').textContent=title(w);
     const body=currentReaderBody();
     body.innerHTML='<div class="phone-empty">本文を読み込んでいます…</div>';
@@ -3191,7 +3198,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   function closePhoneReader(){
     const f=currentFraction();if(state.work){pos[state.work.id]={f,t:Date.now()};save();}
     state.reader=false;
-    const r=phone('#phone-reader');if(r)r.hidden=true;
+    const r=phone('#phone-reader');
+    if(r){r.hidden=true;r.style.display='none';r.setAttribute('aria-hidden','true');}
     if(state.work)openPhoneDetail(state.work);else showScreen(state.screen);
   }
   function addPhoneBookmark(){
