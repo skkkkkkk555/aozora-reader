@@ -948,7 +948,7 @@ function renderHome(){
       curKey=dateKeyOf(curD);
     }
   }
-  $('st-streak').textContent=(streak||1)+'日';
+  $('st-streak').textContent=streak+'日';
 
   // スマートおすすめ
   initSmartRec();
@@ -1329,7 +1329,6 @@ function openBookDetail(w){
     window.__aozoraPhoneOpenDetail(w);
     return;
   }
-  activeBook=w;
   activeBook=w;
   const isF=fav.has(w.id), isW=want.has(w.id), isS=savedKeys.has(w.id), isFA=favAuthors.has(w.a);
   const isDone=(pos[w.id]?.f||0)>=0.97;
@@ -3167,6 +3166,7 @@ document.addEventListener('click',e=>{
 
 function bindMobilePageSwipe(){
   const page=$('body');
+  if(document.documentElement.dataset.device!=='smartphone')return;
   if(!page||page.dataset.swipeUxBound)return;
   page.dataset.swipeUxBound='1';
   let sx=0,sy=0,active=false;
