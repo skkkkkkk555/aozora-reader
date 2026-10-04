@@ -3697,6 +3697,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   function openDetail(w,direction='forward',fromHistory=false){
     if(!w)return;
     state.work=w;
+    state.readerFromDetail=false;
     if(!fromHistory&&history.state?.phoneLayer!=='phone-detail')history.pushState({...history.state,phoneLayer:'phone-detail'},'',location.href);
     syncScreens('detail',direction);
     const d=$p('#phone-detail');if(!d)return;
@@ -3743,7 +3744,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     const bar=$p('#phone-reader-progress span');if(bar)bar.style.width=Math.round(f*100)+'%';
   }
 
-  async function openReader(w,fromDetail=state.readerFromDetail){
+  async function openReader(w,fromDetail=false){
     if(!w)return;
     state.work=w;curWork=w;state.reader=true;state.readerDoc=null;state.readerFromDetail=!!fromDetail;
     if(history.state?.phoneLayer!=='phone-reader')history.pushState({...history.state,phoneLayer:'phone-reader'},'',location.href);
@@ -3999,7 +4000,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='search-filter'){state.searchFilter=el.dataset.filter||'all';renderSearch();return}
     if(act==='shelf-filter'){state.shelf=el.dataset.filter||'reading';if(state.shelf==='records'){showScreen('records')}else renderShelf();return}
     if(act==='record-filter'){state.record=el.dataset.filter||'all';renderRecords();return}
-    if(act==='detail-back'){state.work=null;showScreen(state.screen,'back');return}
+    if(act==='detail-back'){state.work=null;state.readerFromDetail=false;showScreen(state.screen,'back');return}
     if(act==='detail-read'){openReader(state.work,true);return}
     if(act==='detail-more'){
       const w=state.work;if(!w)return;
