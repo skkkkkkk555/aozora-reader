@@ -6133,6 +6133,309 @@ html[data-device="desktop"]:not(.smartphone-ui).low-power #v-cal .block{
   }
 }
 
+
+
+/* ============================================================
+   LIQUID GLASS COMPLETE PASS v5
+   Desktop / tablet only. Smartphone shell is intentionally excluded.
+   ============================================================ */
+html[data-device="desktop"]:not(.smartphone-ui){
+  --lg-bg:rgba(7,12,20,.22);
+  --lg-bg-strong:rgba(8,14,24,.36);
+  --lg-line:rgba(255,255,255,.18);
+  --lg-line-strong:rgba(255,255,255,.30);
+  --lg-hi:rgba(255,255,255,.26);
+  --lg-shadow:0 20px 70px rgba(0,0,0,.24);
+  --lg-cyan:#5ad8ff;
+}
+
+/* Opaque optical stage: no legacy/background DOM can appear through it. */
+html[data-device="desktop"]:not(.smartphone-ui) #liquid-glass-canvas{
+  background:#020305!important;
+  opacity:1!important;
+  mix-blend-mode:normal!important;
+  isolation:isolate;
+}
+
+/* Every remaining desktop/tablet surface gets the same glass material. */
+html[data-device="desktop"]:not(.smartphone-ui) #main-area,
+html[data-device="desktop"]:not(.smartphone-ui) #banner,
+html[data-device="desktop"]:not(.smartphone-ui) .books-section-title,
+html[data-device="desktop"]:not(.smartphone-ui) #search-scope-bar,
+html[data-device="desktop"]:not(.smartphone-ui) #search-init-box,
+html[data-device="desktop"]:not(.smartphone-ui) #search-hist-section,
+html[data-device="desktop"]:not(.smartphone-ui) #sec-genre-select,
+html[data-device="desktop"]:not(.smartphone-ui) #sec-kana-select,
+html[data-device="desktop"]:not(.smartphone-ui) #genre-grid > *,
+html[data-device="desktop"]:not(.smartphone-ui) #kana-chips > *,
+html[data-device="desktop"]:not(.smartphone-ui) #search-empty-msg,
+html[data-device="desktop"]:not(.smartphone-ui) #shelf-timeline-area > *,
+html[data-device="desktop"]:not(.smartphone-ui) #shelf-empty,
+html[data-device="desktop"]:not(.smartphone-ui) #r-search-bar,
+html[data-device="desktop"]:not(.smartphone-ui) #r-paper-hint,
+html[data-device="desktop"]:not(.smartphone-ui) #focus-timer-pill,
+html[data-device="desktop"]:not(.smartphone-ui) #mobile-fab,
+html[data-device="desktop"]:not(.smartphone-ui) #pop,
+html[data-device="desktop"]:not(.smartphone-ui) #toast,
+html[data-device="desktop"]:not(.smartphone-ui) .sheet,
+html[data-device="desktop"]:not(.smartphone-ui) .sheet-head,
+html[data-device="desktop"]:not(.smartphone-ui) .sheet-body,
+html[data-device="desktop"]:not(.smartphone-ui) #app-boot .boot-card{
+  position:relative;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.115),rgba(255,255,255,.035) 44%,rgba(38,145,255,.045) 100%)!important;
+  border:1px solid var(--lg-line)!important;
+  box-shadow:
+    inset 0 1px 0 var(--lg-hi),
+    inset 0 -1px 0 rgba(0,0,0,.16),
+    0 18px 60px rgba(0,0,0,.20)!important;
+  backdrop-filter:blur(22px) saturate(175%) contrast(106%)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(175%) contrast(106%)!important;
+}
+
+/* Subtle moving liquid film across non-WebGL surfaces. */
+html[data-device="desktop"]:not(.smartphone-ui) #banner::before,
+html[data-device="desktop"]:not(.smartphone-ui) .books-section-title::before,
+html[data-device="desktop"]:not(.smartphone-ui) #search-scope-bar::before,
+html[data-device="desktop"]:not(.smartphone-ui) #search-init-box::before,
+html[data-device="desktop"]:not(.smartphone-ui) #search-hist-section::before,
+html[data-device="desktop"]:not(.smartphone-ui) #genre-grid > *::before,
+html[data-device="desktop"]:not(.smartphone-ui) #kana-chips > *::before,
+html[data-device="desktop"]:not(.smartphone-ui) #search-empty-msg::before,
+html[data-device="desktop"]:not(.smartphone-ui) #shelf-timeline-area > *::before,
+html[data-device="desktop"]:not(.smartphone-ui) #shelf-empty::before,
+html[data-device="desktop"]:not(.smartphone-ui) #r-search-bar::before,
+html[data-device="desktop"]:not(.smartphone-ui) #r-paper-hint::before,
+html[data-device="desktop"]:not(.smartphone-ui) #focus-timer-pill::before,
+html[data-device="desktop"]:not(.smartphone-ui) #mobile-fab::before,
+html[data-device="desktop"]:not(.smartphone-ui) #pop::before,
+html[data-device="desktop"]:not(.smartphone-ui) #toast::before,
+html[data-device="desktop"]:not(.smartphone-ui) .sheet::before,
+html[data-device="desktop"]:not(.smartphone-ui) #app-boot .boot-card::before{
+  content:"";
+  position:absolute;
+  inset:-75% -35%;
+  pointer-events:none;
+  z-index:0;
+  background:
+    radial-gradient(circle at 15% 18%,rgba(255,255,255,.18),transparent 24%),
+    radial-gradient(circle at 82% 78%,rgba(60,190,255,.12),transparent 28%),
+    linear-gradient(108deg,transparent 41%,rgba(255,255,255,.16) 50%,transparent 59%);
+  filter:blur(10px);
+  opacity:.55;
+  transform:translate3d(-30%,0,0) rotate(-2deg);
+  animation:liquidGlobalFilm 8.5s cubic-bezier(.45,0,.35,1) infinite;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #banner > *,
+html[data-device="desktop"]:not(.smartphone-ui) .books-section-title > *,
+html[data-device="desktop"]:not(.smartphone-ui) #search-scope-bar > *,
+html[data-device="desktop"]:not(.smartphone-ui) #search-init-box > *,
+html[data-device="desktop"]:not(.smartphone-ui) #search-hist-section > *,
+html[data-device="desktop"]:not(.smartphone-ui) #genre-grid > * > *,
+html[data-device="desktop"]:not(.smartphone-ui) #kana-chips > * > *,
+html[data-device="desktop"]:not(.smartphone-ui) #search-empty-msg > *,
+html[data-device="desktop"]:not(.smartphone-ui) #shelf-timeline-area > * > *,
+html[data-device="desktop"]:not(.smartphone-ui) #shelf-empty > *,
+html[data-device="desktop"]:not(.smartphone-ui) #r-search-bar > *,
+html[data-device="desktop"]:not(.smartphone-ui) #r-paper-hint > *,
+html[data-device="desktop"]:not(.smartphone-ui) #focus-timer-pill > *,
+html[data-device="desktop"]:not(.smartphone-ui) #mobile-fab > *,
+html[data-device="desktop"]:not(.smartphone-ui) #pop > *,
+html[data-device="desktop"]:not(.smartphone-ui) #toast > *,
+html[data-device="desktop"]:not(.smartphone-ui) .sheet > *,
+html[data-device="desktop"]:not(.smartphone-ui) #app-boot .boot-card > *{
+  position:relative;
+  z-index:1;
+}
+
+@keyframes liquidGlobalFilm{
+  0%,100%{transform:translate3d(-30%,0,0) rotate(-2deg);opacity:.18}
+  34%{transform:translate3d(5%,1.5%,0) rotate(0deg);opacity:.62}
+  67%{transform:translate3d(34%,-1%,0) rotate(2deg);opacity:.26}
+}
+
+html[data-device="desktop"]:not(.smartphone-ui) .books-section-title{
+  width:max-content;
+  max-width:100%;
+  padding:7px 14px;
+  margin:8px 0 8px;
+  border-radius:999px!important;
+  color:rgba(255,255,255,.78)!important;
+  letter-spacing:.04em;
+  box-shadow:inset 0 1px rgba(255,255,255,.16),0 8px 26px rgba(0,0,0,.10)!important;
+}
+
+html[data-device="desktop"]:not(.smartphone-ui) #search-scope-bar{
+  color:#fff!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #search-empty-msg,
+html[data-device="desktop"]:not(.smartphone-ui) #shelf-empty{
+  min-height:120px;
+  border-radius:24px;
+  padding:40px 20px!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #r-paper-hint{
+  color:rgba(255,255,255,.68)!important;
+  border:1px solid rgba(255,255,255,.13)!important;
+  border-radius:999px!important;
+  padding:8px 14px!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.14),0 12px 30px rgba(0,0,0,.16)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #focus-timer-pill{
+  color:#fff!important;
+  border-radius:999px!important;
+  overflow:hidden;
+  z-index:55;
+  transition:transform .35s cubic-bezier(.16,1,.3,1),filter .35s ease,box-shadow .35s ease!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #focus-timer-pill:hover,
+html[data-device="desktop"]:not(.smartphone-ui) #mobile-fab:hover{
+  transform:translateY(-4px) scale(1.03);
+  filter:brightness(1.08) saturate(1.10);
+  box-shadow:inset 0 1px rgba(255,255,255,.3),0 22px 58px rgba(30,140,255,.18)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #mobile-fab{
+  color:#fff!important;
+  border-radius:22px!important;
+  overflow:hidden;
+  z-index:55;
+  transition:transform .35s cubic-bezier(.16,1,.3,1),filter .35s ease!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #pop{
+  overflow:hidden;
+  border-radius:22px!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #toast{
+  overflow:hidden;
+  border-radius:18px!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #app-boot{
+  background:rgba(2,3,5,.30)!important;
+  backdrop-filter:blur(18px) saturate(135%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(135%)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #app-boot .boot-card{
+  overflow:hidden;
+  border-radius:30px!important;
+  color:#fff!important;
+  animation:liquidBootIn .75s cubic-bezier(.16,1,.3,1) both,liquidEdgeFloat 6s ease-in-out .8s infinite;
+}
+@keyframes liquidBootIn{
+  0%{opacity:0;transform:translateY(16px) scale(.96);filter:blur(10px)}
+  100%{opacity:1;transform:none;filter:blur(0)}
+}
+@keyframes liquidEdgeFloat{
+  0%,100%{box-shadow:inset 0 1px rgba(255,255,255,.22),0 18px 60px rgba(0,0,0,.20)!important}
+  50%{box-shadow:inset 0 1px rgba(255,255,255,.36),0 22px 72px rgba(40,170,255,.14)!important}
+}
+
+/* Inputs, range controls, segmented controls and dynamic controls. */
+html[data-device="desktop"]:not(.smartphone-ui) #app input[type="range"]{
+  accent-color:var(--lg-cyan);
+  filter:drop-shadow(0 6px 14px rgba(56,189,248,.16));
+}
+html[data-device="desktop"]:not(.smartphone-ui) .seg{
+  border:1px solid rgba(255,255,255,.15)!important;
+  background:rgba(255,255,255,.045)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.14),0 10px 28px rgba(0,0,0,.12)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) .seg button{
+  background:rgba(255,255,255,.025)!important;
+  border:1px solid transparent!important;
+  color:rgba(255,255,255,.66)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) .seg button.active{
+  background:linear-gradient(135deg,rgba(90,216,255,.20),rgba(90,216,255,.055))!important;
+  border-color:rgba(90,216,255,.34)!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.20),0 8px 28px rgba(50,180,255,.10)!important;
+}
+
+/* Press physics for all controls, including the UI that was previously uncovered. */
+html[data-device="desktop"]:not(.smartphone-ui) #app button,
+html[data-device="desktop"]:not(.smartphone-ui) #app .chip-btn,
+html[data-device="desktop"]:not(.smartphone-ui) #app .b-nav-btn,
+html[data-device="desktop"]:not(.smartphone-ui) #app .nav-btn{
+  overflow:hidden;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #app button::before,
+html[data-device="desktop"]:not(.smartphone-ui) #app .chip-btn::before,
+html[data-device="desktop"]:not(.smartphone-ui) #app .b-nav-btn::before,
+html[data-device="desktop"]:not(.smartphone-ui) #app .nav-btn::before{
+  content:"";
+  position:absolute;
+  inset:-75% -30%;
+  pointer-events:none;
+  background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.20) 50%,transparent 58%);
+  transform:translateX(-75%) rotate(5deg);
+  opacity:.25;
+  transition:transform .65s cubic-bezier(.16,1,.3,1),opacity .3s ease;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #app button:hover::before,
+html[data-device="desktop"]:not(.smartphone-ui) #app .chip-btn:hover::before,
+html[data-device="desktop"]:not(.smartphone-ui) #app .b-nav-btn:hover::before,
+html[data-device="desktop"]:not(.smartphone-ui) #app .nav-btn:hover::before{
+  transform:translateX(46%) rotate(5deg);
+  opacity:.72;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #app button:active{
+  transform:scale(.965)!important;
+  filter:brightness(1.10) saturate(1.08);
+}
+
+html[data-device="desktop"]:not(.smartphone-ui) #search-init-box,
+html[data-device="desktop"]:not(.smartphone-ui) #search-hist-section,
+html[data-device="desktop"]:not(.smartphone-ui) #shelf-timeline-area > *,
+html[data-device="desktop"]:not(.smartphone-ui) #genre-grid > *,
+html[data-device="desktop"]:not(.smartphone-ui) #kana-chips > *{
+  transition:transform .32s cubic-bezier(.16,1,.3,1),filter .32s ease,border-color .28s ease!important;
+}
+@media (hover:hover){
+  html[data-device="desktop"]:not(.smartphone-ui) #genre-grid > *:hover,
+  html[data-device="desktop"]:not(.smartphone-ui) #shelf-timeline-area > *:hover,
+  html[data-device="desktop"]:not(.smartphone-ui) #kana-chips > *:hover{
+    transform:translateY(-3px) scale(1.015);
+    filter:brightness(1.05) saturate(1.08);
+    border-color:var(--lg-line-strong)!important;
+  }
+}
+
+/* Keep the actual reader paper/content non-glass; only its chrome is glass. */
+html[data-device="desktop"]:not(.smartphone-ui) #reader #body,
+html[data-device="desktop"]:not(.smartphone-ui) #reader #body *{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #reader #body{
+  background:transparent!important;
+}
+
+/* Explicitly force phone shell out of this entire system. */
+html[data-device="desktop"]:not(.smartphone-ui) #phone-app{display:none!important;}
+
+@media (prefers-reduced-motion:reduce){
+  html[data-device="desktop"]:not(.smartphone-ui) #banner::before,
+  html[data-device="desktop"]:not(.smartphone-ui) .books-section-title::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #search-scope-bar::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #search-init-box::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #search-hist-section::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #genre-grid > *::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #kana-chips > *::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #search-empty-msg::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #shelf-timeline-area > *::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #shelf-empty::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #r-search-bar::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #r-paper-hint::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #focus-timer-pill::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #mobile-fab::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #pop::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #toast::before,
+  html[data-device="desktop"]:not(.smartphone-ui) .sheet::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #app-boot .boot-card::before{
+    animation:none!important;
+  }
+}
+
 </style>
 </head>
 <body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),s=Math.min(innerWidth||0,innerHeight||0);if(m&&s<=899)document.documentElement.dataset.device="smartphone";else document.documentElement.dataset.device="desktop";}catch(e){}})();</script>
@@ -6636,6 +6939,6 @@ html[data-device="desktop"]:not(.smartphone-ui).low-power #v-cal .block{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=liquid-glass-v3-20261005-4"></script>
+<script src="./app.js?v=liquid-glass-v5-20261005-1"></script>
 </body>
 </html>
