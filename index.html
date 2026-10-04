@@ -184,7 +184,7 @@ box-shadow:0 14px 30px rgba(100,80,160,.18);}
 .ai-card-text{margin-top:6px;font-size:14px;line-height:1.5;opacity:.96}
 .ai-card-actions{margin-top:16px;font-size:13px;font-weight:700;opacity:.96}
 .ai-card-arrow{font-size:28px;line-height:1}
-.low-power .ai-feature-card{box-shadow:none!important;animation-duration:18s!important;animation-iteration-count:infinite!important;background-size:220% 220%!important;}
+.low-power .ai-feature-card{box-shadow:none!important;animation:none!important;background-size:100% 100%!important;}
 
 .secret-panel {
   background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.9));
@@ -268,8 +268,11 @@ box-shadow:0 14px 30px rgba(100,80,160,.18);}
   transform: none !important;
 }
 .low-power #bottom-nav, .low-power #sidebar {
-  backdrop-filter: none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
 }
+.low-power #r-warm,.low-power #r-dim{display:none !important;}
+.low-power .sheet,.low-power .popover{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -910,7 +913,7 @@ let allWorks=[], works=[], byId=new Map(), dead=new Set();
 let fav=new Set(), want=new Set(), done=new Set(), favAuthors=new Set();
 let pos={}, bm={}, notes={}, hls={}, hist=[], savedKeys=new Set(), searchHistory=[];
 let calData={}, goalMin=30;
-let st={ fs:18, lh:2.1, theme:'auto', font:'mincho', warm:true, kp:true, offline:false, ollamaEnabled:false, oUrl:'http://127.0.0.1:11434', oHist:[], oMod:'', v:true, rMode:'normal', readSpeed:500, todayBook:null };
+let st={ fs:18, lh:2.1, theme:'auto', font:'mincho', warm:true, kp:true, offline:false, lowSpec:false, ollamaEnabled:false, oUrl:'http://127.0.0.1:11434', oHist:[], oMod:'', v:true, rMode:'normal', readSpeed:500, todayBook:null };
 let aiConn={ ok:false, models:[], err:'' };
 let activeBook=null;
 const isPublicWork = w => !!w && Number(w.c) === 1;
@@ -2129,6 +2132,16 @@ function renderSettingsPage(){
           <button data-act="set-ft" data-v="gothic" class="${st.font==='gothic'?'active':''}">ゴシック</button>
         </div>
       </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:14px">
+        <div>
+          <div style="font-weight:700">低スペックモード</div>
+          <div style="font-size:var(--fs-s); color:var(--sub); margin-top:4px">アニメーション・影・背景効果・不要な監視処理を停止</div>
+        </div>
+        <div class="seg" style="width:180px; flex:none">
+          <button data-act="set-low-spec" data-v="1" class="${st.lowSpec?'active':''}">ON</button>
+          <button data-act="set-low-spec" data-v="0" class="${!st.lowSpec?'active':''}">OFF</button>
+        </div>
+      </div>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
         <span>読書速度 (${st.readSpeed}字/分)</span>
         <select id="sel-read-speed" data-act="sel-speed-change" style="background:var(--card-sub); padding:8px 12px; border-radius:8px">
@@ -2549,6 +2562,16 @@ document.addEventListener('click',async(e)=>{
     applySettings();
     renderSettingsPage();
   }
+  else if(act==='set-low-spec'){
+    st.lowSpec=b.dataset.v==='1';
+    save();
+    applyPerformanceMode();
+    if(st.lowSpec){clearInterval(featTimer);featTimer=null;clearInterval(auditTimer);auditTimer=null;}
+    else {startFeatTimer();startAudit();}
+    renderHome();
+    renderSettingsPage();
+    toast(st.lowSpec?'低スペックモードをONにしました':'低スペックモードをOFFにしました');
+  }
   else if(act==='set-ft'){ st.font=b.dataset.v; applyReaderConfig(); save(); renderSettingsPage(); }
   else if(act==='set-save-url'){ st.oUrl = normalizeOllamaUrl($('set-ourl').value.trim()); save(); pingOllama(); toast('URLを保存しました'); }
   else if(act==='set-pick-mod'){
@@ -2589,7 +2612,9 @@ function detectLowPowerMode(){
 }
 
 function applyPerformanceMode(){
-  document.body.classList.toggle('low-power', detectLowPowerMode());
+  const low=!!st.lowSpec || detectLowPowerMode();
+  document.body.classList.toggle('low-power',low);
+  if(low){clearInterval(featTimer);featTimer=null;clearInterval(auditTimer);auditTimer=null;}
 }
 
 if(window.matchMedia){
@@ -2620,11 +2645,12 @@ $('r-search-inp').oninput=()=>execInBookSearch();
 window.addEventListener('DOMContentLoaded',async()=>{
   applyPerformanceMode();
   await load();
+  applyPerformanceMode();
   applySettings();
   applyReaderConfig();
   await checkCatalog();
-  startFeatTimer();
-  startAudit();
+  if(!document.body.classList.contains('low-power')) startFeatTimer();
+  if(!document.body.classList.contains('low-power')) startAudit();
   
   // Ollama接続確認
   pingOllama();
