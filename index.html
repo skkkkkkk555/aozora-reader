@@ -171,6 +171,21 @@ body {
   background: linear-gradient(135deg, rgba(35,68,93,0.08), rgba(35,68,93,0.02));
   border: 1px solid rgba(35,68,93,0.08);
 }
+.ai-feature-card{color:#fff;border:none;min-height:154px;padding:20px 22px;
+background:linear-gradient(120deg,#ff4d6d,#ff9f43,#ffd84d,#4cd964,#32d5ff,#6c63ff,#d84cff,#ff4d6d);
+background-size:280% 280%;animation:aiRainbow 12s linear infinite;
+box-shadow:0 14px 30px rgba(100,80,160,.18);}
+@keyframes aiRainbow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.ai-card-top,.ai-card-main,.ai-card-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ai-card-main{justify-content:flex-start;margin-top:16px}
+.ai-rain-badge,.ai-card-status{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;background:rgba(255,255,255,.22);color:#fff}
+.ai-card-orb{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;background:rgba(255,255,255,.22);font-size:28px}
+.ai-card-title{font-size:24px;font-weight:800;line-height:1.2}
+.ai-card-text{margin-top:6px;font-size:14px;line-height:1.5;opacity:.96}
+.ai-card-actions{margin-top:16px;font-size:13px;font-weight:700;opacity:.96}
+.ai-card-arrow{font-size:28px;line-height:1}
+.low-power .ai-feature-card{box-shadow:none!important;animation-duration:18s!important;animation-iteration-count:infinite!important;background-size:220% 220%!important;}
+
 .secret-panel {
   background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.9));
   border: 1px solid var(--line);
@@ -416,13 +431,6 @@ button.sm-btn { min-height: 44px; padding: 0 14px; font-size: var(--fs-s); borde
 .hl-y { background: var(--hl-y); } .hl-p { background: var(--hl-p); } .hl-b { background: var(--hl-b); }
 .search-hl { background: #ff9800; color: #fff; border-radius: 2px; }
 
-/* 対訳・現代語訳スタイル */
-.bilingual-pair { margin-bottom: 1.8em; padding: 12px 16px; border-radius: var(--radius-sm); background: var(--card); border-left: 3px solid var(--ac); }
-.bilingual-orig { color: var(--sub); font-size: 0.95em; margin-bottom: 6px; }
-.bilingual-mod { color: var(--fg); font-weight: 600; line-height: 1.7; }
-#body.v .bilingual-pair { border-left: none; border-top: 3px solid var(--ac); margin-left: 1.8em; margin-bottom: 0; }
-#body.v .bilingual-orig { margin-bottom: 0; margin-left: 6px; }
-
 /* 集中モード時の解除用フローティングボタン */
 #btn-exit-focus {
   position: fixed; top: 16px; right: 16px; z-index: 55; display: none;
@@ -639,9 +647,13 @@ button.sm-btn { min-height: 44px; padding: 0 14px; font-size: var(--fs-s); borde
           <svg class="icon"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           <div><div style="font-size:var(--fs-t); font-weight:700">ノート</div><div id="blk-note-cnt" style="font-size:var(--fs-s); color:var(--sub)">栞・メモ</div></div>
         </div>
-        <div id="blk-ai" class="block blue ai-feature" data-act="open-ai-chat" style="display:none">
-          <svg class="icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <div><div style="font-size:var(--fs-t); font-weight:700">AIに聞く</div><div style="font-size:var(--fs-s); color:var(--sub)">解説・翻訳</div></div>
+                <div id="blk-ai" class="block span-4 ai-feature ai-feature-card" data-act="open-ai-chat" style="display:none">
+          <div class="ai-card-top"><span class="ai-rain-badge">AI ASSISTANT</span><span class="ai-card-status">Ollama</span></div>
+          <div class="ai-card-main"><div class="ai-card-orb">✦</div><div>
+            <div class="ai-card-title">AIに聞く</div>
+            <div class="ai-card-text">作品のあらすじ・背景・登場人物・読みどころをAIに質問できます</div>
+          </div></div>
+          <div class="ai-card-actions"><span>ここからAIチャットを開く</span><span class="ai-card-arrow">›</span></div>
         </div>
         <div class="block" data-act="nav-settings">
           <div style="display:flex; justify-content:space-between; align-items:center">
@@ -801,7 +813,6 @@ button.sm-btn { min-height: 44px; padding: 0 14px; font-size: var(--fs-s); borde
       <button class="secondary sm-btn" data-act="r-back" style="width:52px"><svg class="icon"><path d="m15 18-6-6 6-6"/></svg></button>
       <div id="r-title" class="serif" style="font-size:var(--fs-t); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:45%"></div>
       <div style="display:flex; align-items:center; gap:8px">
-        <button class="secondary sm-btn" data-act="r-trans-sheet" id="btn-trans-mode" style="height:38px">現代語訳</button>
         <button class="secondary sm-btn" data-act="r-mode-sheet" id="btn-read-mode" style="height:38px">通常</button>
         <div id="r-prog" style="font-size:var(--fs-s); color:var(--sub)">0%</div>
       </div>
@@ -822,7 +833,6 @@ button.sm-btn { min-height: 44px; padding: 0 14px; font-size: var(--fs-s); borde
       <button class="r-dock-btn" data-act="r-bm"><svg class="icon"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>しおり</button>
       <button class="r-dock-btn" data-act="r-tts"><svg class="icon"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>朗読</button>
       <button class="r-dock-btn" data-act="r-vt"><svg class="icon"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/></svg>縦/横</button>
-      <button class="r-dock-btn" data-act="r-trans-sheet"><svg class="icon"><path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg>現代語</button>
       <button class="r-dock-btn" data-act="r-search-open"><svg class="icon"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>検索</button>
       <button class="r-dock-btn" data-act="r-cfg"><svg class="icon"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>表示</button>
       <button class="r-dock-btn" data-act="r-menu"><svg class="icon"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>メニュー</button>
@@ -845,7 +855,6 @@ button.sm-btn { min-height: 44px; padding: 0 14px; font-size: var(--fs-s); borde
     <button data-act="hl" data-c="hl-b" style="color:#40c4ff; min-height:44px">●青</button>
     <button data-act="pop-copy" style="min-height:44px">引用</button>
     <button data-act="pop-memo" style="min-height:44px">メモ</button>
-    <button data-act="pop-trans" style="min-height:44px">現代語訳</button>
     <button class="ai-feature" data-act="pop-ai" data-m="mod" style="min-height:44px; display:none">AI現代語</button>
     <button class="ai-feature" data-act="pop-ai" data-m="ask" style="min-height:44px; display:none">質問</button>
     <button data-act="pop-bm" style="min-height:44px">栞</button>
@@ -910,10 +919,6 @@ const safeHTML = (id, value) => { const el = safeEl(id); if (el) el.innerHTML = 
 const safeDisplay = (id, show) => { const el = safeEl(id); if (el) el.style.display = show ? '' : 'none'; };
 const closeOneLineMode = () => {};
 const escRe = s => (s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-// 読書表示モード: 'orig'(原文), 'modern'(現代語訳), 'bilingual'(原文+現代語訳)
-let readerTransMode = 'orig';
-let curTranslation = null; // { modern, pairs }
 
 let searchState={
   query: '',
@@ -1035,179 +1040,6 @@ window.addEventListener('keydown',e=>{
   }
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openSearchPage(); }
 });
-
-/* ==================== 4. 翻訳API & 逆翻訳エンジン (堅牢な多重フォールバック) ==================== */
-// 文語・仮名遣い簡易フォールバック変換辞書
-const CLASSICAL_DICT = [
-  [/けふ/g, '今日'], [/てふ/g, 'という'], [/いふ/g, '言う'], [/いづれ/g, 'どれ'], [/いづく/g, 'どこ'],
-  [/あまた/g, 'たくさん'], [/あはれ/g, 'しみじみとした'], [/をかし/g, '趣がある'], [/候ひき/g, 'おりました'],
-  [/候ふ/g, 'おります'], [/侍り/g, 'おります'], [/給ふ/g, 'なさる'], [/給ひける/g, 'なさった'],
-  [/おはす/g, 'いらっしゃる'], [/たまへ/g, 'ください'], [/わが/g, '私の'], [/さらば/g, 'それでは']
-];
-
-function fallbackClassicalToModern(text) {
-  let res = text;
-  CLASSICAL_DICT.forEach(([re, modern]) => { res = res.replace(re, modern); });
-  return res;
-}
-
-async function fetchTranslateStep(text, fromLang, toLang, timeoutMs = 8000) {
-  if (!text || !text.trim()) return '';
-  
-  // 1. MyMemory API
-  const myMemoryUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`;
-  try {
-    const res = await fetch(myMemoryUrl, { signal: sig(timeoutMs) });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.responseData && data.responseData.translatedText) {
-        const decoded = decodeHtmlEntities(data.responseData.translatedText);
-        if (decoded && !decoded.includes('MYMEMORY WARNING') && !decoded.includes('QUOTA_EXCEEDED')) {
-          return decoded.trim();
-        }
-      }
-    }
-  } catch (err) {}
-
-  // 2. Google Translate via CORS Proxy (フォールバック)
-  const gUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${toLang}&dt=t&q=${encodeURIComponent(text)}`;
-  const proxyUrls = [
-    `https://corsproxy.io/?url=${encodeURIComponent(gUrl)}`,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(gUrl)}`
-  ];
-
-  for (const pUrl of proxyUrls) {
-    try {
-      const res2 = await fetch(pUrl, { signal: sig(timeoutMs) });
-      if (res2.ok) {
-        const data2 = await res2.json();
-        if (Array.isArray(data2) && Array.isArray(data2[0])) {
-          return data2[0].map(item => item[0]).join('').trim();
-        }
-      }
-    } catch (err2) {}
-  }
-
-  // 3. Ollama (接続時)
-  if (aiConn.ok && st.oMod && !st.offline) {
-    try {
-      const prompt = fromLang === 'ja'
-        ? `Translate the following Japanese text to English. Output only the translated English text:\n\n${text}`
-        : `Translate the following English text to natural modern Japanese. Output only the translated Japanese text:\n\n${text}`;
-      const res3 = await fetch(normalizeOllamaUrl(st.oUrl) + '/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: st.oMod,
-          messages: [{ role: 'user', content: prompt }],
-          stream: false,
-          options: { num_ctx: 2048, num_predict: 500 }
-        }),
-        signal: sig(timeoutMs)
-      });
-      if (res3.ok) {
-        const data3 = await res3.json();
-        const content = data3.message?.content?.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-        if (content) return content;
-      }
-    } catch (e) {}
-  }
-
-  throw new Error('All translate endpoints failed');
-}
-
-// 逆翻訳 (日本語 → 英語 → 現代日本語) コア
-async function backTranslateChunk(chunkText, signal) {
-  if (!chunkText || !chunkText.trim()) return { orig: chunkText, en: '', modern: chunkText };
-  const cacheKey = 'tr_' + colorOf(chunkText) + '_' + chunkText.length;
-  const cached = await idb.get('k', cacheKey);
-  if (cached && cached.modern) return cached;
-
-  for (let retry = 0; retry < 2; retry++) {
-    if (signal && signal.aborted) throw new DOMException('Aborted', 'AbortError');
-    try {
-      if (retry > 0) await new Promise(r => setTimeout(r, 800));
-      // STEP 1: 原文(日本語) → 英語
-      const en = await fetchTranslateStep(chunkText, 'ja', 'en', 9000);
-      if (!en) throw new Error('Empty EN response');
-      // STEP 2: 英語 → 現代日本語
-      const modern = await fetchTranslateStep(en, 'en', 'ja', 9000);
-      if (!modern) throw new Error('Empty JA response');
-
-      const resObj = { orig: chunkText, en, modern };
-      await idb.set('k', cacheKey, resObj);
-      return resObj;
-    } catch (e) {
-      if (e.name === 'AbortError') throw e;
-    }
-  }
-
-  // 外部APIが一時的に通らない場合は、内蔵文語置換フォールバックで現代語化
-  const modernFallback = fallbackClassicalToModern(chunkText);
-  return { orig: chunkText, en: '', modern: modernFallback, fallback: true };
-}
-
-function splitIntoChunks(text, maxChunkLen = 220) {
-  const paragraphs = text.split(/\n+/);
-  const chunks = [];
-  paragraphs.forEach(p => {
-    const tr = p.trim();
-    if (!tr) return;
-    if (tr.length <= maxChunkLen) {
-      chunks.push(tr);
-    } else {
-      const sentences = tr.match(/[^。！？]+[。！？]?/g) || [tr];
-      let cur = '';
-      sentences.forEach(s => {
-        if ((cur + s).length > maxChunkLen && cur) {
-          chunks.push(cur.trim());
-          cur = s;
-        } else {
-          cur += s;
-        }
-      });
-      if (cur.trim()) chunks.push(cur.trim());
-    }
-  });
-  return chunks.length ? chunks : [text.trim()];
-}
-
-let transAbortCtrl = null;
-
-// 作品全体の現代語訳タスク
-async function runWorkTranslation(work, onProgress) {
-  if (!work || !work.plain) return null;
-  const cachedDoc = await idb.get('k', 'doc_trans_' + work.id);
-  if (cachedDoc && cachedDoc.pairs) return cachedDoc;
-
-  if (transAbortCtrl) transAbortCtrl.abort();
-  transAbortCtrl = new AbortController();
-
-  const chunks = splitIntoChunks(work.plain);
-  const pairs = [];
-
-  for (let i = 0; i < chunks.length; i++) {
-    if (transAbortCtrl.signal.aborted) {
-      throw new DOMException('Aborted', 'AbortError');
-    }
-    const chunk = chunks[i];
-    if (onProgress) {
-      onProgress({
-        current: i + 1,
-        total: chunks.length,
-        percent: Math.round(((i + 1) / chunks.length) * 100),
-        stepText: '原文 → 英語 → 現代日本語'
-      });
-    }
-    const res = await backTranslateChunk(chunk, transAbortCtrl.signal);
-    pairs.push(res);
-  }
-
-  const modernFull = pairs.map(p => p.modern).join('\n\n');
-  const result = { modern: modernFull, pairs };
-  await idb.set('k', 'doc_trans_' + work.id, result);
-  return result;
-}
 
 const URLS=[
   'https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip',
@@ -1784,7 +1616,6 @@ function openBookDetail(w){
       </div>
       <div style="display:flex; gap:8px">
         <button class="primary" data-act="read-now" style="flex:2">読む</button>
-        <button class="secondary" data-act="read-trans-now" style="flex:2">現代語訳で読む</button>
         <button class="secondary" data-act="toggle-want" style="flex:1">${isW?'読みたい済':'＋読みたい'}</button>
         <button class="secondary" data-act="toggle-fav" style="flex:1">${isF?'★':'☆'}</button>
       </div>
@@ -1866,17 +1697,15 @@ function parseAozora(raw){
 }
 function toPlain(h){ const d=document.createElement('div'); d.innerHTML=h.replace(/<br>/g,'\n'); d.querySelectorAll('rt').forEach(x=>x.remove()); return d.textContent||''; }
 
-/* ==================== 9. 読書画面 & 現代語訳表示 ==================== */
+/* ==================== 9. 読書画面 & 表示 ==================== */
 let curDoc=null, curWork=null;
 let lastUserActivityTime=Date.now();
 let inBookSearchResults=[], inBookSearchIdx=0;
 
-async function openReader(w, autoStartTrans = false){
+async function openReader(w){
   closeSheet();
   closeOneLineMode();
   curWork=w;
-  readerTransMode = 'orig';
-  curTranslation = null;
   const tId=++readerTok;
   $('r-title').textContent=w.t;
   $('body').innerHTML='<div style="padding:60px 0; text-align:center; color:var(--sub)">読み込んでいます…</div>';
@@ -1902,34 +1731,15 @@ async function openReader(w, autoStartTrans = false){
     });
 
     if(st.kp && !document.body.classList.contains('low-power')) extractKeyphrases(doc.plain);
-    if(autoStartTrans) {
-      setTimeout(()=>openTranslationSheet(), 300);
-    }
-  } catch(e){
+} catch(e){
     if(e.dead) toast('取得できない作品のため除外しました');
     else $('body').innerHTML='<div style="padding:60px 0; text-align:center">取得に失敗しました<br><button class="primary" data-act="r-retry" style="margin-top:16px">再試行</button></div>';
   }
 }
 
 function renderReaderBody(){
-  if (!curDoc) return;
-  const body = $('body');
-  $('btn-trans-mode').textContent = readerTransMode === 'orig' ? '現代語訳' : readerTransMode === 'modern' ? '現代語' : '対訳';
-
-  if (readerTransMode === 'orig') {
-    body.innerHTML = curDoc.html;
-  } else if (readerTransMode === 'modern' && curTranslation) {
-    const modHtml = curTranslation.pairs.map(p => `<p style="margin-bottom:1.4em">${esc(p.modern)}</p>`).join('');
-    body.innerHTML = `<div style="line-height:2.2">${modHtml}</div>`;
-  } else if (readerTransMode === 'bilingual' && curTranslation) {
-    const biHtml = curTranslation.pairs.map(p => `
-      <div class="bilingual-pair">
-        <div class="bilingual-orig">【原文】${esc(p.orig)}</div>
-        <div class="bilingual-mod">【現代語】${esc(p.modern)}</div>
-      </div>
-    `).join('');
-    body.innerHTML = biHtml;
-  }
+  if(!curDoc) return;
+  $('body').innerHTML=curDoc.html;
 }
 
 function closeReader(fromPop=false){
@@ -1938,7 +1748,6 @@ function closeReader(fromPop=false){
   $('reader').classList.remove('reader-night', 'mode-focus');
   applySettings();
   if(window.speechSynthesis) speechSynthesis.cancel();
-  if(transAbortCtrl) transAbortCtrl.abort();
   popLayer('reader');
   save(); renderHome();
 }
@@ -2119,76 +1928,7 @@ document.addEventListener('selectionchange',()=>{
   pushLayer('pop');
 });
 
-/* ==================== 10. 現代語訳 (逆翻訳) シート ==================== */
-function openTranslationSheet(){
-  const isReady = !!curTranslation;
-  sheet('現代語訳 (逆翻訳)', `
-    <div style="display:flex; flex-direction:column; gap:16px">
-      <div style="font-size:var(--fs-s); color:var(--sub)">
-        古い文語体を「原文 → 英語 → 自然な現代日本語」の2段階で再構成します。
-      </div>
-
-      <div style="display:flex; gap:8px">
-        <button class="secondary sm-btn ${readerTransMode==='orig'?'active':''}" data-act="set-trans-mode" data-m="orig" style="flex:1">原文</button>
-        <button class="secondary sm-btn ${readerTransMode==='modern'?'active':''}" data-act="set-trans-mode" data-m="modern" style="flex:1">現代語訳</button>
-        <button class="secondary sm-btn ${readerTransMode==='bilingual'?'active':''}" data-act="set-trans-mode" data-m="bilingual" style="flex:1">原文＋現代語</button>
-      </div>
-
-      <div id="trans-progress-area" style="display:${isReady?'none':'flex'}; flex-direction:column; gap:8px; padding:14px; background:var(--card-sub); border-radius:var(--radius-sm)">
-        <div style="display:flex; justify-content:space-between; font-weight:700">
-          <span id="trans-status-lbl">現代語訳を生成中…</span>
-          <span id="trans-pct-lbl">0%</span>
-        </div>
-        <div class="trans-prog-wrap"><div class="trans-prog-fill" id="trans-pbar"></div></div>
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:var(--fs-s); color:var(--sub)">
-          <span id="trans-count-lbl">0 / 0 チャンク</span>
-          <button class="secondary sm-btn" data-act="abort-trans" style="height:36px; padding:0 12px">中止</button>
-        </div>
-      </div>
-
-      <div id="trans-action-area" style="display:${isReady?'flex':'none'}; flex-direction:column; gap:10px">
-        <div style="font-size:var(--fs-s); color:var(--ac); font-weight:700">✓ 現代語訳が生成済みです</div>
-        <button class="secondary" data-act="start-work-trans" style="width:100%">再翻訳を実行する</button>
-      </div>
-    </div>
-  `);
-
-  if (!isReady) {
-    startWorkTranslationTask();
-  }
-}
-
-async function startWorkTranslationTask() {
-  const pArea = $('trans-progress-area');
-  const aArea = $('trans-action-area');
-  if (pArea) pArea.style.display = 'flex';
-  if (aArea) aArea.style.display = 'none';
-
-  try {
-    const res = await runWorkTranslation(curWork, (p)=>{
-      if ($('trans-pct-lbl')) $('trans-pct-lbl').textContent = p.percent + '%';
-      if ($('trans-pbar')) $('trans-pbar').style.width = p.percent + '%';
-      if ($('trans-count-lbl')) $('trans-count-lbl').textContent = `${p.current} / ${p.total} チャンク`;
-      if ($('trans-status-lbl')) $('trans-status-lbl').textContent = p.stepText;
-    });
-    if (res) {
-      curTranslation = res;
-      readerTransMode = 'modern';
-      renderReaderBody();
-      if (pArea) pArea.style.display = 'none';
-      if (aArea) aArea.style.display = 'flex';
-      toast('現代語訳が完了しました');
-    }
-  } catch(e) {
-    if ($('trans-status-lbl')) {
-      $('trans-status-lbl').textContent = e.name === 'AbortError' ? '中止しました' : '完了 (一部フォールバック反映)';
-    }
-    if (curTranslation) {
-      renderReaderBody();
-    }
-  }
-}
-
+/* ==================== 10.  () シート ==================== */
 /* ==================== 11. AI機能 (完全日本語化 & 制御) ==================== */
 let aiAbort=null;
 
@@ -2197,7 +1937,7 @@ function openAiChat(initQ=''){
     <div style="display:flex; flex-direction:column; height:60vh">
       <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px">
         <button class="secondary sm-btn" data-act="ai-chip" data-q="この作品のあらすじを三段要約してください。">三段要約</button>
-        <button class="secondary sm-btn" data-act="ai-chip" data-q="現代の分かりやすい日本語で訳してください。">現代語訳</button>
+        <button class="secondary sm-btn" data-act="ai-chip" data-q="この作品の特徴や読みどころを教えてください。">読みどころ</button>
         <button class="secondary sm-btn" data-act="ai-chip" data-q="この場面の時代背景や状況を教えてください。">背景解説</button>
         <button class="secondary sm-btn" data-act="ai-chip" data-q="登場人物たちの関係を教えてください。">登場人物</button>
       </div>
@@ -2234,7 +1974,6 @@ async function sendAiMessage(q){
     const ctx=curDoc?curDoc.plain.slice(0,3000):'';
     const sysPrompt=`【重要指示】
 必ず自然な日本語のみで回答してください。英語や中国語など他言語は一切含めないでください。
-現代語訳を行う場合は原文の意味を損なわずに現代の自然な日本語訳文のみを出力してください。
 要約では本文にない事実を捏造せず、原文に基づいた客観的な内容にしてください。
 参考本文:
 ${ctx}`;
@@ -2599,7 +2338,6 @@ document.addEventListener('click',async(e)=>{
     if(w) openBookDetail(w);
   }
   else if(act==='read-now'){ closeSheet(); openReader(activeBook, false); }
-  else if(act==='read-trans-now'){ closeSheet(); openReader(activeBook, true); }
   else if(act==='toggle-want'){ want.has(activeBook.id)?want.delete(activeBook.id):want.add(activeBook.id); save(); openBookDetail(activeBook); }
   else if(act==='toggle-fav'){
     const isF=fav.has(activeBook.id);
@@ -2653,18 +2391,6 @@ document.addEventListener('click',async(e)=>{
     save();
     toast('集中モードを解除しました');
   }
-  else if(act==='r-trans-sheet'){ openTranslationSheet(); }
-  else if(act==='set-trans-mode'){
-    readerTransMode = b.dataset.m;
-    renderReaderBody();
-    updateProgress();
-    closeSheet();
-  }
-  else if(act==='start-work-trans'){ startWorkTranslationTask(); }
-  else if(act==='abort-trans'){
-    if(transAbortCtrl) transAbortCtrl.abort();
-    toast('翻訳処理を中止しました');
-  }
   else if(act==='r-search-open'){ $('r-search-bar').style.display='flex'; $('r-search-inp').focus(); }
   else if(act==='r-search-close'){ $('r-search-bar').style.display='none'; }
   else if(act==='r-search-prev'){ jumpToInBookMatch(inBookSearchIdx-1); }
@@ -2697,7 +2423,6 @@ document.addEventListener('click',async(e)=>{
     sheet('目次・栞',`
       <div style="display:flex; flex-direction:column; gap:16px">
         <div style="display:flex; gap:8px">
-          <button class="secondary sm-btn" data-act="r-trans-sheet" style="flex:1">現代語訳</button>
           ${isAi?`<button class="secondary sm-btn" data-act="r-ai-action" data-m="要約" style="flex:1">AI要約</button>`:''}
         </div>
         <div style="font-weight:700">目次</div>
@@ -2738,25 +2463,6 @@ document.addEventListener('click',async(e)=>{
       }
     }
   }
-  else if(act==='pop-trans'){
-    const txt=getSelection().toString().trim();
-    $('pop').classList.remove('open');
-    if(txt){
-      toast('現代語訳を実行中…');
-      sheet('選択箇所の現代語訳', `
-        <div style="display:flex; flex-direction:column; gap:14px">
-          <div><div style="font-weight:700; color:var(--sub); margin-bottom:4px">【原文】</div><p style="font-size:var(--fs-b)">${esc(txt)}</p></div>
-          <div><div style="font-weight:700; color:var(--ac); margin-bottom:4px">【現代語訳 (逆翻訳)】</div><p id="pop-trans-result" style="font-size:var(--fs-t); font-weight:600; line-height:1.7">翻訳中…</p></div>
-        </div>
-      `);
-      try {
-        const res = await backTranslateChunk(txt);
-        $('pop-trans-result').textContent = res.modern;
-      } catch(err) {
-        $('pop-trans-result').textContent = '翻訳に失敗しました。';
-      }
-    }
-  }
   else if(act==='pop-memo'){
     const txt=getSelection().toString(); $('pop').classList.remove('open');
     sheet('メモを追加',`
@@ -2774,7 +2480,7 @@ document.addEventListener('click',async(e)=>{
   }
   else if(act==='pop-ai'){
     const txt=getSelection().toString(); $('pop').classList.remove('open');
-    openAiChat(b.dataset.m==='mod'?`「${txt}」を現代語訳してください`:`「${txt}」について教えてください`);
+    openAiChat(`「${txt}」について教えてください`);
   }
   else if(act==='pop-bm'){
     const f=pos[curWork.id]?.f||0;
