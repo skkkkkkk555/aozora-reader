@@ -161,6 +161,7 @@ function sanitizePersistedState(d){
   let size=0;try{size=JSON.stringify(d).length;}catch{return null;}
   if(size>SEC.maxStateChars)return null;
   const out={};
+  out.goalMin=Number.isFinite(Number(d.goalMin))?Math.max(10,Math.min(180,Math.round(Number(d.goalMin)))):30;
   out.fav=safeStateArray(d.fav);out.want=safeStateArray(d.want);out.done=safeStateArray(d.done);
   out.favAuthors=safeStateArray(d.favAuthors,SEC_STATE.maxAuthors);
   out.dead=safeStateArray(d.dead,SEC_STATE.maxItems);
@@ -169,7 +170,7 @@ function sanitizePersistedState(d){
   out.calData=sanitizeStateMap(d.calData,v=>Number.isFinite(Number(v))?Math.max(0,Math.min(1440,Math.round(Number(v)))):undefined);
   out.pos=sanitizeStateMap(d.pos,v=>v&&typeof v==='object'?{f:Math.max(0,Math.min(1,Number(v.f)||0)),t:Math.max(0,Math.min(Number(v.t)||0,Date.now()+86400000))}:undefined);
   out.bm=sanitizeStateMap(d.bm,v=>Array.isArray(v)?v.slice(0,SEC_STATE.maxNotesPerBook).filter(x=>x&&typeof x==='object').map(x=>({f:Math.max(0,Math.min(1,Number(x.f)||0)),s:safeStateText(x.s,500),t:Math.max(0,Math.min(Number(x.t)||0,Date.now()+86400000))})):[],SEC_STATE.maxMapKeys);
-  out.notes=sanitizeStateMap(d.notes,v=>Array.isArray(v)?v.slice(0,SEC_STATE.maxNotesPerBook).filter(x=>x&&typeof x==='object').map(x=>({s:safeStateText(x.s,500),m:safeStateText(x.m,2000),t:Math.max(0,Math.min(Number(x.t)||0,Date.now()+86400000))})):[],SEC_STATE.maxMapKeys);
+  out.notes=sanitizeStateMap(d.notes,v=>Array.isArray(v)?v.slice(0,SEC_STATE.maxNotesPerBook).filter(x=>x&&typeof x==='object').map(x=>({s:safeStateText(x.s,500),m:safeStateText(x.m,2000),t:Math.max(0,Math.min(Number(x.t)||0,Date.now()+86400000)),f:Math.max(0,Math.min(1,Number(x.f)||0))})):[],SEC_STATE.maxMapKeys);
   out.hls=sanitizeStateMap(d.hls,v=>Array.isArray(v)?v.slice(0,SEC_STATE.maxNotesPerBook).filter(x=>x&&typeof x==='object').map(x=>({t:safeStateText(x.t,500),c:safeStateText(x.c,40),d:Math.max(0,Math.min(Number(x.d)||0,Date.now()+86400000))})):[],SEC_STATE.maxMapKeys);
   if(d.st&&typeof d.st==='object'&&!Array.isArray(d.st)){
     out.st={
@@ -315,6 +316,9 @@ const load=async()=>{
     let d=sanitizePersistedState(localState);
     if(!d)d=sanitizePersistedState(await idb.get('k','state'));
     const savedSettingsRaw=localStorage.getItem('aozora_terminal_settings_v1');
+    if(!d&&savedSettingsRaw){
+      try{d=sanitizePersistedState({st:JSON.parse(savedSettingsRaw)});}catch{}
+    }
     if(d){
       fav=new Set(safeStateArray(d.fav)); want=new Set(safeStateArray(d.want)); done=new Set(safeStateArray(d.done));
       favAuthors=new Set(safeStateArray(d.favAuthors,SEC_STATE.maxAuthors));
