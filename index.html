@@ -2700,6 +2700,18 @@ img,video,canvas,iframe{max-width:100%;height:auto}
   .sheet{max-height:94dvh;max-height:94svh}
 }
 
+
+/* Reader mobile progress + context toolbar */
+#r-scroll-progress{position:absolute;left:0;top:0;width:100%;height:3px;transform-origin:left center;transform:scaleX(0);background:var(--ac);z-index:20;pointer-events:none;transition:transform 180ms linear;opacity:.9}
+#reader.reader-scrolled .r-bar{box-shadow:0 5px 18px rgba(0,0,0,.08)}
+@media(max-width:899px){
+  #r-scroll-progress{height:2px}
+  .r-bar{position:relative}
+}
+@media(prefers-reduced-motion:reduce){
+  #r-scroll-progress{transition:none}
+}
+
 </style>
 </head>
 <body>
@@ -3061,7 +3073,7 @@ img,video,canvas,iframe{max-width:100%;height:auto}
   </nav>
 
   <!-- 読書画面 -->
-  <div id="reader">
+  <div id="reader"><div id="r-scroll-progress" aria-hidden="true"></div>
     <button id="btn-exit-focus" data-act="r-exit-focus">集中解除</button>
     <div class="r-bar" id="r-top">
       <button class="secondary sm-btn" data-act="r-back" style="width:52px"><svg class="icon"><path d="m15 18-6-6 6-6"/></svg></button>
@@ -3125,6 +3137,6 @@ img,video,canvas,iframe{max-width:100%;height:auto}
   <div id="toast" class="toast"><span id="toast-m"></span><button id="toast-u" data-act="toast-undo" style="color:var(--ac); font-weight:700">元に戻す</button></div>
 </div>
 
-<script src="./app.js?v=4ad19ea091a74d86"></script>
+<script src="./app.js?v=8e1ca2feb3b872cb"></script>
 </body>
 </html>
