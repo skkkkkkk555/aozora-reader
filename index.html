@@ -4055,7 +4055,7 @@ function renderSettingsPage(){
       </div>
       <div style="display:flex; justify-content:space-between; align-items:center">
         <span>文字サイズ (${st.fs}px)</span>
-        <input type="range" min="14" max="32" value="${st.fs}" oninput="st.fs=this.value;applyReaderConfig();save();renderSettingsPage();" style="width:160px; height:44px">
+        <input type="range" min="14" max="32" value="${st.fs}" data-act="set-fs-range" style="width:160px; height:44px">
       </div>
     </div>
 
@@ -4157,6 +4157,11 @@ function switchView(vid){
   else if(vid==='v-settings') renderSettingsPage();
 }
 
+document.addEventListener('input',e=>{
+  const el=e.target.closest?.('[data-act]');if(!el)return;
+  if(el.dataset.act==='set-fs-range'){st.fs=Math.max(14,Math.min(32,Number(el.value)||18));applyReaderConfig();save();}
+  else if(el.dataset.act==='set-lh-range'){st.lh=Math.max(1.6,Math.min(2.6,Number(el.value)||2.1));applyReaderConfig();save();}
+});
 document.addEventListener('change',e=>{
   const b=e.target.closest('[data-act="sel-speed-change"]');
   if(!b) return;
@@ -4397,11 +4402,11 @@ document.addEventListener('click',async(e)=>{
       <div style="display:flex; flex-direction:column; gap:20px">
         <div style="display:flex; justify-content:space-between; align-items:center">
           <span>文字サイズ (${st.fs}px)</span>
-          <input type="range" min="14" max="32" value="${st.fs}" oninput="st.fs=this.value;applyReaderConfig();save();" style="height:44px; width:160px">
+          <input type="range" min="14" max="32" value="${st.fs}" data-act="set-fs-range" style="height:44px; width:160px">
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center">
           <span>行間 (${st.lh})</span>
-          <input type="range" min="1.6" max="2.6" step="0.1" value="${st.lh}" oninput="st.lh=this.value;applyReaderConfig();save();" style="height:44px; width:160px">
+          <input type="range" min="1.6" max="2.6" step="0.1" value="${st.lh}" data-act="set-lh-range" style="height:44px; width:160px">
         </div>
       </div>`);
   }
