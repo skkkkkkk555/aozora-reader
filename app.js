@@ -3766,10 +3766,44 @@ window.addEventListener('DOMContentLoaded',()=>{
     activatePhone(el);
   };
 
-  // タップは pointerup を主経路にする。Androidブラウザの click 合成不調の影響を受けない。
-  const phonePointerEnd=e=>{
+  // タップとエッジスワイプを pointer イベントで一元処理する。
+  // Androidブラウザの click 合成状態に依存せず、スマホUIを直接起動する。
+  let phoneStartX=0,phoneStartY=0,phoneTouching=false;
+
+  const phonePointerStart=e=>{
     if(!isPhone()||e.pointerType!=='touch')return;
-    if(Math.abs((e.clientX-(e._phoneStartX??e.clientX)))>18 || Math.abs((e.clientY-(e._phoneStartY??e.clientY)))>18)return;
+    phoneStartX=e.clientX;
+    phoneStartY=e.clientY;
+    phoneTouching=true;
+
+    const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
+    if(el)phonePress(el);
+
+    const x=e.clientX,y=e.clientY;
+    if((state.screen==='home'||state.screen==='search'||state.screen==='shelf'||state.screen==='records'||state.screen==='settings')&&x<24)edgeSwipe={x,y};
+    else if(state.reader&&x<28)edgeSwipe={x,y};
+    else edgeSwipe=null;
+  };
+
+  const phonePointerEnd=e=>{
+    if(!isPhone()||e.pointerType!=='touch'||!phoneTouching)return;
+    phoneTouching=false;
+
+    const dx=e.clientX-phoneStartX,dy=e.clientY-phoneStartY;
+    const swiped=!!edgeSwipe&&dx>82&&Math.abs(dx)>Math.abs(dy)*1.35;
+    edgeSwipe=null;
+
+    if(swiped){
+      e.preventDefault();
+      e.stopPropagation();
+      phoneHaptic(10);
+      if(state.reader)closeReader();
+      else if(state.screen!=='home')showScreen('home');
+      return;
+    }
+
+    if(Math.abs(dx)>18||Math.abs(dy)>18)return;
+
     const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
     if(!el)return;
     e.preventDefault();
@@ -3778,19 +3812,13 @@ window.addEventListener('DOMContentLoaded',()=>{
     phonePointerHandledUntil=Date.now()+650;
     phoneActivateElement(el,true);
   };
-  const phonePointerStart=e=>{
-    if(!isPhone()||e.pointerType!=='touch')return;
-    e._phoneStartX=e.clientX;
-    e._phoneStartY=e.clientY;
-    const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
-    if(el)phonePress(el);
-    const x=e.clientX,y=e.clientY;
-    if((state.screen==='home'||state.screen==='search'||state.screen==='shelf'||state.screen==='records'||state.screen==='settings')&&x<24)edgeSwipe={x,y};
-    else if(state.reader&&x<28)edgeSwipe={x,y};
-    else edgeSwipe=null;
-  };
+
   document.addEventListener('pointerdown',phonePointerStart,{capture:true,passive:true});
   document.addEventListener('pointerup',phonePointerEnd,{capture:true,passive:false});
+  document.addEventListener('pointercancel',()=>{
+    phoneTouching=false;
+    edgeSwipe=null;
+  },{capture:true,passive:true});
 
   const phoneEvent=e=>{
     if(!isPhone()||e.type!=='click')return;
@@ -3811,21 +3839,6 @@ window.addEventListener('DOMContentLoaded',()=>{
     phoneActivateElement(el,false);
   };
   document.addEventListener('click',phoneEvent,{capture:true});
-
-  // phonePointerStart がタップ演出とエッジスワイプを兼ねる。
-  const phonePressEnd=e=>{
-    if(!isPhone()||e.pointerType!=='touch'||!edgeSwipe)return;
-    const dx=e.clientX-edgeSwipe.x,dy=e.clientY-edgeSwipe.y;
-    const swiped=dx>82&&Math.abs(dx)>Math.abs(dy)*1.35;
-    edgeSwipe=null;
-    if(!swiped)return;
-    e.preventDefault();e.stopPropagation();phoneHaptic(10);
-    if(state.reader)closeReader();
-    else if(state.screen!=='home')showScreen(state.screen||'home');
-  };
-  document.addEventListener('pointerdown',phonePressStart,{capture:true,passive:true});
-  document.addEventListener('pointerup',phonePressEnd,{capture:true,passive:false});
-  document.addEventListener('pointercancel',()=>{edgeSwipe=null},{capture:true,passive:true});
 
   const phoneTouchGuard=e=>{
     if(!isPhone())return;
