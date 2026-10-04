@@ -1079,6 +1079,10 @@ const GENRES=[{n:'小説',c:'913'},{n:'童話',c:'童話'},{n:'詩歌',c:'911'},
 const KANA=['あ','か','さ','た','な','は','ま','や','ら','わ'];
 
 function openSearchPage(){
+  if(document.documentElement.dataset.device==='smartphone'&&typeof window.__aozoraPhoneShowScreen==='function'){
+    window.__aozoraPhoneShowScreen('search');
+    return;
+  }
   switchView('v-search');
   renderSearchInit();
   $('q-input').focus();
@@ -1320,6 +1324,10 @@ function removeStoredRecord(kind,id,index){
 
 // 本の詳細シート
 function openBookDetail(w){
+  if(document.documentElement.dataset.device==='smartphone'&&typeof window.__aozoraPhoneOpenDetail==='function'){
+    window.__aozoraPhoneOpenDetail(w);
+    return;
+  }
   activeBook=w;
   activeBook=w;
   const isF=fav.has(w.id), isW=want.has(w.id), isS=savedKeys.has(w.id), isFA=favAuthors.has(w.a);
@@ -1562,6 +1570,10 @@ let lastUserActivityTime=Date.now();
 let inBookSearchResults=[], inBookSearchIdx=0;
 
 async function openReader(w, fromDetail=false, bookmarkF=null){
+  if(document.documentElement.dataset.device==='smartphone'&&typeof window.__aozoraPhoneOpenReader==='function'){
+    window.__aozoraPhoneOpenReader(w,fromDetail,bookmarkF);
+    return;
+  }
   closeSheet();
   closeOneLineMode();
   curWork=w;
