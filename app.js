@@ -3421,7 +3421,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     const previous=state.screen;
     state.screen=name;
     syncScreens('main');
-    $p('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===name));
+    $$p('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===name));
     /* phone navigation runtime fix */
     const fn={home:renderHome,search:renderSearch,shelf:renderShelf,records:renderRecords,settings:renderSettings}[name]||renderHome;
     fn();
