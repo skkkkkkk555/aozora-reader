@@ -3955,7 +3955,10 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='search-filter'){state.searchFilter=el.dataset.filter||'all';renderSearch();return}
     if(act==='shelf-filter'){state.shelf=el.dataset.filter||'reading';if(state.shelf==='records'){showScreen('records')}else renderShelf();return}
     if(act==='record-filter'){state.record=el.dataset.filter||'all';renderRecords();return}
-    if(act==='detail-back'){state.work=null;state.readerFromDetail=false;showScreen(state.screen,'back');return}
+    if(act==='detail-back'){
+      if(history.state?.phoneLayer==='phone-detail'){history.back();return;}
+      state.work=null;state.readerFromDetail=false;showScreen(state.screen,'back');return;
+    }
     if(act==='detail-read'){openReader(state.work,true);return}
     if(act==='detail-more'){
       const w=state.work;if(!w)return;
