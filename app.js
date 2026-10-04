@@ -3096,12 +3096,15 @@ window.addEventListener('DOMContentLoaded',()=>{
   let phoneWorksCache=[];
   let phoneWorksIndex=[];
   let phoneWorksCacheSize=-1;
+  let phoneWorksCacheMap=null;
   const works=()=>{
-    const size=byId instanceof Map?byId.size:-1;
-    if(size!==phoneWorksCacheSize){
-      phoneWorksCache=Array.from(byId instanceof Map?byId.values():[]).filter(isPublicWork);
+    const map=byId instanceof Map?byId:null;
+    const size=map?map.size:-1;
+    if(map!==phoneWorksCacheMap||size!==phoneWorksCacheSize){
+      phoneWorksCache=Array.from(map?.values?.()||[]).filter(isPublicWork);
       phoneWorksIndex=phoneWorksCache.map(w=>({w,text:(wt(w)+' '+wa(w)).toLocaleLowerCase('ja')}));
       phoneWorksCacheSize=size;
+      phoneWorksCacheMap=map;
     }
     return phoneWorksCache;
   };
@@ -3747,7 +3750,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!swiped)return;
     e.preventDefault();e.stopPropagation();phoneHaptic(10);
     if(state.reader)closeReader();
-    else if(state.screen!=='home')showScreen('home');
+    else if(state.screen!=='home')showScreen(state.screen||'home');
   };
   document.addEventListener('pointerdown',phonePressStart,{capture:true,passive:true});
   document.addEventListener('pointerup',phonePressEnd,{capture:true,passive:false});
