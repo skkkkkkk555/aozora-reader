@@ -428,6 +428,7 @@ function closeSheet(fromPop=false){
   $('sheet').setAttribute('aria-hidden','true');
   $('scrim').classList.remove('open');
   popLayer('sheet');
+  if(!fromPop && history.state?.layer==='sheet') history.back();
   requestAnimationFrame(()=>{
     if(restoreFocusEl&&document.contains(restoreFocusEl)){
       try{restoreFocusEl.focus({preventScroll:true});}catch{}
@@ -1568,6 +1569,7 @@ async function closeReader(fromPop=false){
   if(window.speechSynthesis) speechSynthesis.cancel();
   popLayer('reader');
   save(); switchView('v-home'); renderHome();
+  if(!fromPop && history.state?.layer==='reader') history.back();
 }
 
 let progressRaf=null;
@@ -2374,7 +2376,12 @@ document.addEventListener('click',async(e)=>{
     const w=byId.get(b.dataset.id);
     if(w) openBookDetail(w);
   }
-  else if(act==='read-now'){ e.stopPropagation(); closeSheet(); openReader(activeBook, false); }
+  else if(act==='read-now'){
+    e.stopPropagation();
+    closeSheet(true);
+    history.replaceState(null,'',location.href);
+    openReader(activeBook, false);
+  }
   else if(act==='toggle-want'){
     want.has(activeBook.id)?want.delete(activeBook.id):want.add(activeBook.id);
     save(); pulseState(b); openBookDetail(activeBook);
