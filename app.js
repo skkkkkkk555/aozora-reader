@@ -33,8 +33,13 @@ const secureFetch=async(input,init={})=>{
   const u=secureUrl(input);
   if(!u)throw new Error('blocked-network-destination');
   const method=String(init.method||'GET').toUpperCase();
-  const isOllama=typeof isSafeOllamaUrl==='function'&&isSafeOllamaUrl(u.href);
-  if(!isOllama&&!['GET','HEAD'].includes(method))throw new Error('blocked-network-method');
+  let isConfiguredOllama=false;
+  try{
+    if(typeof st!=='undefined'&&isSafeOllamaUrl(st.oUrl)){
+      isConfiguredOllama=u.origin===new URL(normalizeOllamaUrl(st.oUrl)).origin;
+    }
+  }catch{}
+  if(!isConfiguredOllama&&!['GET','HEAD'].includes(method))throw new Error('blocked-network-method');
   return window.fetch(u.href,{...init,referrerPolicy:'no-referrer',cache:init.cache||'no-store'});
 };
 async function readResponseBytes(res,maxBytes){
@@ -181,7 +186,8 @@ let st={ fs:18, lh:2.1, theme:'auto', font:'mincho', warm:true, kp:true, offline
 let aiConn={ ok:false, models:[], err:'' };
 let activeBook=null;
 const isPublicWork = w => !!w && Number(w.c) === 1;
-const localDateKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+const dateKeyOf=(d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const localDateKey=()=>dateKeyOf(new Date());
 const normalizeOllamaUrl=(value='')=>{
   const raw=String(value||'').trim().replace(/[\u0000-\u001f\u007f]/g,'');
   if(!raw)return 'http://127.0.0.1:11434';
@@ -653,10 +659,10 @@ function renderHome(){
   let streak=0;
   if(dates.length){
     let curD=new Date();
-    let curKey=curD.toISOString().slice(0,10);
+    let curKey=dateKeyOf(curD);
     if(!calData[curKey]){
       curD.setDate(curD.getDate()-1);
-      curKey=curD.toISOString().slice(0,10);
+      curKey=dateKeyOf(curD);
     }
     while(calData[curKey]>0){
       streak++;
@@ -1134,7 +1140,7 @@ function toPlain(h){ const d=document.createElement('div'); d.innerHTML=h.replac
 
 /* ==================== 9. 読書画面 & 表示 ==================== */
 let curDoc=null, curWork=null;
-let wakeLock=null, wakeLockWanted=false;
+let wakeLock=null, wakeLockWanted=false, catalogBusy=false, ollamaPingController=null, readingMinuteTimer=null;
 
 function setBootStage(percent,text){
   const fill=$('boot-fill'), stage=$('boot-stage');
@@ -1189,6 +1195,7 @@ async function openReader(w){
   closeSheet();
   closeOneLineMode();
   curWork=w;
+  lastUserActivityTime=Date.now();
   lastProgressPct=-1;
   lastProgressSave=0;
   if(progressRaf!==null){cancelAnimationFrame(progressRaf);progressRaf=null;}
@@ -1621,7 +1628,7 @@ function renderCalendar(){
   const d=new Date();
   d.setDate(d.getDate()-83);
   for(let i=0;i<84;i++){
-    const k=d.toISOString().slice(0,10);
+    const k=dateKeyOf(d);
     const m=calData[k]||0;
     const bg=m===0?'var(--card-sub)':m>=goalMin?'var(--ac)':'color-mix(in srgb, var(--ac) 45%, var(--card-sub))';
     hm.insertAdjacentHTML('beforeend',`<div style="width:18px; height:18px; border-radius:4px; background:${bg}" title="${escAttr(k)}: ${m}分"></div>`);
