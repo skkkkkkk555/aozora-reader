@@ -4022,7 +4022,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     phoneStartY=e.clientY;
     phoneTouching=true;
 
-    const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet button,#phone-sheet [data-phone-action]');
+    const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet button,#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]');
     if(el)phonePress(el);
 
     const x=e.clientX,y=e.clientY;
@@ -4054,7 +4054,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
     if(Math.abs(dx)>18||Math.abs(dy)>18)return;
 
-    const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action]');
+    const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]');
     if(!el)return;
     e.preventDefault();
     e.stopPropagation();
@@ -4076,7 +4076,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(!isPhone())return;
       const t=e.touches[0];if(!t)return;
       phoneStartX=t.clientX;phoneStartY=t.clientY;phoneTouching=true;
-      const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet button,#phone-sheet [data-phone-action]');
+      const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet button,#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]');
       if(el)phonePress(el);
     },{capture:true,passive:true});
     document.addEventListener('touchend',e=>{
@@ -4085,7 +4085,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       const t=e.changedTouches[0];if(!t)return;
       const dx=t.clientX-phoneStartX,dy=t.clientY-phoneStartY;
       if(Math.abs(dx)>18||Math.abs(dy)>18)return;
-      const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action]');
+      const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]');
       if(!el)return;
       e.preventDefault();
       e.stopPropagation();
@@ -4107,7 +4107,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   const phoneEvent=e=>{
     if(!isPhone()||e.type!=='click')return;
-    const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action]');
+    const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]');
     if(!el)return;
 
     // Touch pointerup handled this command already. Keep click for keyboard/mouse accessibility.
@@ -4127,7 +4127,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   const phoneTouchGuard=e=>{
     if(!isPhone())return;
-    const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet button,#phone-sheet [data-phone-action]');
+    const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet button,#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]');
     if(!el)return;
     if(e.type==='contextmenu'){
       e.preventDefault();e.stopImmediatePropagation();
