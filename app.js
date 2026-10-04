@@ -230,21 +230,24 @@ let searchState={
 };
 
 const save=()=>{
-  try {
-    const d={fav:[...fav],want:[...want],done:[...done],favAuthors:[...favAuthors],pos,bm,notes,hls,hist,calData,goalMin,st,searchHistory,dead:[...dead]};
-    localStorage.setItem('aozora_terminal_v17',JSON.stringify(d));
+  const d={fav:[...fav],want:[...want],done:[...done],favAuthors:[...favAuthors],pos,bm,notes,hls,hist,calData,goalMin,st,searchHistory,dead:[...dead]};
+  try{
+    const packed=JSON.stringify(d);
+    localStorage.setItem('aozora_terminal_v17',packed);
     localStorage.setItem('aozora_terminal_settings_v1',JSON.stringify(st));
-    idb.set('k','state',d);
-  } catch (err) {
-    console.warn('save failed', err);
+  }catch(err){
+    console.warn('localStorage save failed',err);
   }
+  // localStorageが満杯でもIndexedDBには保存できるよう、別系統で必ず試す。
+  idb.set('k','state',d);
 };
 const load=async()=>{
   try {
     const raw = localStorage.getItem('aozora_terminal_v17') || localStorage.getItem('aozora_terminal_v16') || 'null';
     if(raw.length>SEC.maxStateChars) throw new Error('state-too-large');
     const localState=raw!=='null'?JSON.parse(raw):null;
-    const d=sanitizePersistedState(localState || await idb.get('k','state'));
+    let d=sanitizePersistedState(localState);
+    if(!d)d=sanitizePersistedState(await idb.get('k','state'));
     const savedSettingsRaw=localStorage.getItem('aozora_terminal_settings_v1');
     if(d){
       fav=new Set(safeStateArray(d.fav)); want=new Set(safeStateArray(d.want)); done=new Set(safeStateArray(d.done));
