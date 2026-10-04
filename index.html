@@ -2976,6 +2976,41 @@ img,svg,canvas,video{max-width:100%}
   .sheet-body{padding-left:14px;padding-right:14px}
 }
 
+
+/* Home bookmark shelf */
+.home-bookmark-list{display:flex;flex-direction:column;gap:10px;margin:0 0 20px}
+.home-bookmark-card{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.06)
+}
+.home-bookmark-main{
+  width:100%;min-height:68px!important;padding:12px 14px!important;
+  justify-content:flex-start!important;text-align:left!important;
+  border-radius:0!important;background:transparent!important;
+}
+.home-bookmark-icon{font-size:22px;flex:none}
+.home-bookmark-text{min-width:0;display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.home-bookmark-text strong{max-width:100%;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home-bookmark-text small{font-size:11px;color:var(--sub)}
+.home-bookmark-points{
+  display:flex;gap:7px;padding:0 12px 12px;overflow-x:auto;scrollbar-width:none
+}
+.home-bookmark-points::-webkit-scrollbar{display:none}
+.home-bookmark-point{
+  flex:none!important;min-height:38px!important;padding:0 9px!important;
+  border-radius:10px!important;background:var(--card-sub)!important;
+  border:1px solid var(--line)!important;font-size:11px!important;
+  display:flex!important;gap:5px!important;align-items:center!important
+}
+.home-bookmark-point span{font-weight:800}
+.home-bookmark-point em{font-style:normal;color:var(--sub)}
+.home-bookmark-point.active{background:var(--ac)!important;color:var(--onac)!important;border-color:var(--ac)!important}
+.home-bookmark-point.active em{color:inherit}
+@media(max-width:520px){
+  .home-bookmark-card{border-radius:14px}
+  .home-bookmark-main{min-height:64px!important}
+}
+
 </style>
 </head>
 <body>
@@ -3410,6 +3445,6 @@ img,svg,canvas,video{max-width:100%}
   <div id="toast" class="toast"><span id="toast-m"></span><button id="toast-u" data-act="toast-undo" style="color:var(--ac); font-weight:700">元に戻す</button></div>
 </div>
 
-<script src="./app.js?v=mobile-fix-bookmarks-20261005-1"></script>
+<script src="./app.js?v=mobile-fix-bookmarks-20261005-2"></script>
 </body>
 </html>
