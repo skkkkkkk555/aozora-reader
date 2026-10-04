@@ -1444,6 +1444,227 @@ body{background:#f2f2f7!important;}
   }
 }
 
+
+/* ================= Advanced motion system ================= */
+@keyframes iosRevealDown{
+  0%{opacity:0;transform:translateY(-26px) scale(.97);filter:blur(6px)}
+  55%{opacity:1;filter:blur(0)}
+  100%{transform:none}
+}
+@keyframes iosRiseSoft{
+  0%{opacity:0;transform:translateY(28px) scale(.96)}
+  65%{opacity:1;transform:translateY(-2px) scale(1.008)}
+  100%{transform:none}
+}
+@keyframes iosPop{
+  0%{opacity:0;transform:scale(.78)}
+  70%{opacity:1;transform:scale(1.055)}
+  100%{transform:scale(1)}
+}
+@keyframes iosSpringTap{
+  0%{transform:scale(1)}
+  38%{transform:scale(.91)}
+  72%{transform:scale(1.045)}
+  100%{transform:scale(1)}
+}
+@keyframes iosLineSweep{
+  0%{transform:scaleX(0);opacity:0}
+  25%{opacity:1}
+  100%{transform:scaleX(1);opacity:1}
+}
+@keyframes iosPageGlow{
+  0%,100%{opacity:.25}
+  50%{opacity:.8}
+}
+@keyframes iosCoverShine{
+  0%{transform:translateX(-135%) skewX(-18deg);opacity:0}
+  18%{opacity:.38}
+  38%,100%{transform:translateX(180%) skewX(-18deg);opacity:0}
+}
+@keyframes iosSearchFocus{
+  0%{box-shadow:0 0 0 0 rgba(0,122,255,0),0 1px 4px rgba(0,0,0,0)}
+  100%{box-shadow:0 0 0 4px rgba(0,122,255,.13),0 6px 20px rgba(0,0,0,.06)}
+}
+@keyframes iosToolbarDrop{
+  0%{opacity:0;transform:translateY(-16px)}
+  100%{opacity:1;transform:none}
+}
+
+/* ホームの各要素を「上→下」に順番表示 */
+.rich-motion #v-home .grid > .books-section-title,
+.rich-motion #v-home .grid > .block{
+  animation:iosRevealDown 560ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #v-home .grid > .books-section-title{animation-duration:420ms;}
+.rich-motion #v-home .grid > .books-section-title::after{
+  transform-origin:left center;
+  animation:iosLineSweep 520ms cubic-bezier(.16,1,.3,1) .18s both;
+}
+.rich-motion #v-home .grid > *:nth-child(2){animation-delay:40ms}
+.rich-motion #v-home .grid > *:nth-child(3){animation-delay:90ms}
+.rich-motion #v-home .grid > *:nth-child(4){animation-delay:140ms}
+.rich-motion #v-home .grid > *:nth-child(5){animation-delay:190ms}
+.rich-motion #v-home .grid > *:nth-child(6){animation-delay:240ms}
+.rich-motion #v-home .grid > *:nth-child(7){animation-delay:290ms}
+.rich-motion #v-home .grid > *:nth-child(8){animation-delay:340ms}
+.rich-motion #v-home .grid > *:nth-child(9){animation-delay:390ms}
+.rich-motion #v-home .grid > *:nth-child(10){animation-delay:440ms}
+.rich-motion #v-home .grid > *:nth-child(11){animation-delay:490ms}
+.rich-motion #v-home .grid > *:nth-child(12){animation-delay:540ms}
+.rich-motion #v-home .grid > #blk-resume{
+  animation:iosRiseSoft 760ms cubic-bezier(.16,1,.3,1) 80ms both,iosHeroGlow 4.8s ease-in-out 1s infinite;
+}
+.rich-motion #v-home .grid > #blk-resume::after{
+  animation:iosShimmer 4.8s ease-in-out 1.25s infinite;
+}
+
+/* 検索結果・本棚：作品を上から順番に流し込む */
+.rich-motion .book-cover-card{
+  animation:iosRiseSoft 650ms cubic-bezier(.16,1,.3,1) both;
+  animation-delay:calc(min(var(--book-index,0),20) * 52ms);
+}
+.rich-motion .book-cover-inner{
+  position:relative;
+}
+.rich-motion .book-cover-inner::before{
+  content:"";
+  position:absolute;
+  top:-15%;
+  left:0;
+  width:32%;
+  height:130%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);
+  transform:translateX(-135%) skewX(-18deg);
+  pointer-events:none;
+  opacity:0;
+  animation:iosCoverShine 4.6s ease-in-out calc(900ms + min(var(--book-index,0),8) * 70ms) infinite;
+}
+.rich-motion .book-cover-card:nth-child(1) .book-cover-inner::before{animation-delay:1200ms}
+.rich-motion .book-cover-card:nth-child(2) .book-cover-inner::before{animation-delay:1350ms}
+.rich-motion .book-cover-card:nth-child(3) .book-cover-inner::before{animation-delay:1500ms}
+.rich-motion .book-cover-card:nth-child(4) .book-cover-inner::before{animation-delay:1650ms}
+
+/* 検索初期画面 */
+.rich-motion #genre-grid .block{
+  animation:iosRiseSoft 520ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #genre-grid .block:nth-child(1){animation-delay:40ms}
+.rich-motion #genre-grid .block:nth-child(2){animation-delay:85ms}
+.rich-motion #genre-grid .block:nth-child(3){animation-delay:130ms}
+.rich-motion #genre-grid .block:nth-child(4){animation-delay:175ms}
+.rich-motion #genre-grid .block:nth-child(5){animation-delay:220ms}
+.rich-motion #genre-grid .block:nth-child(6){animation-delay:265ms}
+.rich-motion #kana-chips button,
+.rich-motion #search-hist-chips button{
+  animation:iosPop 420ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #kana-chips button:nth-child(1){animation-delay:80ms}
+.rich-motion #kana-chips button:nth-child(2){animation-delay:115ms}
+.rich-motion #kana-chips button:nth-child(3){animation-delay:150ms}
+.rich-motion #kana-chips button:nth-child(4){animation-delay:185ms}
+.rich-motion #kana-chips button:nth-child(5){animation-delay:220ms}
+.rich-motion #kana-chips button:nth-child(6){animation-delay:255ms}
+.rich-motion #kana-chips button:nth-child(7){animation-delay:290ms}
+.rich-motion #kana-chips button:nth-child(8){animation-delay:325ms}
+.rich-motion #kana-chips button:nth-child(9){animation-delay:360ms}
+.rich-motion #kana-chips button:nth-child(10){animation-delay:395ms}
+
+/* 検索バーの呼吸 */
+.rich-motion #q-input{
+  animation:iosSearchFocus 420ms ease-out 260ms both;
+}
+
+/* タイムラインは縦に流れる */
+.rich-motion .timeline-item{
+  animation:iosRevealDown 480ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion .timeline-item:nth-child(1){animation-delay:40ms}
+.rich-motion .timeline-item:nth-child(2){animation-delay:85ms}
+.rich-motion .timeline-item:nth-child(3){animation-delay:130ms}
+.rich-motion .timeline-item:nth-child(4){animation-delay:175ms}
+.rich-motion .timeline-item:nth-child(5){animation-delay:220ms}
+.rich-motion .timeline-item:nth-child(6){animation-delay:265ms}
+.rich-motion .timeline-item:nth-child(7){animation-delay:310ms}
+.rich-motion .timeline-item:nth-child(8){animation-delay:355ms}
+
+/* 設定の行が一つずつ現れる */
+.rich-motion #settings-area .block{
+  animation:iosRevealDown 520ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #settings-area .block:nth-child(1){animation-delay:50ms}
+.rich-motion #settings-area .block:nth-child(2){animation-delay:110ms}
+.rich-motion #settings-area .block:nth-child(3){animation-delay:170ms}
+.rich-motion #settings-area .block:nth-child(4){animation-delay:230ms}
+
+/* カレンダーを左→右・上→下に軽く展開 */
+.rich-motion #cal-heatmap > div{
+  animation:iosPop 360ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #cal-heatmap > div:nth-child(-n+7){animation-delay:50ms}
+.rich-motion #cal-heatmap > div:nth-child(n+8):nth-child(-n+14){animation-delay:110ms}
+.rich-motion #cal-heatmap > div:nth-child(n+15):nth-child(-n+21){animation-delay:170ms}
+.rich-motion #cal-heatmap > div:nth-child(n+22):nth-child(-n+28){animation-delay:230ms}
+.rich-motion #cal-heatmap > div:nth-child(n+29):nth-child(-n+35){animation-delay:290ms}
+.rich-motion #cal-heatmap > div:nth-child(n+36):nth-child(-n+42){animation-delay:350ms}
+.rich-motion #cal-heatmap > div:nth-child(n+43){animation-delay:410ms}
+
+/* 読書画面のツールバー */
+.rich-motion #reader .r-bar > *{
+  animation:iosToolbarDrop 420ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #reader .r-bar > :nth-child(1){animation-delay:40ms}
+.rich-motion #reader .r-bar > :nth-child(2){animation-delay:90ms}
+.rich-motion #reader .r-bar > :nth-child(3){animation-delay:140ms}
+.rich-motion #reader .r-dock-btn{
+  animation:iosRiseSoft 480ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #reader .r-dock-btn:nth-child(1){animation-delay:40ms}
+.rich-motion #reader .r-dock-btn:nth-child(2){animation-delay:80ms}
+.rich-motion #reader .r-dock-btn:nth-child(3){animation-delay:120ms}
+.rich-motion #reader .r-dock-btn:nth-child(4){animation-delay:160ms}
+.rich-motion #reader .r-dock-btn:nth-child(5){animation-delay:200ms}
+.rich-motion #reader .r-dock-btn:nth-child(6){animation-delay:240ms}
+.rich-motion #reader .r-bottom-bar{
+  animation:iosRiseSoft 500ms cubic-bezier(.16,1,.3,1) 180ms both;
+}
+
+/* タップにしっかり反応 */
+.rich-motion button:active{
+  animation:iosSpringTap 300ms cubic-bezier(.16,1,.3,1);
+}
+.rich-motion .book-cover-card:active .book-cover-inner{
+  transform:perspective(900px) scale(.955) rotateY(2deg)!important;
+  transition:transform 90ms ease;
+}
+.rich-motion .r-dock-btn:active{
+  background:rgba(0,122,255,.11);
+}
+.rich-motion #bottom-nav .b-nav-btn:active .icon{
+  animation:iosNavPulse 420ms cubic-bezier(.16,1,.3,1);
+}
+
+/* オーバーレイ */
+.rich-motion .sheet-scrim.open{
+  animation:iosPageGlow 260ms ease-out both;
+}
+.rich-motion .sheet-body > *{
+  animation:iosRevealDown 420ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion .sheet-body > :nth-child(1){animation-delay:60ms}
+.rich-motion .sheet-body > :nth-child(2){animation-delay:105ms}
+.rich-motion .sheet-body > :nth-child(3){animation-delay:150ms}
+.rich-motion .sheet-body > :nth-child(4){animation-delay:195ms}
+.rich-motion .sheet-body > :nth-child(5){animation-delay:240ms}
+
+/* トーストの出現をバネっぽく */
+.rich-motion .toast.open{
+  animation:iosPop 360ms cubic-bezier(.16,1,.3,1) both;
+}
+
+/* すべてのリッチモーションは低スペックでは完全停止 */
+.low-power .book-cover-inner::before{display:none!important;}
+.low-power .books-section-title::after{animation:none!important;}
+
 </style>
 </head>
 <body>
@@ -1966,9 +2187,9 @@ window.addEventListener('error', (event) => {
 });
 
 /* ==================== 2. レンダリング共通 ==================== */
-const rows=(arr,fn)=>arr.map(fn).join('');
-const tileHtml=(w)=>`
-  <div class="tile book-cover-card" style="--book-color:${colorOf(w.t)}" data-act="open-book" data-id="${w.id}">
+const rows=(arr,fn)=>arr.map((item,i)=>fn(item,i)).join('');
+const tileHtml=(w,i=0)=>`
+  <div class="tile book-cover-card" style="--book-color:${colorOf(w.t)}; --book-index:${i}" data-act="open-book" data-id="${w.id}">
     <div class="book-cover-inner">
       <div class="book-cover-top">
         ${savedKeys.has(w.id)?'<span class="book-badge">保存済</span>':'<span></span>'}
