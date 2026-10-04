@@ -4111,35 +4111,33 @@ window.addEventListener('DOMContentLoaded',()=>{
     c.width=Math.max(512,Math.floor(window.innerWidth*dpr));
     c.height=Math.max(512,Math.floor(window.innerHeight*dpr));
     const ctx=c.getContext('2d');
-    ctx.fillStyle='#020305';
+
+    // 文字・記号は使わず、ガラス越しに見える背景だけを生成する。
+    const bg=ctx.createRadialGradient(
+      c.width*.22,c.height*.18,0,
+      c.width*.50,c.height*.52,Math.max(c.width,c.height)*.85
+    );
+    bg.addColorStop(0,'#0b1a2a');
+    bg.addColorStop(.28,'#07111f');
+    bg.addColorStop(.62,'#040914');
+    bg.addColorStop(1,'#020305');
+    ctx.fillStyle=bg;
     ctx.fillRect(0,0,c.width,c.height);
-    const fontSize=10.5*dpr;
-    const lineHeight=fontSize*1.14;
-    ctx.font='600 '+fontSize+'px "SF Mono",Consolas,"Courier New",monospace';
-    ctx.textBaseline='top';
-    const music=[
-      'AOZORA READER // LIQUID GLASS',
-      'TEXTURE DISPERSION // REFRACTION',
-      'BOOKS // STORIES // POETRY // ARCHIVE',
-      'SDF SURFACE / FIBONACCI BLUR / FRESNEL',
-      'READING FLOW // PAGE / SEARCH / SHELF',
-      'CHROMA // CAUSTICS // SPECULAR'
+
+    const glows=[
+      [c.width*.16,c.height*.25,c.width*.23,'rgba(36,180,255,.16)'],
+      [c.width*.78,c.height*.20,c.width*.25,'rgba(120,80,255,.12)'],
+      [c.width*.55,c.height*.82,c.width*.28,'rgba(20,210,190,.10)'],
+      [c.width*.92,c.height*.78,c.width*.18,'rgba(255,140,80,.06)']
     ];
-    const alphabet='0123456789ABCDEF+-*/=<>[]{}();:!?';
-    const rows=Math.ceil(c.height/lineHeight)+2;
-    for(let r=0;r<rows;r++){
-      let line='';
-      while(ctx.measureText(line).width<c.width+90*dpr){
-        if(Math.random()<.20) line+=music[(r+Math.floor(Math.random()*music.length))%music.length]+' ';
-        else line+=alphabet.charAt(Math.floor(Math.random()*alphabet.length));
-      }
-      const grad=ctx.createLinearGradient(0,r*lineHeight,c.width,r*lineHeight);
-      grad.addColorStop(0,'#07101a');
-      grad.addColorStop(.48,r%5===0?'#2aa8df':(r%7===0?'#7870e6':'#294358'));
-      grad.addColorStop(1,'#07101a');
-      ctx.fillStyle=grad;
-      ctx.fillText(line,-5,r*lineHeight);
+    for(const [x,y,r,color] of glows){
+      const g=ctx.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0,color);
+      g.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,c.width,c.height);
     }
+
     gl.bindTexture(gl.TEXTURE_2D,texture);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c);
   }
