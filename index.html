@@ -2938,6 +2938,44 @@ img,svg,canvas,video{max-width:100%}
   #r-paper-hint{transition:none}
 }
 
+
+/* ================= Sheet / Mobile interaction fix v6 ================= */
+.sheet{
+  left:50%!important;
+  right:auto!important;
+  width:min(720px,100%)!important;
+  max-width:100%!important;
+  transform:translate(-50%,105%)!important;
+  box-sizing:border-box;
+  overflow:hidden;
+  isolation:isolate;
+}
+.sheet.open{transform:translate(-50%,0)!important}
+.sheet-body{
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+}
+.sheet-body>*{min-width:0;max-width:100%;box-sizing:border-box}
+.sheet-head{flex:none;min-width:0}
+.sheet-head>*{min-width:0}
+.sheet-head #sheet-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet-scrim.open{touch-action:none}
+@media(max-width:899px){
+  .sheet{
+    left:0!important;
+    right:0!important;
+    width:100%!important;
+    max-width:none!important;
+    transform:translateY(105%)!important;
+    border-radius:22px 22px 0 0;
+  }
+  .sheet.open{transform:translateY(0)!important}
+  .sheet-body{padding-left:14px;padding-right:14px}
+}
+
 </style>
 </head>
 <body>
@@ -3017,6 +3055,9 @@ img,svg,canvas,video{max-width:100%}
             <button class="secondary sm-btn" style="background:#fff; color:var(--ac); border:1px solid rgba(255,255,255,0.35)">読む</button>
           </div>
         </div>
+
+        <div id="home-bookmarks-section" class="books-section-title">しおり</div>
+        <div id="home-bookmarks" class="home-bookmark-list"></div>
 
         <div class="books-section-title">おすすめ</div>
         <!-- 今日のおすすめ (2x2 リッチカード・15秒切替 / 固定対応) -->
@@ -3369,6 +3410,6 @@ img,svg,canvas,video{max-width:100%}
   <div id="toast" class="toast"><span id="toast-m"></span><button id="toast-u" data-act="toast-undo" style="color:var(--ac); font-weight:700">元に戻す</button></div>
 </div>
 
-<script src="./app.js?v=paper-v5-20261005-1"></script>
+<script src="./app.js?v=mobile-fix-bookmarks-20261005-1"></script>
 </body>
 </html>
