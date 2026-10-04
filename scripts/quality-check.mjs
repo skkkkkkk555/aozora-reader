@@ -53,6 +53,9 @@ ok(app.includes("if(!curWork||!isPublicWork(curWork))"),'AI public-work guard mi
 ok(app.includes('phone-license'),'smartphone UI is missing its copyright/license section');
 ok(app.includes('クリエイティブ・コモンズ 表示 4.0 国際（CC BY 4.0）'),'smartphone license section is missing CC BY 4.0 attribution');
 ok(app.includes('青空文庫の公式アプリケーションではありません'),'smartphone unofficial-app disclaimer missing');
+ok(app.includes("sheet.removeAttribute('inert')"),'phone sheet does not clear inert state when reopening');
+ok(app.includes("scrim.removeAttribute('inert')"),'phone scrim does not clear inert state when reopening');
+ok(app.includes('専用に即時処理し、Android WebView等でclick合成が遅れても確実に閉じる'),'phone sheet close fallback is missing');
 
 if(fail.length){
   console.error('QUALITY CHECK FAILED');
