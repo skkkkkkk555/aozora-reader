@@ -1714,6 +1714,98 @@ body{background:#f2f2f7!important;}
   animation:none!important;
 }
 
+
+/* ================= Task 1: viewport-aware book cascade ================= */
+.rich-motion .book-cover-card.is-visible{
+  animation:iosRiseSoft 650ms cubic-bezier(.16,1,.3,1) both;
+  animation-delay:var(--book-delay,0ms);
+}
+@keyframes shelfReflow{
+  0%{opacity:.2;transform:translateY(12px) scale(.985)}
+  100%{opacity:1;transform:none}
+}
+.rich-motion .shelf-reflow{
+  animation:shelfReflow 420ms cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ================= Task 2: outgoing + incoming navigation ================= */
+.rich-motion .view.view-exit-forward{
+  animation:iosViewExitForward 300ms cubic-bezier(.4,0,1,1) both;
+  pointer-events:none;
+}
+.rich-motion .view.view-exit-backward{
+  animation:iosViewExitBackward 300ms cubic-bezier(.4,0,1,1) both;
+  pointer-events:none;
+}
+@keyframes iosViewExitForward{
+  0%{opacity:1;transform:none}
+  100%{opacity:0;transform:translate3d(-5%,0,0) scale(.985)}
+}
+@keyframes iosViewExitBackward{
+  0%{opacity:1;transform:none}
+  100%{opacity:0;transform:translate3d(5%,0,0) scale(.985)}
+}
+
+/* ================= Task 3: library cover interaction ================= */
+.rich-motion .book-cover-inner{
+  transform-origin:center bottom;
+  transition:transform 360ms cubic-bezier(.16,1,.3,1),box-shadow 360ms ease,filter 360ms ease;
+}
+.rich-motion .book-cover-card:hover .book-cover-inner{
+  transform:perspective(900px) rotateX(3deg) rotateY(-4deg) translate3d(0,-7px,0) scale(1.025);
+  box-shadow:0 18px 30px rgba(0,0,0,.2);
+}
+.rich-motion .book-cover-card:active .book-cover-inner{
+  transform:perspective(900px) scale(.95) rotateY(3deg)!important;
+}
+
+/* ================= Task 4: home hero depth ================= */
+.rich-motion #blk-resume #res-ring{
+  transform:translate3d(calc(var(--hero-x,0) * 10px),calc(var(--hero-y,0) * 8px),0);
+  transition:transform 180ms cubic-bezier(.16,1,.3,1);
+}
+.rich-motion #blk-resume{
+  overflow:hidden;
+}
+.rich-motion #blk-resume .home-pill,
+.rich-motion #blk-resume #res-t,
+.rich-motion #blk-resume #res-a{
+  transform:translate3d(calc(var(--hero-x,0) * 3px),calc(var(--hero-y,0) * 2px),0);
+  transition:transform 220ms cubic-bezier(.16,1,.3,1);
+}
+.rich-motion #blk-resume:hover #res-ring{
+  filter:brightness(1.08);
+}
+
+/* ================= Task 5: reader page-turn feel ================= */
+@keyframes readerPageNext{
+  0%{opacity:.84;transform:translate3d(1.8%,0,0)}
+  55%{opacity:1;transform:translate3d(-.25%,0,0)}
+  100%{opacity:1;transform:none}
+}
+@keyframes readerPagePrev{
+  0%{opacity:.84;transform:translate3d(-1.8%,0,0)}
+  55%{opacity:1;transform:translate3d(.25%,0,0)}
+  100%{opacity:1;transform:none}
+}
+.rich-motion #body.reader-page-next{animation:readerPageNext 340ms cubic-bezier(.16,1,.3,1) both;}
+.rich-motion #body.reader-page-prev{animation:readerPagePrev 340ms cubic-bezier(.16,1,.3,1) both;}
+
+/* iOSらしいタブ選択の小さな「着地」 */
+.rich-motion .b-nav-btn.active .icon{
+  animation:iosNavPulse 360ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion .b-nav-btn{
+  transition:color 220ms ease,opacity 220ms ease;
+}
+
+/* low-specでは追加演出も完全停止 */
+.low-power .shelf-reflow,
+.low-power .reader-page-next,
+.low-power .reader-page-prev{
+  animation:none!important;
+}
+
 </style>
 </head>
 <body>
@@ -2259,8 +2351,13 @@ function watchBookCovers(root){
   if(!list) return;
   if(!bookRevealObserver){
     bookRevealObserver=new IntersectionObserver(entries=>{
-      entries.forEach(entry=>{
-        if(!entry.isIntersecting) return;
+      const entering=entries.filter(entry=>entry.isIntersecting && !entry.target.classList.contains('is-visible'));
+      entering.sort((a,b)=>{
+        const ar=a.boundingClientRect, br=b.boundingClientRect;
+        return (ar.top-br.top)||(ar.left-br.left);
+      });
+      entering.forEach((entry,i)=>{
+        entry.target.style.setProperty('--book-delay',(Math.min(i,12)*68)+'ms');
         entry.target.classList.add('is-visible');
         bookRevealObserver.unobserve(entry.target);
       });
@@ -2799,6 +2896,12 @@ function renderShelf(){
 
   $('shelf-empty').style.display=l.length?'none':'block';
   $('shelf-tiles').innerHTML=rows(l,w=>tileHtml(w));
+  if(!document.body.classList.contains('low-power')){
+    const shelfGrid=$('shelf-tiles');
+    shelfGrid.classList.remove('shelf-reflow');
+    void shelfGrid.offsetWidth;
+    shelfGrid.classList.add('shelf-reflow');
+  }
   watchBookCovers($('shelf-tiles'));
 }
 
@@ -3107,10 +3210,24 @@ $('body').onclick=(e)=>{
     return;
   }
   const b=$('body'), isV=b.classList.contains('v'), step=(isV?b.clientWidth:b.clientHeight)*0.88;
+  const dir=isV ? ((x<=w*0.35)?'prev':'next') : ((x>=w*0.65)?'next':'prev');
+  animateReaderPage(dir);
   b.scrollBy({left:isV?(x<=w*0.35?-step:step):0, top:isV?0:(x>=w*0.65?step:-step), behavior:'smooth'});
 };
 
 // 本文内検索
+function animateReaderPage(direction){
+  if(document.body.classList.contains('low-power')) return;
+  const b=$('body');
+  b.classList.remove('reader-page-next','reader-page-prev');
+  void b.offsetWidth;
+  b.classList.add(direction==='next'?'reader-page-next':'reader-page-prev');
+  clearTimeout(window.__readerPageAnim);
+  window.__readerPageAnim=setTimeout(()=>{
+    b.classList.remove('reader-page-next','reader-page-prev');
+  },360);
+}
+
 function execInBookSearch(){
   const q=$('r-search-inp').value.trim();
   const body=$('body');
@@ -3484,15 +3601,22 @@ let currentView='v-home';
 const viewOrder=['v-home','v-search','v-shelf','v-cal','v-settings'];
 
 function switchView(vid){
+  if(vid===currentView) return;
   const prev=currentView;
   const direction=viewOrder.indexOf(vid)>=viewOrder.indexOf(prev)?'forward':'backward';
+  const current=$(prev), next=$(vid), low=document.body.classList.contains('low-power');
   document.querySelectorAll('.view').forEach(v=>{
-    v.classList.remove('active','view-slide-forward','view-slide-backward');
+    v.classList.remove('view-slide-forward','view-slide-backward','view-exit-forward','view-exit-backward');
   });
-  const next=$(vid);
+  if(!low && current){
+    current.classList.add('active','view-exit-'+direction);
+    setTimeout(()=>current.classList.remove('active','view-exit-'+direction),320);
+  }else if(current){
+    current.classList.remove('active');
+  }
   next.classList.add('active',direction==='forward'?'view-slide-forward':'view-slide-backward');
   currentView=vid;
-  setTimeout(()=>next.classList.remove('view-slide-forward','view-slide-backward'),520);
+  setTimeout(()=>next.classList.remove('view-slide-forward','view-slide-backward'),620);
   document.querySelectorAll('.nav-btn, .b-nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.v===vid));
   if(vid==='v-home') renderHome();
   else if(vid==='v-search') renderSearchInit();
@@ -3919,12 +4043,30 @@ $('rng-goal').oninput=e=>{ goalMin=parseInt(e.target.value,10); $('cal-goal-txt'
 $('r-search-inp').oninput=()=>execInBookSearch();
 
 /* ==================== 15. 初期化 ==================== */
+function initHomeHeroMotion(){
+  const hero=$('blk-resume');
+  if(!hero || !window.matchMedia || !matchMedia('(hover:hover)').matches) return;
+  hero.addEventListener('pointermove',e=>{
+    if(document.body.classList.contains('low-power') || !document.body.classList.contains('rich-motion')) return;
+    const r=hero.getBoundingClientRect();
+    const x=((e.clientX-r.left)/r.width-.5)*2;
+    const y=((e.clientY-r.top)/r.height-.5)*2;
+    hero.style.setProperty('--hero-x',x.toFixed(3));
+    hero.style.setProperty('--hero-y',y.toFixed(3));
+  });
+  hero.addEventListener('pointerleave',()=>{
+    hero.style.setProperty('--hero-x','0');
+    hero.style.setProperty('--hero-y','0');
+  });
+}
+
 window.addEventListener('DOMContentLoaded',async()=>{
   applyPerformanceMode();
   await load();
   applyPerformanceMode();
   applySettings();
   applyReaderConfig();
+  initHomeHeroMotion();
   await checkCatalog();
   if(!document.body.classList.contains('low-power')) startFeatTimer();
   if(!document.body.classList.contains('low-power')) startAudit();
