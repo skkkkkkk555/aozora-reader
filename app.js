@@ -8,8 +8,28 @@ document.addEventListener('pointercancel',e=>{if(e.pointerType==='touch')start=n
 document.addEventListener('click',e=>{if(synthetic)return;if(suppressEl&&Date.now()<suppressUntil&&actionOf(e.target)===suppressEl){e.preventDefault();e.stopImmediatePropagation()}suppressEl=null;suppressUntil=0},true);
 })();
 /* ==================== 1. 状態 & ユーティリティ ==================== */
-if(window.top!==window.self){document.documentElement.style.display='none';throw new Error('framed-context-blocked');}
 const $=i=>document.getElementById(i);
+/* スマホUIはメインアプリの初期化失敗でも空シェルだけ残らないよう、早期にエラーを捕捉する。 */
+(function(){
+  const recoverPhone=()=>{
+    if(document.documentElement.dataset.device!=='smartphone')return;
+    const app=document.getElementById('phone-app');
+    const reader=document.getElementById('phone-reader');
+    const detail=document.getElementById('phone-detail');
+    const content=document.getElementById('phone-content');
+    const tabs=document.querySelector('.phone-tabbar');
+    if(app){app.style.display='flex';app.setAttribute('aria-hidden','false');}
+    if(reader){reader.hidden=true;reader.classList.remove('phone-open');reader.style.display='none';}
+    if(detail){detail.hidden=true;detail.classList.remove('phone-open');detail.style.display='none';}
+    if(content){content.hidden=false;content.style.display='block';}
+    if(tabs){tabs.hidden=false;tabs.style.display='flex';}
+    if(content&&!content.textContent.trim()){
+      content.innerHTML='<section class="phone-screen"><div class="phone-empty"><b>青空文庫を準備しています…</b><br><span style="font-size:12px">アプリの初期化中です。</span></div></section>';
+    }
+  };
+  window.addEventListener('error',()=>{try{recoverPhone()}catch{}});
+  window.addEventListener('unhandledrejection',()=>{try{recoverPhone()}catch{}});
+})();
 /* ================= Smartphone UI auto-detection ================= */
 const refreshSmartphoneUI = ()=>{
   const ua = String(navigator.userAgent || '');
@@ -3134,8 +3154,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!isPhone())return;
     state.screen=name;
     const detail=phone('#phone-detail'),reader=phone('#phone-reader'),content=phone('#phone-content'),tabs=phone('.phone-tabbar');
-    if(detail){detail.hidden=true;detail.style.display='none';detail.setAttribute('aria-hidden','true');}
-    if(reader){reader.hidden=true;reader.style.display='none';reader.setAttribute('aria-hidden','true');}
+    if(detail){detail.hidden=true;detail.classList.remove('phone-open');detail.style.display='none';detail.setAttribute('aria-hidden','true');}
+    if(reader){reader.hidden=true;reader.classList.remove('phone-open');reader.style.display='none';reader.setAttribute('aria-hidden','true');}
     if(content){content.hidden=false;content.style.display='block';}
     if(tabs){tabs.hidden=false;tabs.style.display='flex';}
     phoneAll('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===name));
@@ -3148,9 +3168,9 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(content){content.hidden=true;content.style.display='none';}
     if(tabs){tabs.hidden=true;tabs.style.display='none';}
     const r=phone('#phone-reader');
-    if(r){r.hidden=true;r.style.display='none';r.setAttribute('aria-hidden','true');}
+    if(r){r.hidden=true;r.classList.remove('phone-open');r.style.display='none';r.setAttribute('aria-hidden','true');}
     const d=phone('#phone-detail');if(!d)return;
-    d.hidden=false;d.style.display='block';d.setAttribute('aria-hidden','false');
+    d.hidden=false;d.classList.add('phone-open');d.style.display='block';d.setAttribute('aria-hidden','false');
     const f=Number(pos?.[w.id]?.f||0);
     const pct=Math.round(Math.max(0,Math.min(1,f))*100);
     d.innerHTML='<div class="phone-detail-nav"><button class="phone-circle-btn" data-phone-action="detail-back">‹</button><span style="font-weight:700">作品詳細</span><span style="width:40px"></span></div>'+
@@ -3178,9 +3198,9 @@ window.addEventListener('DOMContentLoaded',()=>{
     const content=phone('#phone-content'),tabs=phone('.phone-tabbar'),detail=phone('#phone-detail');
     if(content){content.hidden=true;content.style.display='none';}
     if(tabs){tabs.hidden=true;tabs.style.display='none';}
-    if(detail){detail.hidden=true;detail.style.display='none';detail.setAttribute('aria-hidden','true');}
+    if(detail){detail.hidden=true;detail.classList.remove('phone-open');detail.style.display='none';detail.setAttribute('aria-hidden','true');}
     const r=phone('#phone-reader');if(!r)return;
-    r.hidden=false;r.style.display='flex';r.setAttribute('aria-hidden','false');
+    r.hidden=false;r.classList.add('phone-open');r.style.display='flex';r.setAttribute('aria-hidden','false');
     phone('#phone-reader-title').textContent=title(w);
     const body=currentReaderBody();
     body.innerHTML='<div class="phone-empty">本文を読み込んでいます…</div>';
@@ -3200,7 +3220,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     const f=currentFraction();if(state.work){pos[state.work.id]={f,t:Date.now()};save();}
     state.reader=false;
     const r=phone('#phone-reader');
-    if(r){r.hidden=true;r.style.display='none';r.setAttribute('aria-hidden','true');}
+    if(r){r.hidden=true;r.classList.remove('phone-open');r.style.display='none';r.setAttribute('aria-hidden','true');}
     if(state.work)openPhoneDetail(state.work);else showScreen(state.screen);
   }
   function addPhoneBookmark(){
@@ -3269,7 +3289,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(app){app.style.display='flex';app.setAttribute('aria-hidden','false');}
     if(content){content.hidden=false;content.style.display='block';}
     if(detail){detail.hidden=true;detail.style.display='none';detail.setAttribute('aria-hidden','true');}
-    if(reader){reader.hidden=true;reader.style.display='none';reader.setAttribute('aria-hidden','true');}
+    if(reader){reader.hidden=true;reader.classList.remove('phone-open');reader.style.display='none';reader.setAttribute('aria-hidden','true');}
     if(tabs){tabs.hidden=false;tabs.style.display='flex';}
   }
   function initPhoneShell(){
