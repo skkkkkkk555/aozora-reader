@@ -1358,7 +1358,8 @@ function openBookDetail(w){
 
 /* ==================== 8. 本文取得 & パース ==================== */
 async function fetchHead(w){
-  if(!w||typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))return '本文の取得をお試しください。';
+  if(!w||!isPublicWork(w))return 'この作品はアプリの公開対象外です。';
+  if(typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))return '本文の取得をお試しください。';
   const c=await idb.get('docs',w.id);
   if(c&&typeof c==='object'&&typeof c.plain==='string'&&c.plain.length<=SEC.maxBookBytes/2)return c.plain.slice(0,90);
   const u=`https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${w.x}`;
@@ -1375,7 +1376,8 @@ async function fetchHead(w){
 
 let readerTok=0;
 async function fetchBody(w){
-  if(!w||typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))throw new Error('invalid-book-path');
+  if(!w||!isPublicWork(w))throw new Error('protected-work');
+  if(typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))throw new Error('invalid-book-path');
   const c=await idb.get('docs',w.id);
   if(c&&typeof c==='object'&&typeof c.html==='string'&&c.html.length<=4*1024*1024){
     const safeHtml=sanitizeReaderHtml(c.html);
@@ -1419,7 +1421,16 @@ function parseAozora(raw){
   const ls=t.split('\n'), d=[];
   ls.forEach((l,i)=>{ if(/^-{20,}$/.test(l)&&i<60) d.push(i); });
   t=d.length>=2?ls.slice(d[1]+1).join('\n'):ls.slice(2).join('\n');
-  const b=t.search(/\n底本：/); if(b>0) t=t.slice(0,b);
+
+  // 青空文庫の本文末尾にある底本・入力者・校正者等の由来情報は削除しない。
+  // 著作権保護期間満了作品についても、青空文庫はファイル内の由来情報を
+  // 残すことを求めているため、本文とは分離して読者に表示する。
+  let sourceInfo='';
+  const sourceIndex=t.search(/\n底本：/);
+  if(sourceIndex>0){
+    sourceInfo=t.slice(sourceIndex).trim();
+    t=t.slice(0,sourceIndex);
+  }
 
   t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
    .replace(/[０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0))
@@ -1434,7 +1445,16 @@ function parseAozora(raw){
    .replace(/［＃中見出し］([^\n]+)/g,()=>`<h3 class="serif" data-hid="h-${midashiSeq++}">$1</h3>`)
    .replace(/［＃(改ページ|改丁)］/g,'<hr class="aozora-page-break">')
    .replace(/［＃[^］]*］/g,'');
-  return t.replace(/\n/g,'<br>');
+  let html=t.replace(/\n/g,'<br>');
+
+  if(sourceInfo){
+    const safeSource=esc(sourceInfo);
+    html+=`<section class="aozora-source-info" aria-label="青空文庫の作品情報">
+      <div class="aozora-source-title">青空文庫 作品情報</div>
+      <pre>${safeSource}</pre>
+    </section>`;
+  }
+  return html;
 }
 function toPlain(h){ const d=document.createElement('div'); d.innerHTML=h.replace(/<br>/g,'\n'); d.querySelectorAll('rt').forEach(x=>x.remove()); return d.textContent||''; }
 
