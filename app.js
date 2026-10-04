@@ -841,9 +841,11 @@ function renderSearchInit(){
 }
 
 function applySearch(reset=true){
+  const summary=$('search-result-summary');
   if(reset){
     searchCursor=0;
     $('search-tiles').innerHTML='';
+    if(summary){summary.classList.remove('show');summary.textContent='';}
   }
 
   const q=searchState.query.trim().toLowerCase().replace(/[\s　]/g,'');
@@ -938,6 +940,11 @@ function applySearch(reset=true){
   searchPool=list;
 
   if(hasScope) $('search-scope-text').textContent=`${searchState.scope.label} (${searchPool.length}件)`;
+  if(summary){
+    const descriptor=hasQuery?`「${searchState.query.trim()}」`:hasScope?(searchState.scope?.label||'絞り込み'):'条件';
+    summary.textContent=`${descriptor} · ${searchPool.length.toLocaleString('ja-JP')}件`;
+    summary.classList.add('show');
+  }
 
   const chunk=searchPool.slice(searchCursor,searchCursor+40);
   searchCursor+=40;
@@ -1040,6 +1047,7 @@ function renderNotesShelf(){
 // 本の詳細シート
 function openBookDetail(w){
   activeBook=w;
+  activeBook=w;
   const isF=fav.has(w.id), isW=want.has(w.id), isS=savedKeys.has(w.id), isFA=favAuthors.has(w.a);
   const isDone=(pos[w.id]?.f||0)>=0.97;
   const estM=Math.max(1,Math.ceil((w.plain?.length||8000)/st.readSpeed));
@@ -1081,7 +1089,10 @@ function openBookDetail(w){
       <div id="b-quote" style="padding:16px; background:var(--card-sub); border-radius:var(--radius-sm); font-size:var(--fs-b); line-height:1.6; color:var(--sub)">冒頭を読み込んでいます…</div>
     </div>`;
   sheet(w.t, html);
-  fetchHead(w).then(q=>{const el=$('b-quote');if(el) el.textContent=q;});
+  fetchHead(w).then(q=>{
+    const el=$('b-quote');
+    if(el){el.textContent=q;el.classList.remove('book-quote-loading');el.setAttribute('aria-busy','false');}
+  });
 }
 
 /* ==================== 8. 本文取得 & パース ==================== */
