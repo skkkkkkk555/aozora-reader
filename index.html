@@ -5805,6 +5805,27 @@ html[data-device="desktop"]:not(.smartphone-ui).low-power #liquid-glass-canvas{d
   html[data-device="desktop"]:not(.smartphone-ui) #liquid-glass-canvas{display:none!important;}
 }
 
+
+/* WebGL unavailable / low-power fallback: retain the glass silhouette. */
+html[data-device="desktop"].liquid-glass-fallback:not(.smartphone-ui) #v-home .grid > .block,
+html[data-device="desktop"].liquid-glass-fallback:not(.smartphone-ui) #v-home .insight-bar,
+html[data-device="desktop"].liquid-glass-fallback:not(.smartphone-ui) #search-results-area .tile,
+html[data-device="desktop"].liquid-glass-fallback:not(.smartphone-ui) #shelf-tiles .tile,
+html[data-device="desktop"].liquid-glass-fallback:not(.smartphone-ui) #settings-area .block,
+html[data-device="desktop"].liquid-glass-fallback:not(.smartphone-ui) #v-cal .block{
+  background:rgba(9,14,22,.72)!important;
+  border:1px solid rgba(255,255,255,.13)!important;
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.08),
+    0 14px 34px rgba(0,0,0,.22)!important;
+}
+html[data-device="desktop"].liquid-glass-fallback:not(.smartphone-ui) #sidebar{
+  background:rgba(7,10,16,.78)!important;
+}
+html[data-device="desktop"].liquid-glass-fallback:not(.smartphone-ui) #v-home .grid > #blk-resume{
+  background:linear-gradient(135deg,rgba(0,122,255,.72),rgba(10,132,255,.46))!important;
+}
+
 </style>
 </head>
 <body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),s=Math.min(innerWidth||0,innerHeight||0);if(m&&s<=899)document.documentElement.dataset.device="smartphone";else document.documentElement.dataset.device="desktop";}catch(e){}})();</script>
@@ -6308,6 +6329,6 @@ html[data-device="desktop"]:not(.smartphone-ui).low-power #liquid-glass-canvas{d
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=liquid-glass-v2-20261005-4"></script>
+<script src="./app.js?v=liquid-glass-v3-20261005-4"></script>
 </body>
 </html>
