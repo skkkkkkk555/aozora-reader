@@ -3821,6 +3821,29 @@ window.addEventListener('DOMContentLoaded',()=>{
     edgeSwipe=null;
   },{capture:true,passive:true});
 
+  // Pointer Events が利用できない古いWebView向けのフォールバック。
+  if(!('PointerEvent' in window)){
+    document.addEventListener('touchstart',e=>{
+      if(!isPhone())return;
+      const t=e.touches[0];if(!t)return;
+      phoneStartX=t.clientX;phoneStartY=t.clientY;phoneTouching=true;
+      const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
+      if(el)phonePress(el);
+    },{capture:true,passive:true});
+    document.addEventListener('touchend',e=>{
+      if(!isPhone()||!phoneTouching)return;
+      phoneTouching=false;
+      const t=e.changedTouches[0];if(!t)return;
+      const dx=t.clientX-phoneStartX,dy=t.clientY-phoneStartY;
+      if(Math.abs(dx)>18||Math.abs(dy)>18)return;
+      const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
+      if(!el)return;
+      e.preventDefault();
+      e.stopPropagation();
+      phoneActivateElement(el,true);
+    },{capture:true,passive:false});
+  }
+
   const phoneEvent=e=>{
     if(!isPhone()||e.type!=='click')return;
     const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
@@ -3865,6 +3888,15 @@ window.addEventListener('DOMContentLoaded',()=>{
     bindPhoneHeaderScroll();
     syncScreens(state.reader?'reader':'main');
   }
+
+  const phoneBootWatchdog=setTimeout(()=>{
+    if(!isPhone())return;
+    try{
+      document.getElementById('app-boot')?.classList.add('done');
+      const content=$p('#phone-content');
+      if(content&&!content.textContent.trim())showScreen(state.screen||'home');
+    }catch(err){console.warn('Phone boot watchdog:',err)}
+  },900);
 
   function initPhone(){
     if(!isPhone())return;
