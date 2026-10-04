@@ -3588,10 +3588,13 @@ html.smartphone-ui[data-device="smartphone"] .rich-motion .sheet-scrim.open{
    Separate DOM: #phone-app. Desktop UI is never restyled by this.
    ============================================================ */
 #phone-app{display:none}
+/* hidden属性をスマホシェル内でCSSが上書きしないよう明示 */
+#phone-app [hidden]{display:none!important}
 html[data-device="smartphone"] body{display:block!important;background:#f2f2f7!important;overflow:hidden!important}
 html[data-device="smartphone"] #phone-app{
   display:flex;position:fixed;inset:0;z-index:500;flex-direction:column;
   width:100vw;height:100dvh;min-width:0;min-height:0;
+  z-index:2000;
   color:#1c1c1e;background:#f2f2f7;
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Hiragino Sans","Yu Gothic UI",sans-serif;
   overflow:hidden;
@@ -4168,6 +4171,6 @@ html[data-theme="dark"][data-device="smartphone"] .phone-tabbar{background:rgba(
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=ios-phone-redesign-20261005-1"></script>
+<script src="./app.js?v=phone-fix-20261005-2"></script>
 </body>
 </html>
