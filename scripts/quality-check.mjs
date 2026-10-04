@@ -24,8 +24,7 @@ ok(!/script-src[^;]*'unsafe-inline'/.test(csp),'script-src still allows unsafe-i
 
 const acts=[...new Set([...html.matchAll(/data-act="([^"]+)"/g)].map(m=>m[1]))];
 const handled=[...new Set([...app.matchAll(/act==='([^']+)'/g)].map(m=>m[1]))];
-const changeHandled=new Set([...app.matchAll(/data-act="([^"]+)"\]\)/g)].map(m=>m[1]));
-changeHandled.add('sel-speed-change');
+const changeHandled=new Set(['sel-speed-change']);
 for(const act of acts)ok(handled.includes(act)||changeHandled.has(act),`data-act has no handler: ${act}`);
 
 const phoneActs=[...new Set([...app.matchAll(/data-phone-action="([^"]+)"/g)].map(m=>m[1]))];
