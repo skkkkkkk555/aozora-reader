@@ -3043,18 +3043,28 @@ function parseFile(file){
   const r=new FileReader();
   if(file.size>SEC.maxLocalFileBytes){toast('ファイルが大きすぎます（最大30MB）');return;}
   r.onload=async()=>{
-    if(file.name.toLowerCase().endsWith('.zip')){
-      const z=await JSZip.loadAsync(r.result);
-      const names=Object.keys(z.files);
-      if(names.length>60000)throw new Error('catalog-entries-too-many');
-      const cf=names.find(n=>n.toLowerCase().endsWith('.csv'));
-      if(!cf||!z.files[cf]||z.files[cf].dir)throw new Error('catalog-csv-missing');
-      const txt=await z.files[cf].async('string');
-      if(txt.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
-      parseCsv(txt);
-    } else parseCsv(r.result);
+    try{
+      if(file.name.toLowerCase().endsWith('.zip')){
+        const z=await JSZip.loadAsync(r.result);
+        const names=Object.keys(z.files);
+        if(names.length>60000)throw new Error('catalog-entries-too-many');
+        const totalUncompressed=names.reduce((sum,n)=>sum+Number(z.files[n]?._data?.uncompressedSize||0),0);
+        if(totalUncompressed>SEC.maxCatalogText*2)throw new Error('catalog-uncompressed-too-large');
+        const cf=names.find(n=>n.toLowerCase().endsWith('.csv'));
+        if(!cf||!z.files[cf]||z.files[cf].dir)throw new Error('catalog-csv-missing');
+        const txt=await z.files[cf].async('string');
+        if(txt.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
+        parseCsv(txt);
+      }else{
+        if(typeof r.result!=='string'||r.result.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
+        parseCsv(r.result);
+      }
+    }catch(e){
+      console.warn('catalog file rejected:',e);
+      toast('カタログを安全に読み込めませんでした');
+    }
   };
-  if(file.name.endsWith('.zip')) r.readAsArrayBuffer(file); else r.readAsText(file);
+  if(file.name.toLowerCase().endsWith('.zip')) r.readAsArrayBuffer(file); else r.readAsText(file);
 }
 
 async function parseCsv(csv){
@@ -3076,10 +3086,11 @@ async function parseCsv(csv){
       else if(ch===','){ cols.push(c); c=''; } else c+=ch;
     }
     cols.push(c);
+    const rawId=String(cols[col.id]||'').trim();
     const rawUrl=String(cols[col.x]||'').trim();
     let parsedUrl=null;try{parsedUrl=new URL(rawUrl);}catch{}
-    if(!id||!parsedUrl||parsedUrl.protocol!=='https:'||parsedUrl.hostname!=='www.aozora.gr.jp'||!rawUrl.toLowerCase().endsWith('.zip'))continue;
-    const id=String(cols[col.id]).slice(0,80);
+    if(!rawId||!parsedUrl||parsedUrl.protocol!=='https:'||parsedUrl.hostname!=='www.aozora.gr.jp'||!rawUrl.toLowerCase().endsWith('.zip'))continue;
+    const id=rawId.slice(0,80);
     const author=((cols[col.a]||'')+' '+(cols[col.am]||'')).trim();
     if(m.has(id)){
       const ex=m.get(id);
@@ -3603,7 +3614,7 @@ function openBookDetail(w){
 
 /* ==================== 8. 本文取得 & パース ==================== */
 async function fetchHead(w){
-  if(!w||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))return '本文の取得をお試しください。';
+  if(!w||typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))return '本文の取得をお試しください。';
   const c=await idb.get('docs',w.id); if(c?.plain) return c.plain.slice(0,90);
   const u=`https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${w.x}`;
   try {
@@ -3619,7 +3630,7 @@ async function fetchHead(w){
 
 let readerTok=0;
 async function fetchBody(w){
-  if(!w||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))throw new Error('invalid-book-path');
+  if(!w||typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))throw new Error('invalid-book-path');
   const c=await idb.get('docs',w.id); if(c?.html){c.html=sanitizeReaderHtml(c.html);c.plain=toPlain(c.html);return c;}
   if(st.offline) throw new Error('オフラインです');
   const urls=[
