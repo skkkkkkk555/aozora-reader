@@ -29,7 +29,7 @@ ok(!/touch-fallback\.js/.test(html+app),'obsolete touch fallback is still refere
 ok(app.includes('blocked-cross-origin-redirect'),'cross-origin redirect validation missing');
 ok(app.includes('isConfiguredOllama'),'configured Ollama method guard missing');
 ok(!/https:\'&&isSafeOllamaUrl\(u\.href\)/.test(app),'generic HTTPS is still treated as Ollama');
-ok(app.includes(".rich-motion .view.active{animation:none!important}"),'stable view animation override missing');
+ok(html.includes(".rich-motion .view.active{animation:none!important}"),'stable view animation override missing');
 ok(app.includes("classList.remove('view-slide-forward','view-slide-backward')"),'view transition cleanup missing');
 ok(app.includes("navigator.wakeLock"),'screen wake-lock feature missing');
 ok(app.includes("classList.add('loading-bar-live')"),'loading feedback missing');
