@@ -7,7 +7,10 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-SOURCE = "https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip"
+# 青空文庫の書誌情報を利用して catalog.json を生成する。
+# 出典: https://www.aozora.gr.jp/
+# ライセンス: Creative Commons Attribution 4.0 International (CC BY 4.0)
+# 本スクリプトではCSV由来の書誌情報をWebアプリ用JSONへ変換する。\nSOURCE = "https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip"
 OUT = Path("catalog.json")
 
 def text(v):
