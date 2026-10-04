@@ -3545,10 +3545,10 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
   }
 
-  function openDetail(w){
+  function openDetail(w,direction='forward'){
     if(!w)return;
     state.work=w;
-    syncScreens('detail');
+    syncScreens('detail',direction);
     const d=$p('#phone-detail');if(!d)return;
     const p=Math.round(progressOf(w)*100), f=progressOf(w);
     d.innerHTML='<div class="phone-detail-nav">'+
@@ -3596,7 +3596,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   async function openReader(w){
     if(!w)return;
     state.work=w;state.reader=true;state.readerDoc=null;
-    syncScreens('reader');
+    syncScreens('reader','forward');
     const titleEl=$p('#phone-reader-title');if(titleEl)titleEl.textContent=wt(w);
     const body=currentReaderBody();if(!body)return;
     body.style.setProperty('--phone-reader-fs',state.readerFs+'px');
@@ -3619,9 +3619,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   function closeReader(){
     saveReaderProgress();state.reader=false;state.readerDoc=null;
     const b=currentReaderBody();if(b)b.onscroll=null;
-    syncScreens('detail');
-    if(state.work)openDetail(state.work);
-    else showScreen(state.screen);
+    if(state.work){openDetail(state.work,'back');}
+    else showScreen(state.screen,'back');
   }
 
   function addBookmark(){
