@@ -1896,6 +1896,291 @@ button:focus-visible,.block[data-act]:focus-visible,.tile[data-act]:focus-visibl
 @media (min-width:900px){#sidebar{padding:24px 14px;gap:8px}.nav-btn{min-height:50px}}
 @media (prefers-reduced-motion:reduce){.ui-ripple{display:none!important}}
 .low-power .ui-ripple{display:none!important}
+
+/* ===== Apple-like visual system ===== */
+:root{
+  --apple-blue:#007aff;
+  --apple-secondary:#8e8e93;
+  --apple-fill:rgba(120,120,128,.12);
+  --apple-separator:rgba(60,60,67,.18);
+  --apple-radius:16px;
+  --apple-shadow:0 1px 2px rgba(0,0,0,.04),0 6px 18px rgba(0,0,0,.04);
+}
+body{
+  background:#f2f2f7!important;
+  background-image:none!important;
+  letter-spacing:-.012em;
+}
+:root[data-theme="dark"] body{background:#000!important}
+#main-area{background:transparent!important}
+.view{
+  padding-top:22px;
+  padding-left:24px;
+  padding-right:24px;
+}
+.view > div:first-child h1,
+.view > div:first-child .brand-mark{
+  font-family:var(--font-sans);
+  font-weight:800;
+  letter-spacing:-.035em;
+}
+.brand-mark{
+  color:var(--fg)!important;
+  font-size:clamp(30px,4vw,42px)!important;
+}
+.brand-sub{
+  color:var(--apple-secondary)!important;
+  letter-spacing:.01em;
+  text-transform:none;
+}
+#home-clock{
+  color:var(--apple-secondary)!important;
+  font-weight:500;
+}
+.insight-bar{
+  gap:0;
+  background:var(--card);
+  border-radius:var(--apple-radius);
+  overflow:hidden;
+  box-shadow:var(--apple-shadow);
+  border:1px solid rgba(60,60,67,.08);
+}
+.insight-card{
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  background:transparent;
+  min-height:92px;
+  padding:16px 14px;
+}
+.insight-card + .insight-card{
+  border-left:1px solid var(--apple-separator);
+}
+.insight-card::before{display:none}
+.insight-kicker{
+  color:var(--apple-secondary);
+  letter-spacing:.02em;
+  text-transform:none;
+}
+.insight-value{
+  font-family:var(--font-sans);
+  font-size:clamp(20px,2.6vw,28px);
+  letter-spacing:-.03em;
+}
+.insight-sub{color:var(--apple-secondary)}
+.grid{gap:12px}
+.books-section-title{
+  font-size:21px;
+  font-weight:800;
+  letter-spacing:-.025em;
+  color:var(--fg);
+  padding:4px 2px 0;
+}
+.block{
+  border-radius:var(--apple-radius);
+  border:1px solid rgba(60,60,67,.08);
+  box-shadow:var(--apple-shadow);
+  background:var(--card)!important;
+  background-image:none!important;
+}
+.block::before{display:none}
+.block.hero-blue{
+  background:var(--apple-blue)!important;
+  box-shadow:0 10px 24px rgba(0,122,255,.18);
+}
+.block.blue,.block.green,.block.orange,.block.purple{
+  background:var(--card)!important;
+}
+.tile{
+  border-radius:var(--apple-radius);
+  box-shadow:var(--apple-shadow);
+}
+.tile::before{opacity:.04!important}
+.tile-t{font-size:20px}
+.card-tint,.search-cta{
+  background:var(--card)!important;
+  border-color:rgba(60,60,67,.08)!important;
+}
+button.secondary{
+  background:var(--apple-fill);
+}
+button.primary{
+  background:var(--apple-blue);
+  box-shadow:0 8px 18px rgba(0,122,255,.16);
+}
+.seg{
+  background:var(--apple-fill);
+  border:0;
+  padding:2px;
+  gap:2px;
+  border-radius:11px;
+}
+.seg button{
+  min-height:38px;
+  border-radius:9px;
+}
+.seg button.active{
+  background:var(--card);
+  color:var(--apple-blue);
+  box-shadow:0 1px 3px rgba(0,0,0,.12);
+}
+.chip-btn{
+  background:var(--apple-fill)!important;
+  border:0;
+}
+.chip-btn.active{
+  background:rgba(0,122,255,.12)!important;
+  color:var(--apple-blue)!important;
+  border:0;
+}
+#bottom-nav{
+  background:rgba(249,249,249,.88)!important;
+  box-shadow:0 -1px 12px rgba(0,0,0,.06);
+  border-top:1px solid rgba(60,60,67,.18);
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+}
+:root[data-theme="dark"] #bottom-nav{
+  background:rgba(28,28,30,.88)!important;
+}
+.b-nav-btn.active{
+  background:transparent;
+  color:var(--apple-blue);
+}
+.b-nav-btn.active .icon{
+  transform:none;
+  stroke-width:2.1;
+}
+#sidebar{
+  background:rgba(242,242,247,.88)!important;
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+}
+:root[data-theme="dark"] #sidebar{
+  background:rgba(28,28,30,.9)!important;
+}
+.nav-btn.active{
+  background:rgba(118,118,128,.16);
+  color:var(--fg);
+  box-shadow:none;
+}
+.sheet{
+  border-radius:20px 20px 0 0;
+  box-shadow:0 -10px 40px rgba(0,0,0,.14);
+  background:var(--card);
+}
+.sheet-head{
+  border-bottom:1px solid var(--apple-separator);
+  background:rgba(255,255,255,.78);
+}
+:root[data-theme="dark"] .sheet-head{background:rgba(28,28,30,.8)}
+.sheet-head .serif{
+  font-family:var(--font-sans)!important;
+  font-weight:750!important;
+  letter-spacing:-.02em;
+}
+.sheet-body{gap:12px}
+.sheet-body .block{
+  box-shadow:none;
+  border:1px solid rgba(60,60,67,.10);
+}
+#search-scope-bar{
+  background:rgba(0,122,255,.10)!important;
+  color:var(--apple-blue)!important;
+  box-shadow:none;
+  border:1px solid rgba(0,122,255,.12);
+}
+#search-scope-bar button{
+  color:var(--apple-blue)!important;
+  background:rgba(0,122,255,.10)!important;
+}
+#q-input{
+  background:var(--card);
+  box-shadow:none!important;
+}
+#search-init-box .block,
+#search-results-area .block,
+#v-settings .block{
+  box-shadow:none;
+}
+#v-settings .block{
+  border-radius:14px;
+}
+#v-settings .block > div:first-child{
+  letter-spacing:-.02em;
+}
+#v-settings .block [data-act="cache-clear"]{color:#ff3b30!important}
+input[type="range"]{accent-color:var(--apple-blue)}
+.r-bar,.r-bottom-bar,.r-dock{
+  background:rgba(249,249,249,.78)!important;
+  border-color:var(--apple-separator)!important;
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+}
+:root[data-theme="dark"] .r-bar,
+:root[data-theme="dark"] .r-bottom-bar,
+:root[data-theme="dark"] .r-dock{
+  background:rgba(28,28,30,.82)!important;
+}
+.r-dock{
+  box-shadow:0 -1px 14px rgba(0,0,0,.06)!important;
+}
+.r-dock-btn{
+  color:var(--apple-secondary);
+}
+.r-dock-btn:active{
+  color:var(--apple-blue);
+}
+@media (max-width:899px){
+  .view{padding-left:16px;padding-right:16px;padding-top:18px}
+  .brand-wrap{gap:10px}
+  .insight-card{padding:14px 11px}
+  .insight-value{font-size:21px}
+  .books-section-title{font-size:20px;padding-left:2px}
+}
+@media (max-width:520px){
+  .view{padding-left:14px;padding-right:14px}
+  .insight-bar{border-radius:14px}
+  .insight-card{min-height:82px;padding:12px 8px}
+  .insight-kicker{font-size:10px}
+  .insight-value{font-size:19px}
+  .insight-sub{font-size:11px}
+}
+.low-power #sidebar,
+.low-power #bottom-nav,
+.low-power .r-bar,
+.low-power .r-bottom-bar,
+.low-power .r-dock{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+
+
+.apple-settings-group{
+  overflow:hidden;
+  padding:0!important;
+  background:var(--card)!important;
+}
+.apple-group-title{
+  padding:14px 16px 8px;
+  color:var(--apple-secondary);
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.01em;
+}
+.apple-settings-group > div:not(.apple-group-title),
+.apple-settings-group > button,
+.apple-settings-group > label{
+  margin-left:16px!important;
+  margin-right:16px!important;
+}
+.apple-settings-group > div:not(.apple-group-title){
+  min-height:48px;
+}
+.apple-settings-group .seg{
+  min-width:132px;
+}
+
 </style>
 </head>
 <body>
@@ -3649,8 +3934,8 @@ setInterval(()=>{
 function renderSettingsPage(){
   const sa=$('settings-area');
   sa.innerHTML=`
-    <div class="block" style="min-height:auto">
-      <div style="font-weight:700; margin-bottom:14px; font-size:var(--fs-t)">表示環境</div>
+    <div class="apple-settings-group block" style="min-height:auto">
+      <div class="apple-group-title">表示環境</div>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
         <span>外観テーマ</span>
         <div class="seg" style="width:260px">
@@ -3690,9 +3975,10 @@ function renderSettingsPage(){
       </div>
     </div>
 
-    <div class="block" style="min-height:auto">
+    <div class="apple-settings-group block" style="min-height:auto">
+      <div class="apple-group-title">AI</div>
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
-        <div style="font-weight:700; font-size:var(--fs-t)">Ollama AI連携</div>
+        <div style="font-weight:700; font-size:var(--fs-t)">Ollama</div>
         <div class="seg" style="width:140px">
           <button data-act="set-ollama-toggle" data-v="1" class="${st.ollamaEnabled?'active':''}">ON</button>
           <button data-act="set-ollama-toggle" data-v="0" class="${!st.ollamaEnabled?'active':''}">OFF</button>
@@ -3719,8 +4005,8 @@ function renderSettingsPage(){
       `}
     </div>
 
-    <div class="block" style="min-height:auto">
-      <div style="font-weight:700; margin-bottom:14px; font-size:var(--fs-t)">保管庫とデータ</div>
+    <div class="apple-settings-group block" style="min-height:auto">
+      <div class="apple-group-title">データ</div>
       <button class="secondary" data-act="cat-intro" style="width:100%; margin-bottom:10px">作品カタログを再取得</button>
       <button class="secondary" data-act="cache-clear" style="width:100%; color:#d9534f; margin-bottom:10px">本文キャッシュを消去</button>
       <div style="display:flex; gap:10px">
