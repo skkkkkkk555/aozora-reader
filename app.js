@@ -3606,7 +3606,12 @@ window.addEventListener('DOMContentLoaded',()=>{
     try{showScreen(state.screen||'home')}catch(err){console.error('Phone init failed',err)}
   }
 
-  window.addEventListener('aozora-phone-data-ready',()=>{if(isPhone()&&!state.reader)showScreen(state.screen||'home')});
+  window.addEventListener('aozora-phone-data-ready',()=>{
+    if(!isPhone()||state.reader)return;
+    state.readerFs=Number(st?.fs)||19;
+    state.readerLh=Number(st?.lh)||2.05;
+    showScreen(state.screen||'home');
+  });
   window.addEventListener('resize',()=>{if(isPhone()&&!state.reader)syncPhoneVisibility()},{passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&isPhone()&&state.reader)saveReaderProgress()});
 
