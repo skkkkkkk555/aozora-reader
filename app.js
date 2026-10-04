@@ -2,10 +2,37 @@
 (function(){
 let start=null,suppressEl=null,suppressUntil=0,synthetic=false;
 const actionOf=t=>t?.closest?.('[data-act]')||null;
-document.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;const el=actionOf(e.target);if(!el)return;start={x:e.clientX,y:e.clientY,el};},{passive:true});
-document.addEventListener('pointerup',e=>{if(e.pointerType!=='touch'||!start)return;const el=actionOf(e.target),dx=e.clientX-start.x,dy=e.clientY-start.y;if(el===start.el&&dx*dx+dy*dy<=324){suppressEl=el;suppressUntil=Date.now()+900;synthetic=true;try{el.click()}finally{synthetic=false}}start=null;},{passive:true});
+document.addEventListener('pointerdown',e=>{
+  if(e.pointerType!=='touch')return;
+  const el=actionOf(e.target); if(!el)return;
+  start={x:e.clientX,y:e.clientY,el,moved:false};
+},{passive:true});
+document.addEventListener('pointermove',e=>{
+  if(e.pointerType!=='touch'||!start)return;
+  const dx=e.clientX-start.x,dy=e.clientY-start.y;
+  if(dx*dx+dy*dy>324)start.moved=true;
+},{passive:true});
+document.addEventListener('pointerup',e=>{
+  if(e.pointerType!=='touch'||!start)return;
+  const el=actionOf(e.target),dx=e.clientX-start.x,dy=e.clientY-start.y;
+  const isTap=el===start.el&&!start.moved&&dx*dx+dy*dy<=324;
+  if(isTap){
+    suppressEl=el;suppressUntil=Date.now()+900;synthetic=true;
+    try{el.click()}finally{synthetic=false}
+  }else if(start.moved&&start.el){
+    // スワイプ終了時に後から発火するclickで誤作動しないようにする。
+    suppressEl=start.el;suppressUntil=Date.now()+450;
+  }
+  start=null;
+},{passive:true});
 document.addEventListener('pointercancel',e=>{if(e.pointerType==='touch')start=null;},{passive:true});
-document.addEventListener('click',e=>{if(synthetic)return;if(suppressEl&&Date.now()<suppressUntil&&actionOf(e.target)===suppressEl){e.preventDefault();e.stopImmediatePropagation()}suppressEl=null;suppressUntil=0},true);
+document.addEventListener('click',e=>{
+  if(synthetic)return;
+  if(suppressEl&&Date.now()<suppressUntil&&actionOf(e.target)===suppressEl){
+    e.preventDefault();e.stopImmediatePropagation();
+  }
+  suppressEl=null;suppressUntil=0;
+},true);
 })();
 /* ==================== 1. 状態 & ユーティリティ ==================== */
 const $=i=>document.getElementById(i);
@@ -518,15 +545,18 @@ window.addEventListener('popstate',()=>{
   if(closingLayer){closingLayer=false;return;}
   const target=history.state?.layer||null;
 
-  // シートを閉じた直後に reader の履歴へ戻った場合は、
-  // すでにUIを閉じているので何もしない。
+  // reader上に重なったシートを「戻る」で一段だけ閉じる。
   if(target==='reader'){
     if(!$('reader').classList.contains('open')) return;
+    if($('sheet').classList.contains('open')){
+      closeSheet(true);
+      return;
+    }
     if(layers[layers.length-1]==='reader') return;
     return;
   }
 
-  // ルートへ戻った場合だけ、開いている最上位UIを閉じる。
+  // ルートへ戻った場合は、最上位のUIから順に閉じる。
   if(target===null){
     if($('sheet').classList.contains('open')){ closeSheet(true); return; }
     if($('reader').classList.contains('open')){ closeReader(true); return; }
@@ -539,10 +569,20 @@ window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(layers.length){
       const l=layers[layers.length-1];
-      if(l==='sheet') closeSheet(false);
-      else if(l==='reader') closeReader(false);
-      else if(l==='pop') $('pop').classList.remove('open');
-      history.back();
+      if(l==='sheet'){
+        closeSheet(false);
+        return;
+      }
+      if(l==='reader'){
+        closeReader(false);
+        return;
+      }
+      if(l==='pop'){
+        $('pop').classList.remove('open');
+        popLayer('pop');
+        if(history.state?.layer==='pop')history.back();
+        return;
+      }
     }
   }
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openSearchPage(); }
@@ -1624,6 +1664,8 @@ function playPaperTurn(direction){
 
 async function closeReader(fromPop=false){
   closeOneLineMode();
+  // 閉じる直前のページ位置を必ず確定保存。
+  if(curWork) updateProgress(true);
   await releaseScreenWakeLock();
   $('reader').classList.remove('open','paper-reader','paper-first-open');
   $('reader').classList.remove('reader-night', 'mode-focus');
@@ -1677,6 +1719,7 @@ function updateProgress(force=false){
     hist=hist.filter(h=>h.id!==curWork.id);
     hist.unshift({id:curWork.id,t:now});
     if(hist.length>50) hist.pop();
+    if(force) save();
   }
 }
 
@@ -1689,6 +1732,14 @@ $('body').onscroll=()=>{
     });
   }
 };
+window.addEventListener('pagehide',()=>{
+  try{
+    if(curWork&&$('reader')?.classList.contains('open')){
+      updateProgress(true);
+      save();
+    }
+  }catch(err){console.debug('reader progress pagehide save failed',err)}
+});
 
 $('body').onclick=(e)=>{
   lastUserActivityTime=Date.now();
