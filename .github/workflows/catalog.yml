@@ -23,7 +23,7 @@ jobs:
 
       - name: Commit catalog when changed
         run: |
-          if git diff --quiet -- catalog.json; then
+          if [ -z "$(git status --porcelain -- catalog.json)" ]; then
             echo "Catalog is unchanged."
             exit 0
           fi
