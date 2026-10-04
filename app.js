@@ -3942,7 +3942,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   const MAX_SHAPES=14;
   let canvas=null,gl=null,program=null,texture=null,raf=0;
   let resizeTimer=0,collectTimer=0;
-  let shapes=[],shapeCount=0,lastW=0,lastH=0,lastDpr=0;
+  let shapes=[],shapeCount=0,lastW=0,lastH=0,lastDpr=0,lastCollect=0;
   let mouseX=.5,mouseY=.5,targetX=.5,targetY=.5,impact=0;
   let u=null;
 
@@ -4152,18 +4152,32 @@ window.addEventListener('DOMContentLoaded',()=>{
     canvas.setAttribute('aria-hidden','true');
     document.body.insertBefore(canvas,document.body.firstChild);
     gl=canvas.getContext('webgl',{antialias:true,alpha:true,premultipliedAlpha:true,powerPreference:'high-performance'});
-    if(!gl){canvas.remove();canvas=null;gl=null;return false;}
+    if(!gl){
+      root.classList.add('liquid-glass-fallback');
+      canvas.remove();
+      canvas=null;
+      gl=null;
+      return false;
+    }
     const v=makeShader(vsSource,gl.VERTEX_SHADER);
     const f=makeShader(fsSource,gl.FRAGMENT_SHADER);
-    if(!v||!f){canvas.remove();canvas=null;gl=null;return false;}
+    if(!v||!f){
+      root.classList.add('liquid-glass-fallback');
+      canvas.remove();
+      canvas=null;
+      gl=null;
+      return false;
+    }
     program=gl.createProgram();
     gl.attachShader(program,v);
     gl.attachShader(program,f);
     gl.linkProgram(program);
     if(!gl.getProgramParameter(program,gl.LINK_STATUS)){
       console.error('Liquid Glass link:',gl.getProgramInfoLog(program));
+      root.classList.add('liquid-glass-fallback');
       return false;
     }
+    root.classList.remove('liquid-glass-fallback');
     gl.useProgram(program);
     const buf=gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER,buf);
@@ -4249,6 +4263,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   function draw(now){
     if(!isGlassDevice()){
+      root.classList.remove('liquid-glass-fallback');
       if(canvas)canvas.style.display='none';
       if(raf){cancelAnimationFrame(raf);raf=0;}
       return;
@@ -4258,7 +4273,10 @@ window.addEventListener('DOMContentLoaded',()=>{
     targetX+=(mouseX-targetX)*.06;
     targetY+=(mouseY-targetY)*.06;
     impact*=.93;
-    collectShapes();
+    if(now-lastCollect>120){
+      lastCollect=now;
+      collectShapes();
+    }
 
     const sd=new Float32Array(MAX_SHAPES*4);
     const st=new Float32Array(MAX_SHAPES*4);
@@ -4287,6 +4305,11 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   function activate(){
     if(!isGlassDevice())return;
+    if(root.classList.contains('low-power') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
+      root.classList.add('liquid-glass-fallback');
+      if(canvas)canvas.style.display='none';
+      return;
+    }
     if(!setup())return;
     resize();
     collectShapes();
