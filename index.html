@@ -327,6 +327,22 @@ button.sm-btn { min-height: 44px; padding: 0 14px; font-size: var(--fs-s); borde
 
 #main-area { flex: 1; height: 100%; position: relative; overflow: hidden; border-radius: 0 28px 28px 0; background: rgba(255,255,255,0.28); border: 1px solid var(--line); }
 @media (max-width: 899px) { #main-area { border-radius: 0; border: none; } }
+/* 画面切替中の重複描画を物理的に防止。非アクティブ画面は常にレイアウトから除外する。 */
+#main-area .view[hidden]{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+#main-area .view:not(.active){
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+#main-area .view.active{
+  visibility:visible;
+  pointer-events:auto;
+}
+
 .view { position: absolute; inset: 0; overflow-y: auto; padding: 20px 18px calc(76px + env(safe-area-inset-bottom)); display: none; -webkit-overflow-scrolling: touch; }
 .view.active { display: block; animation: fadeIn 220ms var(--ease); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
