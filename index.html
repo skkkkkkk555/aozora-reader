@@ -5669,6 +5669,142 @@ html[data-device="desktop"]:not(.smartphone-ui).low-power #v-cal .block{
   }
 }
 
+
+/* ================= REAL WEBGL LIQUID GLASS SURFACES ================= */
+html[data-device="desktop"]:not(.smartphone-ui) body{
+  background:#020305!important;
+  color:#fff!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #liquid-glass-canvas{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:1;
+  pointer-events:none;
+  display:block;
+  touch-action:none;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #app{
+  position:relative;
+  z-index:3;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #main-area{
+  background:rgba(3,6,11,.12)!important;
+  border-color:rgba(255,255,255,.08)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) .view{
+  color:#fff;
+}
+html[data-device="desktop"]:not(.smartphone-ui) .view h1,
+html[data-device="desktop"]:not(.smartphone-ui) .books-section-title,
+html[data-device="desktop"]:not(.smartphone-ui) .insight-value,
+html[data-device="desktop"]:not(.smartphone-ui) .brand-mark{
+  color:#fff!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) .brand-sub,
+html[data-device="desktop"]:not(.smartphone-ui) .insight-kicker,
+html[data-device="desktop"]:not(.smartphone-ui) .insight-sub{
+  color:rgba(255,255,255,.62)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #sidebar{
+  background:rgba(7,10,16,.20)!important;
+  border-color:rgba(255,255,255,.13)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.13)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #sidebar::before{color:#fff!important;}
+html[data-device="desktop"]:not(.smartphone-ui) #sidebar .nav-btn{
+  color:rgba(255,255,255,.62)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #sidebar .nav-btn.active{
+  color:#fff!important;
+  background:rgba(56,189,248,.10)!important;
+  border-color:rgba(56,189,248,.20)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #sidebar .nav-btn.active::before{
+  background:#38bdf8!important;
+  box-shadow:0 0 14px rgba(56,189,248,.60);
+}
+
+/* DOM surfaces are transparent; the WebGL canvas is the glass material. */
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .grid > .block,
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .insight-bar,
+html[data-device="desktop"]:not(.smartphone-ui) #search-results-area .tile,
+html[data-device="desktop"]:not(.smartphone-ui) #shelf-tiles .tile,
+html[data-device="desktop"]:not(.smartphone-ui) #settings-area .block,
+html[data-device="desktop"]:not(.smartphone-ui) #v-cal .block{
+  background:rgba(4,8,14,.12)!important;
+  border-color:rgba(255,255,255,.11)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .grid > #blk-resume{
+  background:rgba(0,122,255,.10)!important;
+  border-color:rgba(255,255,255,.20)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .grid > .block::before,
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .grid > .block::after{
+  display:none!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .insight-card{
+  background:rgba(255,255,255,.025)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #q-input,
+html[data-device="desktop"]:not(.smartphone-ui) .seg,
+html[data-device="desktop"]:not(.smartphone-ui) #v-search .chip-btn,
+html[data-device="desktop"]:not(.smartphone-ui) button.secondary{
+  background:rgba(8,13,21,.30)!important;
+  color:#fff!important;
+  border-color:rgba(255,255,255,.14)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.08),0 7px 22px rgba(0,0,0,.16)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #q-input::placeholder{color:rgba(255,255,255,.44);}
+html[data-device="desktop"]:not(.smartphone-ui) .seg button.active,
+html[data-device="desktop"]:not(.smartphone-ui) #v-search #sort-seg button.active,
+html[data-device="desktop"]:not(.smartphone-ui) #v-shelf .seg button.active{
+  background:rgba(56,189,248,.15)!important;
+  color:#fff!important;
+  border-color:rgba(56,189,248,.40)!important;
+  box-shadow:0 0 22px rgba(56,189,248,.10),inset 0 1px rgba(255,255,255,.15)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #bottom-nav{
+  background:rgba(7,10,16,.22)!important;
+  border-color:rgba(255,255,255,.12)!important;
+  box-shadow:0 16px 44px rgba(0,0,0,.22)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #bottom-nav .b-nav-btn{color:rgba(255,255,255,.58);}
+html[data-device="desktop"]:not(.smartphone-ui) #bottom-nav .b-nav-btn.active{
+  color:#38bdf8;
+  background:rgba(56,189,248,.09);
+}
+html[data-device="desktop"]:not(.smartphone-ui) .sheet{
+  background:rgba(6,9,15,.54)!important;
+  color:#fff!important;
+  border-color:rgba(255,255,255,.16)!important;
+  box-shadow:0 30px 110px rgba(0,0,0,.55)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) .sheet-head{border-color:rgba(255,255,255,.10)!important;}
+html[data-device="desktop"]:not(.smartphone-ui) .sheet-head .serif,
+html[data-device="desktop"]:not(.smartphone-ui) .sheet-body{color:#fff!important;}
+html[data-device="desktop"]:not(.smartphone-ui) #reader{background:#020305!important;}
+html[data-device="desktop"]:not(.smartphone-ui) #reader .r-bar,
+html[data-device="desktop"]:not(.smartphone-ui) #reader .r-bottom-bar,
+html[data-device="desktop"]:not(.smartphone-ui) #reader .r-dock{
+  background:rgba(7,10,16,.30)!important;
+  border-color:rgba(255,255,255,.12)!important;
+  color:#fff!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui).low-power #liquid-glass-canvas{display:none!important;}
+@media (prefers-reduced-motion:reduce){
+  html[data-device="desktop"]:not(.smartphone-ui) #liquid-glass-canvas{display:none!important;}
+}
+
 </style>
 </head>
 <body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),s=Math.min(innerWidth||0,innerHeight||0);if(m&&s<=899)document.documentElement.dataset.device="smartphone";else document.documentElement.dataset.device="desktop";}catch(e){}})();</script>
@@ -6172,6 +6308,6 @@ html[data-device="desktop"]:not(.smartphone-ui).low-power #v-cal .block{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=phone-v5-20261005-3"></script>
+<script src="./app.js?v=liquid-glass-v2-20261005-4"></script>
 </body>
 </html>
