@@ -479,6 +479,10 @@ function watchBookCovers(root){
 }
 
 function sheet(title, html){
+  if(document.documentElement.dataset.device==='smartphone'&&typeof window.__aozoraPhoneOpenSheet==='function'){
+    window.__aozoraPhoneOpenSheet(title,html);
+    return;
+  }
   restoreFocusEl=document.activeElement instanceof HTMLElement?document.activeElement:null;
   $('sheet-t').textContent=title;
   $('sheet-b').innerHTML=html;
@@ -491,6 +495,10 @@ function sheet(title, html){
   });
 }
 function closeSheet(fromPop=false){
+  if(document.documentElement.dataset.device==='smartphone'&&typeof window.__aozoraPhoneCloseSheet==='function'){
+    window.__aozoraPhoneCloseSheet(fromPop);
+    return;
+  }
   $('sheet').classList.remove('open');
   $('sheet').setAttribute('aria-hidden','true');
   $('scrim').classList.remove('open');
@@ -1515,7 +1523,9 @@ function finishBoot(){
   }
 }
 async function requestScreenWakeLock(){
-  if(!wakeLockWanted||!$('reader').classList.contains('open'))return;
+  const desktopReaderOpen=!!$('reader')?.classList.contains('open');
+  const phoneReaderOpen=document.documentElement.dataset.device==='smartphone'&&!!$('phone-reader')?.classList.contains('phone-open');
+  if(!wakeLockWanted||(!desktopReaderOpen&&!phoneReaderOpen))return;
   if(!('wakeLock' in navigator)){toast('この端末では画面維持に対応していません');return;}
   try{
     if(wakeLock)return;
@@ -3884,7 +3894,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   function cycleTheme(){
     const cur=st.theme||'auto';
-    const next=cur==='auto'?'light':cur==='light'?'dark':'auto';
+    const next=cur==='auto'?'sepia':cur==='sepia'?'dark':'auto';
     st.theme=next;applySettings();save();renderSettings();toast('テーマを変更しました');
   }
   function cycleFont(){
