@@ -693,6 +693,8 @@ const PAL=['#23445d','#2e5b70','#3b5249','#5c3d46','#6e4a2e','#4a4e69','#3d5a80'
 const colorOf=s=>{let h=0;for(let i=0;i<s.length;i++){h=(h<<5)-h+s.charCodeAt(i);h|=0}return PAL[Math.abs(h)%PAL.length]};
 const sig=(ms)=>{const c=new AbortController();setTimeout(()=>c.abort(new DOMException('Timeout','TimeoutError')),ms);return c.signal};
 
+const localDateKey=()=>{const d=new Date();const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;};
+
 function decodeHtmlEntities(str){
   const txt = document.createElement('textarea');
   txt.innerHTML = str;
@@ -772,7 +774,7 @@ const load=async()=>{
 };
 
 function renderInsightBar(){
-  const todayKey = new Date().toISOString().slice(0,10);
+  const todayKey = localDateKey();
   const todayMin = Number(calData[todayKey] || 0);
   const totalBooks = new Set(hist.map(item => item.id)).size;
   const progress = Math.min(100, Math.round((todayMin / Math.max(1, goalMin)) * 100));
@@ -911,7 +913,7 @@ async function fetchTranslateStep(text, fromLang, toLang, timeoutMs = 8000) {
       const prompt = fromLang === 'ja'
         ? `Translate the following Japanese text to English. Output only the translated English text:\n\n${text}`
         : `Translate the following English text to natural modern Japanese. Output only the translated Japanese text:\n\n${text}`;
-      const res3 = await fetch(st.oUrl + '/api/chat', {
+      const res3 = await fetch(normalizeOllamaUrl(st.oUrl) + '/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1143,7 +1145,7 @@ function startAudit(){
         if(!r2||r2.status===404){ dead.add(w.id); filterWorks(); }
       }
     }catch{}
-  },2000);
+  },60000);
 }
 
 /* ==================== 6. ホーム・おすすめ・新機能 ==================== */
@@ -1195,7 +1197,7 @@ function renderHome(){
   }
 
   // 読書チャレンジ計算
-  const todayKey=new Date().toISOString().slice(0,10);
+  const todayKey=localDateKey();
   const todayMin=calData[todayKey]||0;
   const chalPct=Math.min(100, Math.round((todayMin / goalMin)*100));
   $('chal-pct-txt').textContent=chalPct+'%';
@@ -1234,7 +1236,7 @@ function renderHome(){
   initSmartRec();
 
   // 今日の一冊固定 または 12選巡回
-  const todayStr=new Date().toISOString().slice(0,10);
+  const todayStr=localDateKey();
   if(st.todayBook && st.todayBook.date === todayStr && byId.has(st.todayBook.id)){
     const w = byId.get(st.todayBook.id);
     featList = [w];
@@ -1601,7 +1603,7 @@ function openBookDetail(w){
       <div id="b-quote" style="padding:16px; background:var(--card-sub); border-radius:var(--radius-sm); font-size:var(--fs-b); line-height:1.6; color:var(--sub)">冒頭を読み込んでいます…</div>
     </div>`;
   sheet(w.t, html);
-  fetchHead(w).then(q=>{$('b-quote').textContent=q;});
+  fetchHead(w).then(q=>{const el=$('b-quote');if(el) el.textContent=q;});
 }
 
 /* ==================== 8. 本文取得 & パース ==================== */
@@ -1825,7 +1827,7 @@ function execInBookSearch(){
     const idx=txt.indexOf(q);
     if(idx!==-1){
       const span=document.createElement('span');
-      const safePattern = new RegExp(escRe(esc(q)), 'g');
+      const safePattern = new RegExp(escRe(q), 'g');
       span.innerHTML=esc(txt).replace(safePattern, m=>`<mark class="search-hl">${m}</mark>`);
       node.parentNode.replaceChild(span, node);
     }
@@ -2037,7 +2039,7 @@ async function sendAiMessage(q){
   if(aiAbort) aiAbort.abort();
   aiAbort=new AbortController();
 
-  let firstWordTimer=setTimeout(()=>{ $('ai-cur').innerHTML='モデルを読み込み中… (約150秒お待ちください)'; }, 15000);
+  let firstWordTimer=setTimeout(()=>{ const el=$('ai-cur'); if(el) el.textContent='モデルを読み込み中… (約150秒お待ちください)'; }, 15000);
 
   try {
     const ctx=curDoc?curDoc.plain.slice(0,3000):'';
@@ -2048,7 +2050,7 @@ async function sendAiMessage(q){
 参考本文:
 ${ctx}`;
 
-    const res=await fetch(st.oUrl+'/api/chat',{
+    const res=await fetch(normalizeOllamaUrl(st.oUrl)+'/api/chat',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:st.oMod,
@@ -2071,14 +2073,14 @@ ${ctx}`;
         const j=JSON.parse(l);
         if(j.message?.content){
           full+=j.message.content;
-          $('ai-cur').textContent=full.replace(/<think>[\s\S]*?<\/think>/g,'').trim();
+          const aiCur=$('ai-cur'); if(aiCur) aiCur.textContent=full.replace(/<think>[\s\S]*?<\/think>/g,'').trim();
           box.scrollTop=box.scrollHeight;
         }
       }
     }
   }catch(e){
     clearTimeout(firstWordTimer);
-    $('ai-cur').textContent=e.name==='AbortError'?'回答を停止しました。':'接続失敗: '+e.message;
+    const aiCur=$('ai-cur'); if(aiCur) aiCur.textContent=e.name==='AbortError'?'回答を停止しました。':'接続失敗: '+e.message;
   }finally{
     $('ai-cur').removeAttribute('id');
     btn.textContent='送信'; btn.dataset.act='ai-send';
@@ -2130,7 +2132,7 @@ function renderCalendar(){
 setInterval(()=>{
   if($('reader').classList.contains('open') && !document.hidden){
     if(Date.now() - lastUserActivityTime < 65000){
-      const todayKey=new Date().toISOString().slice(0,10);
+      const todayKey=localDateKey();
       calData[todayKey]=(calData[todayKey]||0)+1;
       save();
       renderHome();
@@ -2169,7 +2171,7 @@ function renderSettingsPage(){
       </div>
       <div style="display:flex; justify-content:space-between; align-items:center">
         <span>文字サイズ (${st.fs}px)</span>
-        <input type="range" min="14" max="32" value="${st.fs}" oninput="st.fs=this.value;applyReaderConfig();save();renderSettingsPage();" style="width:160px; height:44px">
+        <input type="range" min="14" max="32" value="${st.fs}" oninput="st.fs=this.value;applyReaderConfig();save();" style="width:160px; height:44px">
       </div>
     </div>
 
@@ -2366,7 +2368,7 @@ document.addEventListener('click',async(e)=>{
     e.stopPropagation();
     const w=featList[featIdx];
     if(w){
-      const todayStr=new Date().toISOString().slice(0,10);
+      const todayStr=localDateKey();
       if(st.todayBook && st.todayBook.id === w.id){
         st.todayBook = null;
         toast('固定を解除しました');
@@ -2482,7 +2484,7 @@ document.addEventListener('click',async(e)=>{
       </div>`);
   }
   else if(act==='r-menu'){
-    const isAi=aiConn.ok;
+    const isAi=aiConn.ok && canUseOllama();
     sheet('目次・栞',`
       <div style="display:flex; flex-direction:column; gap:16px">
         <div style="display:flex; gap:8px">
