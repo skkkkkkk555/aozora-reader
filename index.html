@@ -1665,6 +1665,35 @@ body{background:#f2f2f7!important;}
 .low-power .book-cover-inner::before{display:none!important;}
 .low-power .books-section-title::after{animation:none!important;}
 
+
+/* 第1弾: iOS風の方向付き画面遷移 */
+@keyframes iosViewPush{
+  0%{opacity:0;transform:translate3d(7%,0,0) scale(.985)}
+  55%{opacity:1}
+  100%{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+@keyframes iosViewPop{
+  0%{opacity:0;transform:translate3d(-7%,0,0) scale(.985)}
+  55%{opacity:1}
+  100%{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+.rich-motion .view.active.view-slide-forward{
+  animation:iosViewPush 460ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion .view.active.view-slide-backward{
+  animation:iosViewPop 460ms cubic-bezier(.16,1,.3,1) both;
+}
+.low-power .view.active.view-slide-forward,
+.low-power .view.active.view-slide-backward{
+  animation:none!important;
+}
+@media (prefers-reduced-motion:reduce){
+  .rich-motion .view.active.view-slide-forward,
+  .rich-motion .view.active.view-slide-backward{
+    animation:none!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3413,9 +3442,19 @@ function renderSettingsPage(){
 }
 
 /* ==================== 14. イベント委譲 (data-act) ==================== */
+let currentView='v-home';
+const viewOrder=['v-home','v-search','v-shelf','v-cal','v-settings'];
+
 function switchView(vid){
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  $(vid).classList.add('active');
+  const prev=currentView;
+  const direction=viewOrder.indexOf(vid)>=viewOrder.indexOf(prev)?'forward':'backward';
+  document.querySelectorAll('.view').forEach(v=>{
+    v.classList.remove('active','view-slide-forward','view-slide-backward');
+  });
+  const next=$(vid);
+  next.classList.add('active',direction==='forward'?'view-slide-forward':'view-slide-backward');
+  currentView=vid;
+  setTimeout(()=>next.classList.remove('view-slide-forward','view-slide-backward'),520);
   document.querySelectorAll('.nav-btn, .b-nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.v===vid));
   if(vid==='v-home') renderHome();
   else if(vid==='v-search') renderSearchInit();
