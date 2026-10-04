@@ -1854,6 +1854,48 @@ body{background:#f2f2f7!important;}
   transform:none!important;
 }
 
+/* ===== UI/UX refresh: hierarchy, touch feedback, navigation clarity ===== */
+:root{--ios-blue:#0a84ff;--focus-ring:rgba(10,132,255,.26);--hairline:rgba(60,60,67,.16)}
+button,.block[data-act],.tile[data-act],input,select,textarea{-webkit-tap-highlight-color:transparent}
+button:focus-visible,.block[data-act]:focus-visible,.tile[data-act]:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--focus-ring);outline-offset:2px}
+.rich-motion .block[data-act],.rich-motion .tile[data-act],.rich-motion button,.rich-motion input,.rich-motion .seg,.rich-motion .chip-btn{transition:transform 180ms var(--spring),box-shadow 220ms var(--ease),border-color 180ms var(--ease),background-color 180ms var(--ease),opacity 180ms var(--ease)}
+.rich-motion button:hover{transform:translateY(-1px)}
+.rich-motion button:active,.rich-motion .physics-pressed{transform:scale(.975)}
+.rich-motion .block[data-act]:active,.rich-motion .tile[data-act]:active{transform:scale(.985)}
+.rich-motion input{border:1px solid transparent}
+.rich-motion input:hover{border-color:rgba(10,132,255,.12)}
+.rich-motion input:focus{border-color:rgba(10,132,255,.34);box-shadow:0 0 0 4px rgba(10,132,255,.08),0 10px 26px rgba(20,20,30,.06)}
+#q-input{border-radius:var(--radius-sm)}
+#q-clear{border-radius:999px!important;color:var(--sub);background:rgba(120,120,128,.10)!important}
+#q-clear:hover{background:rgba(120,120,128,.16)!important}
+#search-scope-bar{box-shadow:0 10px 24px rgba(10,132,255,.12)}
+.chip-btn{white-space:nowrap;border:1px solid transparent}
+.chip-btn.active{background:rgba(10,132,255,.12)!important;color:var(--ios-blue)!important;border-color:rgba(10,132,255,.18)}
+.seg{border:1px solid rgba(60,60,67,.06)}
+.seg button.active{color:var(--ios-blue)}
+#bottom-nav{box-shadow:0 -8px 28px rgba(20,20,30,.08);border-top-color:var(--hairline)}
+.b-nav-btn{position:relative;overflow:hidden;color:#73737a;font-weight:600;padding-top:3px}
+.b-nav-btn .icon{transition:transform 220ms var(--spring),stroke-width 180ms}
+.rich-motion .b-nav-btn:hover .icon{transform:translateY(-1px) scale(1.04)}
+.b-nav-btn.active{color:var(--ios-blue);background:radial-gradient(ellipse 30px 17px at 50% 20px,rgba(10,132,255,.13) 0 98%,transparent 100%)}
+.b-nav-btn.active .icon{transform:scale(1.06);stroke-width:2}
+.nav-btn{position:relative;overflow:hidden}
+.nav-btn.active{background:linear-gradient(135deg,#0a84ff,#1677dc);box-shadow:0 10px 22px rgba(10,132,255,.20)}
+#sidebar{border-right-color:var(--hairline)}
+.view{scroll-padding-top:18px}
+.view::-webkit-scrollbar{width:8px}
+.view::-webkit-scrollbar-thumb{background:rgba(120,120,128,.18);border-radius:999px}
+.sheet{box-shadow:0 -18px 48px rgba(20,20,30,.16)}
+.sheet-head{position:sticky;top:0;z-index:2;background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.sheet-handle{cursor:grab;background:rgba(120,120,128,.30)}
+.toast{box-shadow:0 14px 34px rgba(20,20,30,.16)}
+.ui-ripple{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:currentColor;opacity:.12;transform:scale(0);pointer-events:none;animation:uiRipple 420ms var(--ease) forwards}
+@keyframes uiRipple{0%{transform:scale(.25);opacity:.12}100%{transform:scale(8);opacity:0}}
+.rich-motion .book-cover-card .book-cover-inner{will-change:transform}
+@media (max-width:899px){.view{padding-left:14px;padding-right:14px;padding-top:14px}.view > [style*="margin-bottom:20px"] h1,.view > div:first-child h1{letter-spacing:-.02em}#bottom-nav{height:calc(64px + env(safe-area-inset-bottom))}.b-nav-btn{font-size:11px;gap:3px}.b-nav-btn .icon{width:24px;height:24px}.sheet{max-height:88vh;border-radius:24px 24px 0 0}.sheet-body{padding-top:14px}}
+@media (min-width:900px){#sidebar{padding:24px 14px;gap:8px}.nav-btn{min-height:50px}}
+@media (prefers-reduced-motion:reduce){.ui-ripple{display:none!important}}
+.low-power .ui-ripple{display:none!important}
 </style>
 </head>
 <body>
@@ -3710,7 +3752,11 @@ let currentView='v-home';
 const viewOrder=['v-home','v-search','v-shelf','v-cal','v-settings'];
 
 function switchView(vid){
-  if(vid===currentView) return;
+  if(vid===currentView){
+    const same=$(vid);
+    if(same && same.scrollTop>24 && !document.body.classList.contains('low-power')) same.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
   const prev=currentView;
   const direction=viewOrder.indexOf(vid)>=viewOrder.indexOf(prev)?'forward':'backward';
   const current=$(prev), next=$(vid), low=document.body.classList.contains('low-power');
@@ -3726,7 +3772,13 @@ function switchView(vid){
   next.classList.add('active',direction==='forward'?'view-slide-forward':'view-slide-backward');
   currentView=vid;
   setTimeout(()=>next.classList.remove('view-slide-forward','view-slide-backward'),620);
-  document.querySelectorAll('.nav-btn, .b-nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.v===vid));
+  document.querySelectorAll('.nav-btn, .b-nav-btn').forEach(b=>{
+    const active=b.dataset.v===vid;
+    b.classList.toggle('active',active);
+    if(active) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+  const targetView=$(vid);
+  if(targetView && !document.body.classList.contains('low-power')) targetView.scrollTop=0;
   if(vid==='v-home') renderHome();
   else if(vid==='v-search') renderSearchInit();
   else if(vid==='v-shelf') renderShelf();
@@ -4151,6 +4203,18 @@ $('r-slider').oninput=e=>{
 $('rng-goal').oninput=e=>{ goalMin=parseInt(e.target.value,10); $('cal-goal-txt').textContent=goalMin+'分'; save(); renderCalendar(); renderHome(); };
 $('r-search-inp').oninput=()=>execInBookSearch();
 
+function bindUiRipple(){
+  document.addEventListener('pointerdown',e=>{
+    if(document.body.classList.contains('low-power') || !document.body.classList.contains('rich-motion')) return;
+    const el=e.target.closest('button,[data-act="open-book"],[data-act="resume-click"],[data-act="feat-click"]');
+    if(!el || !el.getBoundingClientRect().width) return;
+    if(getComputedStyle(el).position==='static') el.style.position='relative';
+    const r=el.getBoundingClientRect(), ripple=document.createElement('span');
+    ripple.className='ui-ripple'; ripple.style.left=(e.clientX-r.left)+'px'; ripple.style.top=(e.clientY-r.top)+'px';
+    el.appendChild(ripple); setTimeout(()=>ripple.remove(),460);
+  },{passive:true});
+}
+
 /* ==================== 15. 初期化 ==================== */
 function initHomeHeroMotion(){
   const hero=$('blk-resume');
@@ -4177,6 +4241,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
   applyReaderConfig();
   initHomeHeroMotion();
   bindPressPhysics();
+  bindUiRipple();
   await checkCatalog();
   if(!document.body.classList.contains('low-power')) startFeatTimer();
   if(!document.body.classList.contains('low-power')) startAudit();
