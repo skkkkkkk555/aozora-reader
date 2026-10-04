@@ -481,12 +481,22 @@ function closeLayerByUser(n,fn){
 }
 window.addEventListener('popstate',()=>{
   if(closingLayer){closingLayer=false;return;}
-  if(layers.length){
-    const l=layers.pop();
-    if(l==='sheet') closeSheet(true);
-    else if(l==='reader') closeReader(true);
-    else if(l==='pop') $('pop').classList.remove('open');
-  } else {
+  const target=history.state?.layer||null;
+
+  // シートを閉じた直後に reader の履歴へ戻った場合は、
+  // すでにUIを閉じているので何もしない。
+  if(target==='reader'){
+    if(!$('reader').classList.contains('open')) return;
+    if(layers[layers.length-1]==='reader') return;
+    return;
+  }
+
+  // ルートへ戻った場合だけ、開いている最上位UIを閉じる。
+  if(target===null){
+    if($('sheet').classList.contains('open')){ closeSheet(true); return; }
+    if($('reader').classList.contains('open')){ closeReader(true); return; }
+    $('pop').classList.remove('open');
+    layers.length=0;
     switchView('v-home');
   }
 });
