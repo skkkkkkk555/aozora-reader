@@ -702,7 +702,7 @@ function decodeHtmlEntities(str){
 }
 
 const idb={
-  d:new Promise(r=>{const o=indexedDB.open('aozora_terminal_v17',1);o.onupgradeneeded=()=>{const db=o.result;db.createObjectStore('k');db.createObjectStore('docs');};o.onsuccess=()=>r(o.result)}),
+  d:new Promise(r=>{try{const o=indexedDB.open('aozora_terminal_v17',1);o.onupgradeneeded=()=>{const db=o.result;if(!db.objectStoreNames.contains('k'))db.createObjectStore('k');if(!db.objectStoreNames.contains('docs'))db.createObjectStore('docs');};o.onsuccess=()=>r(o.result);o.onerror=()=>r(null);o.onblocked=()=>r(null)}catch{r(null)}}),
   async get(s,k){try{const db=await this.d;return new Promise(r=>{const q=db.transaction(s,'readonly').objectStore(s).get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)})}catch{return null}},
   async set(s,k,v){try{const db=await this.d;db.transaction(s,'readwrite').objectStore(s).put(v,k)}catch{}},
   async del(s,k){try{const db=await this.d;db.transaction(s,'readwrite').objectStore(s).delete(k)}catch{}}
@@ -1072,6 +1072,7 @@ async function fetchCatalog(){
   $('c-bar').style.width='50%'; $('c-log').textContent='解凍中…';
   const z=await JSZip.loadAsync(buf);
   const cf=Object.keys(z.files).find(n=>n.endsWith('.csv'));
+  if(!cf){ $('c-log').textContent='ZIP内にCSVが見つかりません。'; return; }
   parseCsv(await z.files[cf].async('string'));
 }
 function parseFile(file){
@@ -1081,6 +1082,7 @@ function parseFile(file){
     if(file.name.endsWith('.zip')){
       const z=await JSZip.loadAsync(r.result);
       const cf=Object.keys(z.files).find(n=>n.endsWith('.csv'));
+      if(!cf){ toast('ZIP内にCSVが見つかりません'); return; }
       parseCsv(await z.files[cf].async('string'));
     } else parseCsv(r.result);
   };
@@ -1906,12 +1908,13 @@ function extractKeyphrases(txt){
   }
   const top=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).slice(0,7).map(x=>x[0]);
   if(!top.length) return;
-  const re=new RegExp(top.join('|'),'g');
+  const re=new RegExp(top.map(escRe).join('|'),'g');
   const w=document.createTreeWalker($('body'),NodeFilter.SHOW_TEXT);
   const nds=[]; let n; while((n=w.nextNode())) nds.push(n);
   nds.forEach(node=>{
     if(node.parentElement.closest('rt,rp,ruby,.keyphrase,.search-hl')) return;
     if(re.test(node.nodeValue)){
+      re.lastIndex=0;
       const s=document.createElement('span');
       s.innerHTML=node.nodeValue.replace(re,m=>`<span class="keyphrase">${m}</span>`);
       node.parentNode.replaceChild(s,node);
@@ -2082,7 +2085,7 @@ ${ctx}`;
     clearTimeout(firstWordTimer);
     const aiCur=$('ai-cur'); if(aiCur) aiCur.textContent=e.name==='AbortError'?'回答を停止しました。':'接続失敗: '+e.message;
   }finally{
-    $('ai-cur').removeAttribute('id');
+    const aiCur=$('ai-cur'); if(aiCur) aiCur.removeAttribute('id');
     btn.textContent='送信'; btn.dataset.act='ai-send';
   }
 }
@@ -2231,6 +2234,15 @@ function switchView(vid){
   else if(vid==='v-cal') renderCalendar();
   else if(vid==='v-settings') renderSettingsPage();
 }
+
+document.addEventListener('change',e=>{
+  const b=e.target.closest('[data-act="sel-speed-change"]');
+  if(!b) return;
+  st.readSpeed=parseInt(b.value,10)||500;
+  save();
+  renderHome();
+  toast('読書速度を設定しました');
+});
 
 document.addEventListener('click',async(e)=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
@@ -2585,10 +2597,6 @@ document.addEventListener('click',async(e)=>{
     renderSettingsPage();
   }
   else if(act==='set-ft'){ st.font=b.dataset.v; applyReaderConfig(); save(); renderSettingsPage(); }
-  else if(act==='sel-speed-change'){
-    st.readSpeed=parseInt(b.value, 10)||500;
-    save(); toast('読書速度を設定しました');
-  }
   else if(act==='set-save-url'){ st.oUrl = normalizeOllamaUrl($('set-ourl').value.trim()); save(); pingOllama(); toast('URLを保存しました'); }
   else if(act==='set-pick-mod'){
     sheet('モデル選択',aiConn.models.map(m=>`<div class="block" data-act="set-mod-val" data-m="${m}" style="min-height:56px; padding:16px; margin-bottom:8px; font-weight:700">${m}</div>`).join('')||'<div>利用可能なモデルがありません</div>');
@@ -2637,7 +2645,10 @@ if(window.matchMedia){
   else if(motionQuery.addListener) motionQuery.addListener(motionListener);
 }
 
-matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{ if(st.theme==='auto') applySettings(); });
+const colorSchemeQuery=matchMedia('(prefers-color-scheme:dark)');
+const colorSchemeListener=()=>{ if(st.theme==='auto') applySettings(); };
+if(colorSchemeQuery.addEventListener) colorSchemeQuery.addEventListener('change',colorSchemeListener);
+else if(colorSchemeQuery.addListener) colorSchemeQuery.addListener(colorSchemeListener);
 
 $('r-slider').oninput=e=>{
   lastUserActivityTime=Date.now();
