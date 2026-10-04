@@ -3929,3 +3929,398 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initPhone,{once:true});
   else initPhone();
 })();
+
+/* ============================================================
+   REAL LIQUID GLASS OPTICAL UI
+   Based on the supplied WebGL glass reference.
+   Desktop / tablet only; smartphone shell remains isolated.
+   ============================================================ */
+(function(){
+  'use strict';
+  const root=document.documentElement;
+  const isGlassDevice=()=>root.dataset.device==='desktop'&&!root.classList.contains('smartphone-ui');
+  const MAX_SHAPES=14;
+  let canvas=null,gl=null,program=null,texture=null,raf=0;
+  let resizeTimer=0,collectTimer=0;
+  let shapes=[],shapeCount=0,lastW=0,lastH=0,lastDpr=0;
+  let mouseX=.5,mouseY=.5,targetX=.5,targetY=.5,impact=0;
+  let u=null;
+
+  const vsSource=`
+    attribute vec2 a_pos;
+    void main(){gl_Position=vec4(a_pos,0.0,1.0);}
+  `;
+
+  const fsSource=`
+    precision highp float;
+    uniform vec2 u_res;
+    uniform float u_time;
+    uniform vec2 u_lightPos;
+    uniform float u_impact;
+    uniform int u_shapeCount;
+    uniform vec4 u_shapes[14];
+    uniform vec4 u_style[14];
+    uniform sampler2D u_tex;
+
+    float sdRoundedBox(vec2 p,vec2 b,float r){
+      vec2 q=abs(p)-b+r;
+      return min(max(q.x,q.y),0.0)+length(max(q,0.0))-r;
+    }
+    float sdCircle(vec2 p,float r){return length(p)-r;}
+    float smin(float a,float b,float k){
+      float safeK=max(1.5,k);
+      float h=clamp(0.5+0.5*(b-a)/safeK,0.0,1.0);
+      return mix(b,a,h)-safeK*h*(1.0-h);
+    }
+    float sceneSDF(vec2 p){
+      float d=1e5;
+      for(int i=0;i<14;i++){
+        if(i<u_shapeCount){
+          vec4 s=u_shapes[i],st=u_style[i];
+          vec2 q=p-s.xy;
+          float wobble=st.w;
+          q.x+=sin(u_time*1.15+float(i)*1.37)*wobble;
+          q.y+=cos(u_time*.92+float(i)*1.11)*wobble*.7;
+          float di=st.y<.5
+            ? sdRoundedBox(q,s.zw,st.x)
+            : sdCircle(q,max(4.0,s.z));
+          d=smin(d,di,st.z);
+        }
+      }
+      return d;
+    }
+    vec2 sdfNormal(vec2 p){
+      vec2 e=vec2(1.0,0.0);
+      return normalize(vec2(
+        sceneSDF(p+e.xy)-sceneSDF(p-e.xy),
+        sceneSDF(p+e.yx)-sceneSDF(p-e.yx)
+      ));
+    }
+    vec3 fieldBackground(vec2 uv){
+      vec2 q=uv;
+      q.x+=sin(u_time*.055)*.025;
+      q.y+=cos(u_time*.043)*.018;
+      vec3 col=vec3(.012,.018,.030);
+      vec2 p1=q-vec2(.18+sin(u_time*.13)*.04,.25);
+      vec2 p2=q-vec2(.82+cos(u_time*.10)*.035,.26);
+      vec2 p3=q-vec2(.54+sin(u_time*.08)*.03,.82);
+      col+=vec3(.02,.19,.30)*exp(-dot(p1,p1)*10.0);
+      col+=vec3(.12,.04,.27)*exp(-dot(p2,p2)*11.0);
+      col+=vec3(.02,.22,.25)*exp(-dot(p3,p3)*13.0);
+      float grid=sin(q.x*190.0+q.y*80.0+u_time*.25);
+      grid*=sin(q.y*120.0-q.x*55.0-u_time*.18);
+      col+=vec3(.012,.028,.045)*smoothstep(.92,1.0,grid);
+      return col;
+    }
+    void main(){
+      vec2 p=gl_FragCoord.xy;
+      float d=sceneSDF(p);
+      vec2 uv=p/u_res;
+      vec2 texUv=vec2(uv.x,1.0-uv.y);
+      if(d>0.0){
+        gl_FragColor=vec4(0.0);
+        return;
+      }
+      float depth=-d;
+      vec2 grad=sdfNormal(p);
+      vec2 tangent=vec2(-grad.y,grad.x);
+
+      const float refractRim=.10;
+      const float refractPower=.040;
+      const float refractCurve=2.60;
+      const float blurRim=.45;
+      const float blurRadius=4.60;
+      const float blurCurve=1.25;
+      const float chroma=2.80;
+      const float caustics=.24;
+      const float specular=.08;
+
+      float localScale=sqrt(max(80.0,min(360.0,u_res.x*u_res.y/9500.0)));
+      float refractRimWidth=max(10.0,localScale*.55*refractRim*2.0);
+      float uRefract=clamp(1.0-depth/refractRimWidth,0.0,1.0);
+      float refractProgress=pow(uRefract,refractCurve);
+      float blurRimWidth=max(14.0,localScale*.55*blurRim*2.2);
+      float uBlur=clamp(1.0-depth/blurRimWidth,0.0,1.0);
+      float blurProgress=pow(uBlur,blurCurve);
+
+      float steepness=pow(uRefract,1.8)*2.0;
+      float nz=sqrt(max(.02,1.0-min(.98,steepness*.35)));
+      vec3 N=normalize(vec3(grad*steepness,nz));
+      float radialPull=(refractProgress+pow(uRefract,3.2)*2.0)*refractPower*2.8;
+      float tangCompress=pow(uRefract,2.5)*refractPower*.4;
+      vec2 refractOffset=(grad*radialPull+tangent*tangCompress)*(localScale/u_res);
+      float dispStrength=pow(uRefract,1.9)*(chroma*.0038);
+      vec2 dispDir=grad*dispStrength;
+
+      vec3 col=vec3(0.0);
+      const int SAMPLES=12;
+      float blurAmount=blurProgress*blurRadius/u_res.x;
+      for(int i=0;i<SAMPLES;i++){
+        float fi=float(i);
+        float theta=fi*2.399963;
+        float rn=sqrt((fi+.5)/float(SAMPLES));
+        vec2 off=vec2(cos(theta),sin(theta))*rn*blurAmount;
+        vec2 base=texUv+refractOffset+off;
+        vec3 procedural=fieldBackground(base);
+        float rv=texture2D(u_tex,base-dispDir*1.2).r;
+        float gv=texture2D(u_tex,base).g;
+        float bv=texture2D(u_tex,base+dispDir*1.2).b;
+        col+=mix(procedural,vec3(rv,gv,bv),.72);
+      }
+      col/=float(SAMPLES);
+
+      vec3 frostTint=vec3(.92,.96,1.0);
+      col=mix(col,frostTint*.65,blurProgress*.08);
+      float causticRing=exp(-pow((uRefract-.48)/.15,2.0))*.30*caustics;
+      float tirShadow=smoothstep(.995,.88,uRefract);
+      col*=.85+.15*tirShadow;
+
+      vec2 light2D=normalize(u_lightPos-u_res*.5);
+      vec3 lightDir=normalize(vec3(light2D*.6,.85));
+      vec3 viewDir=vec3(0.0,0.0,1.0);
+      vec3 halfVec=normalize(lightDir+viewDir);
+      float fresnel=pow(1.0-max(0.0,N.z),4.5)*.45;
+      float tapGlow=u_impact*.25;
+      float spec1=pow(max(0.0,dot(N,halfVec)),55.0)*.5*specular;
+      float spec2=pow(max(0.0,dot(N,normalize(vec3(-.5,-.5,.8)+viewDir))),18.0)*.2*specular;
+      float rimHighlight=smoothstep(.975,.988,uRefract)
+        *(1.0-smoothstep(.996,1.0,uRefract))
+        *(.65*specular+tapGlow);
+      vec3 finalGlow=vec3(fresnel*.35+spec1+spec2+rimHighlight+causticRing);
+      finalGlow+=vec3(dispDir.x*.24,.018*(1.0-uRefract),-dispDir.x*.24);
+      gl_FragColor=vec4(col+finalGlow,.72+blurProgress*.20);
+    }
+  `;
+
+  function makeShader(src,type){
+    const s=gl.createShader(type);
+    gl.shaderSource(s,src);
+    gl.compileShader(s);
+    if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){
+      console.error('Liquid Glass shader:',gl.getShaderInfoLog(s));
+      gl.deleteShader(s);
+      return null;
+    }
+    return s;
+  }
+
+  function makeTexture(){
+    if(!gl||!texture)return;
+    const c=document.createElement('canvas');
+    const dpr=Math.min(window.devicePixelRatio||1,1.25);
+    c.width=Math.max(512,Math.floor(window.innerWidth*dpr));
+    c.height=Math.max(512,Math.floor(window.innerHeight*dpr));
+    const ctx=c.getContext('2d');
+    ctx.fillStyle='#020305';
+    ctx.fillRect(0,0,c.width,c.height);
+    const fontSize=10.5*dpr;
+    const lineHeight=fontSize*1.14;
+    ctx.font='600 '+fontSize+'px "SF Mono",Consolas,"Courier New",monospace';
+    ctx.textBaseline='top';
+    const music=[
+      'AOZORA READER // LIQUID GLASS',
+      'TEXTURE DISPERSION // REFRACTION',
+      'BOOKS // STORIES // POETRY // ARCHIVE',
+      'SDF SURFACE / FIBONACCI BLUR / FRESNEL',
+      'READING FLOW // PAGE / SEARCH / SHELF',
+      'CHROMA // CAUSTICS // SPECULAR'
+    ];
+    const alphabet='0123456789ABCDEF+-*/=<>[]{}();:!?';
+    const rows=Math.ceil(c.height/lineHeight)+2;
+    for(let r=0;r<rows;r++){
+      let line='';
+      while(ctx.measureText(line).width<c.width+90*dpr){
+        if(Math.random()<.20) line+=music[(r+Math.floor(Math.random()*music.length))%music.length]+' ';
+        else line+=alphabet.charAt(Math.floor(Math.random()*alphabet.length));
+      }
+      const grad=ctx.createLinearGradient(0,r*lineHeight,c.width,r*lineHeight);
+      grad.addColorStop(0,'#07101a');
+      grad.addColorStop(.48,r%5===0?'#2aa8df':(r%7===0?'#7870e6':'#294358'));
+      grad.addColorStop(1,'#07101a');
+      ctx.fillStyle=grad;
+      ctx.fillText(line,-5,r*lineHeight);
+    }
+    gl.bindTexture(gl.TEXTURE_2D,texture);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c);
+  }
+
+  function setup(){
+    if(!isGlassDevice())return false;
+    if(canvas&&gl)return true;
+    canvas=document.createElement('canvas');
+    canvas.id='liquid-glass-canvas';
+    canvas.setAttribute('aria-hidden','true');
+    document.body.insertBefore(canvas,document.body.firstChild);
+    gl=canvas.getContext('webgl',{antialias:true,alpha:true,premultipliedAlpha:true,powerPreference:'high-performance'});
+    if(!gl){canvas.remove();canvas=null;gl=null;return false;}
+    const v=makeShader(vsSource,gl.VERTEX_SHADER);
+    const f=makeShader(fsSource,gl.FRAGMENT_SHADER);
+    if(!v||!f){canvas.remove();canvas=null;gl=null;return false;}
+    program=gl.createProgram();
+    gl.attachShader(program,v);
+    gl.attachShader(program,f);
+    gl.linkProgram(program);
+    if(!gl.getProgramParameter(program,gl.LINK_STATUS)){
+      console.error('Liquid Glass link:',gl.getProgramInfoLog(program));
+      return false;
+    }
+    gl.useProgram(program);
+    const buf=gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+    const aPos=gl.getAttribLocation(program,'a_pos');
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
+    u={
+      res:gl.getUniformLocation(program,'u_res'),
+      time:gl.getUniformLocation(program,'u_time'),
+      lightPos:gl.getUniformLocation(program,'u_lightPos'),
+      impact:gl.getUniformLocation(program,'u_impact'),
+      shapeCount:gl.getUniformLocation(program,'u_shapeCount'),
+      shapes:gl.getUniformLocation(program,'u_shapes[0]'),
+      style:gl.getUniformLocation(program,'u_style[0]'),
+      tex:gl.getUniformLocation(program,'u_tex')
+    };
+    texture=gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D,texture);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+    makeTexture();
+    resize();
+    return true;
+  }
+
+  function resize(){
+    if(!canvas||!gl||!isGlassDevice())return;
+    const dpr=Math.min(window.devicePixelRatio||1,1.25);
+    const w=Math.max(1,Math.floor(window.innerWidth*dpr));
+    const h=Math.max(1,Math.floor(window.innerHeight*dpr));
+    if(w===lastW&&h===lastH&&dpr===lastDpr)return;
+    lastW=w;lastH=h;lastDpr=dpr;
+    canvas.width=w;
+    canvas.height=h;
+    gl.viewport(0,0,w,h);
+    makeTexture();
+  }
+
+  function collectShapes(){
+    if(!canvas||!isGlassDevice())return;
+    const selectors=[
+      '#sidebar',
+      '#v-home .grid > #blk-resume',
+      '#v-home .grid > #blk-feat',
+      '#v-home .grid > #blk-goal',
+      '#v-home .grid > #blk-smart-rec',
+      '#v-home .grid > .search-cta',
+      '#v-home .insight-bar',
+      '#v-search #q-input',
+      '#v-search #sort-seg',
+      '#v-shelf #shelf-tiles .tile:nth-child(-n+4)',
+      '#settings-area .block:nth-child(-n+3)',
+      '#v-cal .block'
+    ];
+    const next=[];
+    const dpr=Math.min(window.devicePixelRatio||1,1.25);
+    for(const selector of selectors){
+      for(const el of document.querySelectorAll(selector)){
+        if(next.length>=MAX_SHAPES)break;
+        const r=el.getBoundingClientRect();
+        if(r.width<18||r.height<18||r.bottom<0||r.top>innerHeight)continue;
+        const cs=getComputedStyle(el);
+        if(cs.display==='none'||cs.visibility==='hidden'||parseFloat(cs.opacity||'1')<.05)continue;
+        next.push({
+          cx:(r.left+r.width*.5)*dpr,
+          cy:(innerHeight-(r.top+r.height*.5))*dpr,
+          hx:Math.max(8,r.width*.5*dpr),
+          hy:Math.max(8,r.height*.5*dpr),
+          radius:(parseFloat(cs.borderTopLeftRadius)||14)*dpr,
+          circle:selector.includes('nth-child')&&r.width/r.height>.85&&r.width/r.height<1.15
+        });
+      }
+      if(next.length>=MAX_SHAPES)break;
+    }
+    shapes=next;
+    shapeCount=next.length;
+  }
+
+  function draw(now){
+    if(!isGlassDevice()){
+      if(canvas)canvas.style.display='none';
+      if(raf){cancelAnimationFrame(raf);raf=0;}
+      return;
+    }
+    if(!gl||!canvas){activate();return;}
+    canvas.style.display='block';
+    targetX+=(mouseX-targetX)*.06;
+    targetY+=(mouseY-targetY)*.06;
+    impact*=.93;
+    collectShapes();
+
+    const sd=new Float32Array(MAX_SHAPES*4);
+    const st=new Float32Array(MAX_SHAPES*4);
+    for(let i=0;i<shapeCount;i++){
+      const s=shapes[i];
+      sd.set([s.cx,s.cy,s.hx,s.hy],i*4);
+      st.set([Math.min(s.radius,Math.min(s.hx,s.hy)*.55),s.circle?1:0,9.0,1.15+impact*2.0],i*4);
+    }
+
+    gl.useProgram(program);
+    gl.uniform2f(u.res,canvas.width,canvas.height);
+    gl.uniform1f(u.time,now*.001);
+    gl.uniform2f(u.lightPos,targetX*canvas.width,(1-targetY)*canvas.height);
+    gl.uniform1f(u.impact,impact);
+    gl.uniform1i(u.shapeCount,shapeCount);
+    gl.uniform4fv(u.shapes,sd);
+    gl.uniform4fv(u.style,st);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D,texture);
+    gl.uniform1i(u.tex,0);
+    gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLES,0,6);
+    raf=requestAnimationFrame(draw);
+  }
+
+  function activate(){
+    if(!isGlassDevice())return;
+    if(!setup())return;
+    resize();
+    collectShapes();
+    if(!raf)raf=requestAnimationFrame(draw);
+  }
+
+  function onMove(e){
+    if(!isGlassDevice())return;
+    mouseX=Math.max(0,Math.min(1,e.clientX/Math.max(1,innerWidth)));
+    mouseY=Math.max(0,Math.min(1,e.clientY/Math.max(1,innerHeight)));
+  }
+
+  window.addEventListener('pointermove',onMove,{passive:true});
+  window.addEventListener('pointerdown',()=>{if(isGlassDevice())impact=Math.min(1,impact+.42)},{passive:true});
+  window.addEventListener('resize',()=>{
+    clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(()=>{resize();collectShapes()},80);
+  },{passive:true});
+  window.addEventListener('scroll',()=>{
+    clearTimeout(collectTimer);
+    collectTimer=setTimeout(collectShapes,45);
+  },{passive:true,capture:true});
+
+  const observer=new MutationObserver(()=>{
+    if(!isGlassDevice())return;
+    clearTimeout(collectTimer);
+    collectTimer=setTimeout(collectShapes,30);
+  });
+
+  function boot(){
+    observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class']});
+    activate();
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
+  else boot();
+})();
