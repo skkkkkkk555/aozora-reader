@@ -113,7 +113,7 @@ function sanitizePersistedState(d){
       theme:['auto','sepia','dark'].includes(d.st.theme)?d.st.theme:'auto',
       font:['mincho','gothic'].includes(d.st.font)?d.st.font:'mincho',
       warm:!!d.st.warm,kp:!!d.st.kp,offline:!!d.st.offline,lowSpec:!!d.st.lowSpec,ollamaEnabled:!!d.st.ollamaEnabled,
-      oUrl:safeStateText(d.st.oUrl,500),oHist:Array.isArray(d.st.oHist)?d.st.oHist.slice(-100):[],
+      oUrl:safeStateText(d.st.oUrl,500),
       oMod:safeStateText(d.st.oMod,120),v:d.st.v!==false,
       rMode:['normal','focus','night'].includes(d.st.rMode)?d.st.rMode:'normal',
       readSpeed:[350,500,750].includes(Number(d.st.readSpeed))?Number(d.st.readSpeed):500,
@@ -142,6 +142,7 @@ const isSafeOllamaUrl=value=>{
     const u=new URL(candidate);
     if(!['http:','https:'].includes(u.protocol)||u.username||u.password||u.search||u.hash)return false;
     if(!u.hostname||u.hostname.length>253)return false;
+    if(NETWORK_HOSTS.has(u.hostname))return false;
     return u.protocol==='https:'||isPrivateHost(u.hostname);
   }catch{return false}
 };
@@ -182,7 +183,7 @@ let allWorks=[], works=[], byId=new Map(), dead=new Set();
 let fav=new Set(), want=new Set(), done=new Set(), favAuthors=new Set();
 let pos={}, bm={}, notes={}, hls={}, hist=[], savedKeys=new Set(), searchHistory=[];
 let calData={}, goalMin=30;
-let st={ fs:18, lh:2.1, theme:'auto', font:'mincho', warm:true, kp:true, offline:false, lowSpec:false, ollamaEnabled:false, oUrl:'http://127.0.0.1:11434', oHist:[], oMod:'', v:true, rMode:'normal', readSpeed:500, todayBook:null };
+let st={ fs:18, lh:2.1, theme:'auto', font:'mincho', warm:true, kp:true, offline:false, lowSpec:false, ollamaEnabled:false, oUrl:'http://127.0.0.1:11434', oMod:'', v:true, rMode:'normal', readSpeed:500, todayBook:null };
 let aiConn={ ok:false, models:[], err:'' };
 let activeBook=null;
 const isPublicWork = w => !!w && Number(w.c) === 1;
@@ -2344,6 +2345,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
   bindUiRipple();
   setBootStage(70,'本棚を準備中…');
   await checkCatalog();
+  document.body.classList.add('app-ready');
   setBootStage(88,'仕上げています…');
   if(!document.body.classList.contains('low-power')) startFeatTimer();
   if(!document.body.classList.contains('low-power')) startAudit();
