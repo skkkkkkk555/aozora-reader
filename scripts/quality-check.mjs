@@ -26,6 +26,35 @@ const acts=[...new Set([...html.matchAll(/data-act="([^"]+)"/g)].map(m=>m[1]))];
 const handled=[...new Set([...app.matchAll(/act==='([^']+)'/g)].map(m=>m[1]))];
 for(const act of acts)ok(handled.includes(act),`data-act has no handler: ${act}`);
 
+const phoneActs=[...new Set([...app.matchAll(/data-phone-action="([^"]+)"/g)].map(m=>m[1]))];
+for(const act of phoneActs)ok(handled.includes(act)||act==='sheet-close',`data-phone-action has no handler: ${act}`);
+const ids=[...html.matchAll(/id="([^"]+)"/g)].map(m=>m[1]);
+const idCounts=new Map();
+for(const id of ids)idCounts.set(id,(idCounts.get(id)||0)+1);
+for(const [id,count] of idCounts)ok(count===1,`duplicate id: ${id}`);
+for(const id of ['phone-app','phone-content','phone-detail','phone-reader','phone-reader-body','phone-reader-progress','phone-sheet','phone-sheet-body','phone-sheet-scrim'])ok(new RegExp(`id=["']${id}["']`).test(html),`smartphone shell id missing: ${id}`);
+ok(!/<script(?![^>]*\\bsrc=)[^>]*>/i.test(html),'inline script remains and may be blocked by CSP');
+ok(html.includes('touch-action:pan-y!important'),'smartphone reader body does not allow vertical touch scrolling');
+ok(html.includes('app.js?v=ios-deep-20261005-4'),'app.js cache-bust was not refreshed');
+ok(app.includes("reader.classList.add('phone-open')"),'smartphone reader open class lifecycle missing');
+ok(html.includes('.phone-reader.phone-open{display:flex!important}'),'smartphone reader display rule missing');
+ok(app.includes('__aozoraPhoneOpenSheet=openPhoneSheet'),'global sheet bridge missing');
+ok(app.includes('__aozoraPhoneOpenReader=openReader'),'global reader bridge missing');
+ok(app.includes('__aozoraPhoneOpenDetail=openDetail'),'global detail bridge missing');
+ok(app.includes('__aozoraPhoneShowScreen=showScreen'),'global navigation bridge missing');
+ok(app.includes("if(document.documentElement.dataset.device==='smartphone')return;"),'desktop popstate handler can interfere with smartphone history');
+ok(app.includes("state.sheetOpen&&layer!=='phone-sheet'"),'smartphone sheet back handling missing');
+ok(app.includes("state.reader&&layer!=='phone-reader'"),'smartphone reader back handling missing');
+ok(app.includes("openReader(w,fromDetail=false)"),'smartphone reader origin default is unstable');
+ok(app.includes("cur==='auto'?'sepia':cur==='sepia'?'dark':'auto'"),'smartphone theme cycle contains invalid theme value');
+ok(app.includes("const isAnyReaderOpen=()=>"),'PC/smartphone shared reader tracking missing');
+ok(app.includes("state.work=w;curWork=w"),'smartphone AI context is not synchronized');
+ok(!/activeBook=w;\s*activeBook=w/.test(app),'duplicate activeBook assignment remains');
+for(const fn of ['animateReaderPage','execInBookSearch','jumpToInBookMatch']){
+  const count=(app.match(new RegExp(`(?:^|\\n)function ${fn}\\(`, 'g'))||[]).length;
+  ok(count===1,`duplicate global reader function: ${fn}`);
+}
+
 ok(!/\beval\s*\(/.test(app),'eval() detected');
 ok(!/\bnew\s+Function\s*\(/.test(app),'dynamic Function constructor detected');
 ok(!/touch-fallback\.js/.test(html+app),'obsolete touch fallback is still referenced');
