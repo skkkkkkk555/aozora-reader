@@ -3771,10 +3771,15 @@ window.addEventListener('DOMContentLoaded',()=>{
   }
 
   function closeReader(fromHistory=false){
-    saveReaderProgress();state.reader=false;state.readerDoc=null;
-    const b=currentReaderBody();if(b)b.onscroll=null;
+    saveReaderProgress();
+    const b=currentReaderBody();
+    if(!fromHistory&&history.state?.phoneLayer==='phone-reader'){
+      history.back();
+      return;
+    }
+    if(b)b.onscroll=null;
     const w=state.work;
-    if(!fromHistory&&history.state?.phoneLayer==='phone-reader'){history.back();return;}
+    state.reader=false;state.readerDoc=null;
     if(w&&state.readerFromDetail){openDetail(w,'back',true);}
     else{state.work=null;state.readerFromDetail=false;showScreen(state.screen,'back');}
   }
@@ -3855,7 +3860,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   function openPhoneSheet(title,html){
     const sheet=$p('#phone-sheet'),scrim=$p('#phone-sheet-scrim'),stitle=$p('#phone-sheet-title'),body=$p('#phone-sheet-body');
     if(!sheet||!scrim||!body)return;
-    if(history.state?.phoneLayer!=='phone-sheet')history.pushState({...history.state,phoneLayer:'phone-sheet'},'',location.href);
+    if(history.state?.phoneLayer!=='phone-sheet')history.pushState({...history.state,phoneLayer:'phone-sheet',phoneParent:history.state?.phoneLayer||null},'',location.href);
     stitle.textContent=title;
     body.innerHTML=html;
     // 閉じた後に残る inert/hidden が次回の操作をブロックしないよう、開く時に必ず解除する。
@@ -3888,7 +3893,12 @@ window.addEventListener('DOMContentLoaded',()=>{
         scrim.hidden=true;
       }
     },380);
-    if(!fromHistory&&history.state?.phoneLayer==='phone-sheet')history.back();
+    if(!fromHistory&&history.state?.phoneLayer==='phone-sheet'){
+      const next={...(history.state||{})},parent=next.phoneParent||null;
+      delete next.phoneParent;
+      if(parent)next.phoneLayer=parent;else delete next.phoneLayer;
+      history.replaceState(next,'',location.href);
+    }
   }
 
   function readerMenu(){
@@ -4224,6 +4234,9 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   window.__aozoraPhoneOpenSheet=openPhoneSheet;
   window.__aozoraPhoneCloseSheet=closePhoneSheet;
+  window.__aozoraPhoneOpenReader=openReader;
+  window.__aozoraPhoneOpenDetail=openDetail;
+  window.__aozoraPhoneShowScreen=showScreen;
 
   window.addEventListener('aozora-phone-data-ready',()=>{
     if(!isPhone()||state.reader)return;
@@ -4238,6 +4251,26 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(w){openDetail(w);return;}
     }
     showScreen(state.screen||'home');
+  });
+  window.addEventListener('popstate',()=>{
+    if(!isPhone())return;
+    const layer=history.state?.phoneLayer||null;
+    if(state.sheetOpen&&layer!=='phone-sheet'){
+      closePhoneSheet(true);
+      return;
+    }
+    if(state.reader&&layer!=='phone-reader'){
+      closeReader(true);
+      return;
+    }
+    if(state.work&&!state.reader&&layer!=='phone-detail'){
+      state.work=null;
+      state.readerFromDetail=false;
+      syncScreens('main','back');
+      $p('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===state.screen));
+      const fn={home:renderHome,search:renderSearch,shelf:renderShelf,records:renderRecords,settings:renderSettings}[state.screen]||renderHome;
+      fn();
+    }
   });
   window.addEventListener('resize',()=>{if(isPhone()&&!state.reader)syncPhoneVisibility()},{passive:true});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&isPhone()&&state.reader)saveReaderProgress()});
