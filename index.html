@@ -2187,6 +2187,7 @@ input[type="range"]{accent-color:var(--apple-blue)}
 </style>
 </head>
 <body>
+
 <div id="app">
   <!-- PC向けサイドバー (900px以上) -->
   <aside id="sidebar">
@@ -2600,6 +2601,7 @@ input[type="range"]{accent-color:var(--apple-blue)}
 
 <script>
 /* ==================== 1. 状態 & ユーティリティ ==================== */
+if(window.top!==window.self){document.documentElement.style.display='none';throw new Error('framed-context-blocked');}
 const $=i=>document.getElementById(i);
 const esc=s=>(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]||c));
 
@@ -3045,7 +3047,7 @@ async function fetchCatalog(){
   if(!buf){ $('c-log').textContent='自動取得に失敗しました。ファイルを選択してください。'; return; }
   $('c-bar').style.width='50%'; $('c-log').textContent='解凍中…';
   if(!buf||buf.byteLength>SEC.maxCatalogBytes)throw new Error('catalog-too-large');
-  const z=await JSZip.loadAsync(buf);
+  const z=await JSZip.loadAsync(buf,{checkCRC32:true});
   const names=Object.keys(z.files);
   const totalUncompressed=names.reduce((sum,n)=>sum+Number(z.files[n]?._data?.uncompressedSize||0),0);
   if(totalUncompressed>SEC.maxCatalogText*2)throw new Error('catalog-uncompressed-too-large');
@@ -3089,6 +3091,7 @@ async function parseCsv(csv){
   if(typeof csv!=='string'||csv.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
   $('c-bar').style.width='70%'; $('c-log').textContent='解析中…';
   const lines=csv.split('\n');
+  if(lines.length>20000)throw new Error('catalog-rows-too-many');
   if(!lines.length||lines[0].length>200000)throw new Error('catalog-header-invalid');
   const h=lines[0].split(',').map(s=>s.replace(/^["\uFEFF]|["\r]/g,'').trim()).slice(0,100);
   const col={ id:h.indexOf('作品ID'), t:h.indexOf('作品名'), a:h.indexOf('姓'), am:h.indexOf('名'), tk:h.indexOf('作品名読み'), ak:h.indexOf('姓読み'), x:h.indexOf('テキストファイルURL'), d:h.indexOf('公開日'), k:h.indexOf('文字遣い種別'), c:h.indexOf('作品著作権フラグ'), ndc:h.indexOf('分類番号') };
@@ -4018,6 +4021,7 @@ async function sendAiMessage(q){
 
   if(aiAbort) aiAbort.abort();
   aiAbort=new AbortController();
+  const aiHardTimeout=setTimeout(()=>{try{aiAbort.abort(new DOMException('AI timeout','TimeoutError'));}catch{aiAbort.abort();}},180000);
 
   let firstWordTimer=setTimeout(()=>{ const el=$('ai-cur'); if(el) el.innerHTML='モデルを読み込み中… (約150秒お待ちください)'; }, 15000);
 
@@ -4040,6 +4044,7 @@ ${ctx}`;
     });
 
     clearTimeout(firstWordTimer);
+    clearTimeout(aiHardTimeout);
     const r=res.body.getReader(), dec=new TextDecoder();
     let full='', buf=''; let responseBytes=0; const maxAiBytes=2*1024*1024;
 
@@ -4060,8 +4065,8 @@ ${ctx}`;
       }
     }
   }catch(e){
-    clearTimeout(firstWordTimer);
-    $('ai-cur').textContent=e.name==='AbortError'?'回答を停止しました。':'接続失敗: '+e.message;
+    clearTimeout(firstWordTimer);clearTimeout(aiHardTimeout);
+    $('ai-cur').textContent=(e.name==='AbortError'||e.name==='TimeoutError')?'回答を停止しました。':'接続失敗: '+e.message;
   }finally{
     const aiCur=$('ai-cur'); if(aiCur) aiCur.removeAttribute('id');
     btn.textContent='送信'; btn.dataset.act='ai-send';
