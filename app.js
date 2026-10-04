@@ -471,10 +471,13 @@ window.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openSearchPage(); }
 });
 
+const CATALOG_TARGET='https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip';
 const URLS=[
-  'https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip',
-  'https://corsproxy.org/?'+encodeURIComponent('https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip'),
-  'https://api.allorigins.win/raw?url='+encodeURIComponent('https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip')
+  CATALOG_TARGET,
+  'https://raw.githubusercontent.com/aozorabunko/aozorabunko/master/index_pages/list_person_all_extended_utf8.zip',
+  'https://raw.githubusercontent.com/code4fukui/koten-reader/main/list_person_all_extended_utf8.csv',
+  'https://corsproxy.org/?'+encodeURIComponent(CATALOG_TARGET),
+  'https://api.allorigins.win/raw?url='+encodeURIComponent(CATALOG_TARGET)
 ];
 
 async function checkCatalog(){
@@ -485,11 +488,29 @@ async function checkCatalog(){
     if(safeCatalog.length!==c.length)await idb.set('k','cat',safeCatalog);
     filterWorks();
     renderHome();
-  }else{
-    filterWorks();
-    renderHome();
-    showBanner('作品カタログがまだありません。「設定」からカタログを読み込めます。');
+    return;
   }
+
+  // GitHub Pagesと同一オリジンに置いたcatalog.jsonを最優先で利用。
+  // これなら青空文庫側のCORS状態に左右されず、初回起動でも自動収集済みカタログを使える。
+  try{
+    const res=await secureFetch('./catalog.json?'+Date.now(),{signal:sig(8000),cache:'no-store'});
+    if(res.ok){
+      const data=await res.json();
+      const parsed=sanitizeCatalogRecords(data);
+      if(parsed.length>=100){
+        allWorks=parsed;
+        await idb.set('k','cat',parsed);
+        filterWorks();
+        renderHome();
+        return;
+      }
+    }
+  }catch(err){ console.debug('same-origin catalog unavailable',err); }
+
+  filterWorks();
+  renderHome();
+  showBanner('作品カタログがまだありません。「設定」からカタログを読み込めます。');
 }
 function filterWorks(){
   works = allWorks.filter(w => !dead.has(w.id) && isPublicWork(w));
@@ -519,19 +540,35 @@ async function fetchCatalog(){
   if(log)log.textContent='配信元へ接続中…';
   if(bar)bar.style.width='20%';
   try{
-    let buf=null;
+    let buf=null, csvText=null;
     for(let i=0;i<URLS.length;i++){
       if(log)log.textContent=`配信元へ接続中… (${i+1}/${URLS.length})`;
       try{
         const res=await secureFetch(URLS[i],{signal:sig(30000)});
         if(!res.ok)continue;
         const b=await readResponseBytes(res,SEC.maxCatalogBytes);
-        const u8=b&&new Uint8Array(b);
-        if(u8&&u8.length>=4&&u8[0]===0x50&&u8[1]===0x4b&&[0x03,0x05,0x07].includes(u8[2])){buf=b;break;}
-      }catch{}
+        if(!b||!b.byteLength)continue;
+        const u8=new Uint8Array(b);
+        // まずZIPを優先。公式配布物とGitHubミラーの両方に対応。
+        if(u8.length>=4&&u8[0]===0x50&&u8[1]===0x4b&&[0x03,0x05,0x07].includes(u8[2])){
+          buf=b;break;
+        }
+        // CSVミラーにも対応。CORSやZIP配信の制限がある環境でも復旧できる。
+        const text=new TextDecoder('utf-8').decode(b).replace(/^\\uFEFF/,'');
+        if(text.includes('作品ID')&&text.includes('作品名')&&text.includes('テキストファイルURL')){
+          csvText=text;break;
+        }
+      }catch(err){ console.debug('catalog source failed',URLS[i],err); }
     }
-    if(!buf){
+    if(!buf&&!csvText){
       if(log)log.textContent='自動取得に失敗しました。ファイルを選択してください。';
+      toast('自動取得元に接続できませんでした。別の配信元を試しました。');
+      return;
+    }
+    if(csvText){
+      if(bar)bar.style.width='70%';
+      if(log)log.textContent='CSVを解析中…';
+      await parseCsv(csvText);
       return;
     }
     if(bar)bar.style.width='50%';
