@@ -1694,6 +1694,26 @@ body{background:#f2f2f7!important;}
   }
 }
 
+
+/* 第2弾: 表紙を画面に入った瞬間だけ順番表示 */
+.rich-motion .book-cover-card{
+  opacity:0;
+  animation:none!important;
+}
+.rich-motion .book-cover-card.is-visible{
+  opacity:1;
+  animation:iosRiseSoft 650ms cubic-bezier(.16,1,.3,1) both;
+  animation-delay:var(--book-delay,0ms);
+}
+.rich-motion .book-cover-card.is-visible .book-cover-inner::before{
+  animation:iosCoverShine 4.6s ease-in-out var(--book-shine-delay,1200ms) infinite;
+}
+.low-power .book-cover-card,
+.low-power .book-cover-card.is-visible{
+  opacity:1!important;
+  animation:none!important;
+}
+
 </style>
 </head>
 <body>
@@ -2233,6 +2253,22 @@ const tileHtml=(w,i=0)=>`
   </div>`;
 
 
+let bookRevealObserver=null;
+function watchBookCovers(root){
+  const list=(root||document).querySelectorAll?.('.book-cover-card:not(.is-visible)');
+  if(!list) return;
+  if(!bookRevealObserver){
+    bookRevealObserver=new IntersectionObserver(entries=>{
+      entries.forEach(entry=>{
+        if(!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        bookRevealObserver.unobserve(entry.target);
+      });
+    },{root:null,rootMargin:'0px 0px 6% 0px',threshold:0.08});
+  }
+  list.forEach(el=>bookRevealObserver.observe(el));
+}
+
 function sheet(title, html){
   $('sheet-t').textContent=title;
   $('sheet-b').innerHTML=html;
@@ -2743,6 +2779,7 @@ function applySearch(reset=true){
   } else {
     $('search-empty-msg').style.display='none';
     $('search-tiles').insertAdjacentHTML('beforeend',rows(chunk,w=>tileHtml(w)));
+      watchBookCovers($('search-tiles'));
   }
 }
 
@@ -2762,6 +2799,7 @@ function renderShelf(){
 
   $('shelf-empty').style.display=l.length?'none':'block';
   $('shelf-tiles').innerHTML=rows(l,w=>tileHtml(w));
+  watchBookCovers($('shelf-tiles'));
 }
 
 function renderTimelineShelf(){
@@ -3580,6 +3618,7 @@ document.addEventListener('click',async(e)=>{
     $('search-scope-bar').style.display='flex';
     $('search-scope-text').textContent=`お気に入り作家 (${searchPool.length}件)`;
     $('search-tiles').innerHTML=rows(searchPool.slice(0,40),w=>tileHtml(w));
+    watchBookCovers($('search-tiles'));
     searchCursor=40;
   }
   else if(act==='tab-shelf-want') { switchView('v-shelf'); curShelf='want'; document.querySelectorAll('#shelf-seg button').forEach(el=>el.classList.toggle('active',el.dataset.t==='want')); renderShelf(); }
