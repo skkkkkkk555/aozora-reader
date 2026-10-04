@@ -3434,17 +3434,17 @@ img,svg,canvas,video{max-width:100%}
     <button data-act="pop-bm" style="min-height:44px">栞</button>
   </div>
 
-  <!-- 共通シート (1枚) -->
-  <div class="sheet-scrim" id="scrim" aria-hidden="true"></div>
-  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="sheet-handle"></div>
-    <div class="sheet-head"><span id="sheet-t" class="serif" style="font-size:var(--fs-h)"></span><button class="secondary sm-btn" data-act="close-sheet" style="width:44px; height:44px">✕</button></div>
-    <div class="sheet-body" id="sheet-b"></div>
-  </div>
-
   <div id="toast" class="toast"><span id="toast-m"></span><button id="toast-u" data-act="toast-undo" style="color:var(--ac); font-weight:700">元に戻す</button></div>
 </div>
 
-<script src="./app.js?v=mobile-fix-bookmarks-20261005-2"></script>
+<!-- 共通シートは #app の overflow:hidden の影響を受けないよう body 直下に配置 -->
+<div class="sheet-scrim" id="scrim" aria-hidden="true"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><span id="sheet-t" class="serif" style="font-size:var(--fs-h)"></span><button class="secondary sm-btn" data-act="close-sheet" style="width:44px; height:44px">✕</button></div>
+  <div class="sheet-body" id="sheet-b"></div>
+</div>
+
+<script src="./app.js?v=mobile-fix-sheet-20261005-1"></script>
 </body>
 </html>
