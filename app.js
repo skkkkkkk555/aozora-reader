@@ -3518,6 +3518,33 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
   }
 
+  function showScreen(name,direction='forward'){
+    if(!isPhone())return;
+    closePhoneSheet();
+    const previous=state.screen;
+    const tabNames=['home','search','shelf','records','settings'];
+    const fromIndex=tabNames.indexOf(previous),toIndex=tabNames.indexOf(name);
+    const routeDirection=direction==='back'
+      ?'back'
+      :(toIndex>=0&&fromIndex>=0&&toIndex<fromIndex?'back':'forward');
+    state.screen=name;
+    syncScreens('main',routeDirection);
+    $$p('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===name));
+    const fn={
+      home:renderHome,
+      search:renderSearch,
+      shelf:renderShelf,
+      records:renderRecords,
+      settings:renderSettings
+    }[name]||renderHome;
+    fn();
+    const content=$p('#phone-content');
+    if(content){
+      content.scrollTop=0;
+      bindPhoneHeaderScroll();
+    }
+  }
+
   function openDetail(w){
     if(!w)return;
     state.work=w;
