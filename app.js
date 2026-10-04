@@ -3572,7 +3572,18 @@ window.addEventListener('DOMContentLoaded',()=>{
     '<section class="phone-section"><div class="phone-section-head"><h2 class="phone-section-title">読書機能</h2></div><div class="phone-list">'+
       '<button class="phone-row" data-phone-action="search"><span class="phone-row-icon">⌕</span><span class="phone-row-copy"><b class="phone-row-title">作品を検索</b><small class="phone-row-sub">青空文庫の登録作品を探す</small></span><span class="phone-chevron">›</span></button>'+
       '<button class="phone-row" data-phone-action="reader-more"><span class="phone-row-icon">⋯</span><span class="phone-row-copy"><b class="phone-row-title">読書機能一覧</b><small class="phone-row-sub">朗読・本文検索・目次・AIなど</small></span><span class="phone-chevron">›</span></button>'+
-    '</div></section>';
+    '</div></section>'+
+    '<section class="phone-section phone-license" aria-label="出典・ライセンス">'+
+      '<div class="phone-section-head"><h2 class="phone-section-title">出典・ライセンス</h2></div>'+
+      '<div class="phone-license-copy">'+
+        '<p>本アプリでは、青空文庫が提供する書誌情報を利用しています。</p>'+
+        '<p>書誌情報は <strong>クリエイティブ・コモンズ 表示 4.0 国際（CC BY 4.0）</strong> に基づいて利用しています。</p>'+
+        '<p><a href="https://www.aozora.gr.jp/" target="_blank" rel="noopener noreferrer">青空文庫</a> / <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>'+
+        '<p>本アプリは青空文庫の公式アプリケーションではありません。青空文庫による推薦・認可・運営・支持を意味するものではありません。</p>'+
+        '<p>作品本文は、青空文庫の公開データから公開対象作品について取得します。作品ごとの利用条件は青空文庫の規準に従います。</p>'+
+        '<p>第三者ソフトウェア：JSZip 3.10.1（MIT / GPLv3）</p>'+
+      '</div>'+
+    '</section>';
   }
 
   function syncScreens(mode,direction='forward'){
