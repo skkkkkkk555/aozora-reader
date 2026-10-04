@@ -2511,6 +2511,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
 /* ================= Mobile UX / Focus Timer v4 ================= */
 let mobileFocusTimer=null;
 let mobileFocusTimerTick=null;
+let focusTimerSheetTick=null;
 
 function focusTimerFormat(ms){
   const sec=Math.max(0,Math.ceil(ms/1000));
@@ -2545,6 +2546,7 @@ function stopFocusTimerTicker(){
 }
 function finishFocusTimer(){
   stopFocusTimerTicker();
+  if(focusTimerSheetTick){clearInterval(focusTimerSheetTick);focusTimerSheetTick=null;}
   mobileFocusTimer=null;
   renderFocusTimerPill();
   try{navigator.vibrate?.([180,90,180]);}catch{}
@@ -2585,10 +2587,12 @@ function resumeFocusTimer(){
 }
 function resetFocusTimer(){
   stopFocusTimerTicker();
+  if(focusTimerSheetTick){clearInterval(focusTimerSheetTick);focusTimerSheetTick=null;}
   mobileFocusTimer=null;
   renderFocusTimerPill();
 }
 function openFocusTimerSheet(){
+  if(focusTimerSheetTick){clearInterval(focusTimerSheetTick);focusTimerSheetTick=null;}
   const current=mobileFocusTimer;
   const live=current?(current.running?Math.max(0,current.end-Date.now()):current.remaining):25*60*1000;
   if(current){
@@ -2612,8 +2616,12 @@ function openFocusTimerSheet(){
       el.textContent=focusTimerFormat(left);
       if(left<=0) finishFocusTimer();
     };
-    const id=setInterval(()=>{
-      if(!$('sheet').classList.contains('open')){clearInterval(id);return;}
+    focusTimerSheetTick=setInterval(()=>{
+      if(!$('sheet').classList.contains('open')){
+        clearInterval(focusTimerSheetTick);
+        focusTimerSheetTick=null;
+        return;
+      }
       timerSheetRefresh();
     },250);
     return;
