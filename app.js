@@ -453,6 +453,7 @@ function openCatalogIntro(){
 }
 
 async function fetchCatalog(){
+  $('c-bar').classList.add('loading-bar-live');
   $('c-log').textContent='配信元へ接続中…'; $('c-bar').style.width='20%';
   let buf=null;
   for(let i=0;i<URLS.length;i++){
@@ -464,7 +465,7 @@ async function fetchCatalog(){
       if(u8&&u8.length>=4&&u8[0]===0x50&&u8[1]===0x4b&&[0x03,0x05,0x07].includes(u8[2])){buf=b;break;}
     }catch{}
   }
-  if(!buf){ $('c-log').textContent='自動取得に失敗しました。ファイルを選択してください。'; return; }
+  if(!buf){ $('c-bar').classList.remove('loading-bar-live'); $('c-log').textContent='自動取得に失敗しました。ファイルを選択してください。'; return; }
   $('c-bar').style.width='50%'; $('c-log').textContent='解凍中…';
   if(!buf||buf.byteLength>SEC.maxCatalogBytes)throw new Error('catalog-too-large');
   const z=await JSZip.loadAsync(buf,{checkCRC32:true});
@@ -554,7 +555,7 @@ async function parseCsv(csv){
   allWorks=sanitizeCatalogRecords([...m.values()]);
   filterWorks();
   await idb.set('k','cat',allWorks);
-  $('c-bar').style.width='100%'; $('c-log').textContent='完了しました！';
+  $('c-bar').classList.remove('loading-bar-live'); $('c-bar').style.width='100%'; $('c-log').textContent='完了しました！';
   setTimeout(()=>{ closeSheet(); renderHome(); toast('作品カタログを取り込みました'); },400);
 }
 
@@ -749,8 +750,11 @@ function initSmartRec(){
 }
 
 function renderFeatItem(){
-  if(!featList.length) return;
-  const w=featList[featIdx];
+  if(!featList.length)return;
+  const w=featList[featIdx], body=$('feat-body');
+  if(body&&!document.body.classList.contains('low-power')){
+    body.classList.remove('content-swap'); void body.offsetWidth; body.classList.add('content-swap');
+  }
   $('feat-dots').innerHTML=featList.map((_,i)=>`<div style="width:8px; height:8px; border-radius:50%; background:${i===featIdx?'var(--ac)':'var(--card-sub)'}"></div>`).join('');
   $('feat-t').textContent=w.t; $('feat-a').textContent=w.a;
   $('feat-genre').textContent=w.ndc?`NDC ${w.ndc.match(/\d{3}/)?.[0]||''}`:'名作';
@@ -1130,6 +1134,54 @@ function toPlain(h){ const d=document.createElement('div'); d.innerHTML=h.replac
 
 /* ==================== 9. 読書画面 & 表示 ==================== */
 let curDoc=null, curWork=null;
+let wakeLock=null, wakeLockWanted=false;
+
+function setBootStage(percent,text){
+  const fill=$('boot-fill'), stage=$('boot-stage');
+  if(fill)fill.style.width=Math.max(0,Math.min(100,percent))+'%';
+  if(stage)stage.textContent=text;
+}
+function finishBoot(){
+  setBootStage(100,'準備完了');
+  const boot=$('app-boot');
+  if(boot){
+    boot.classList.add('done');
+    window.setTimeout(()=>boot.remove(),420);
+  }
+}
+async function requestScreenWakeLock(){
+  if(!wakeLockWanted||!$('reader').classList.contains('open'))return;
+  if(!('wakeLock' in navigator)){toast('この端末では画面維持に対応していません');return;}
+  try{
+    if(wakeLock)return;
+    wakeLock=await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release',()=>{
+      wakeLock=null;
+      updateWakeButton();
+    },{once:true});
+    updateWakeButton();
+  }catch(e){
+    wakeLock=null;
+    updateWakeButton();
+    if(e?.name!=='AbortError')toast('画面維持を開始できませんでした');
+  }
+}
+async function releaseScreenWakeLock(){
+  wakeLockWanted=false;
+  if(wakeLock){
+    try{await wakeLock.release();}catch{}
+    wakeLock=null;
+  }
+  updateWakeButton();
+}
+function updateWakeButton(){
+  const b=$('btn-r-wake');
+  if(!b)return;
+  b.classList.toggle('is-on',!!wakeLock);
+  b.setAttribute('aria-pressed',wakeLock?'true':'false');
+  b.lastChild && b.lastChild.nodeType===3 ? b.lastChild.nodeValue=wakeLock?'画面維持中':'画面維持' : null;
+}
+
 let lastUserActivityTime=Date.now();
 let inBookSearchResults=[], inBookSearchIdx=0;
 
@@ -1194,8 +1246,9 @@ function renderReaderBody(){
   $('body').innerHTML=sanitizeReaderHtml(curDoc.html);
 }
 
-function closeReader(fromPop=false){
+async function closeReader(fromPop=false){
   closeOneLineMode();
+  await releaseScreenWakeLock();
   $('reader').classList.remove('open');
   $('reader').classList.remove('reader-night', 'mode-focus');
   applySettings();
@@ -1224,6 +1277,11 @@ function updateProgress(force=false){
     lastProgressPct=pct;
     $('r-prog').textContent=pct+'%';
     $('r-slider').value=pct;
+    const prog=$('r-prog');
+    if(prog&&!document.body.classList.contains('low-power')){
+      prog.classList.remove('progress-bump'); void prog.offsetWidth; prog.classList.add('progress-bump');
+      window.setTimeout(()=>prog.classList.remove('progress-bump'),280);
+    }
 
     const totalChars=curWork.plain?.length||8000;
     const readChars=Math.floor(totalChars*f);
@@ -1421,6 +1479,9 @@ function extractKeyphrases(txt){
   });
 }
 
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&wakeLockWanted&&$('reader').classList.contains('open')) requestScreenWakeLock();
+});
 document.addEventListener('selectionchange',()=>{
   lastUserActivityTime=Date.now();
   const s=getSelection(), t=s?.toString().trim();
@@ -1958,6 +2019,10 @@ document.addEventListener('click',async(e)=>{
   else if(act==='r-search-close'){ $('r-search-bar').style.display='none'; }
   else if(act==='r-search-prev'){ jumpToInBookMatch(inBookSearchIdx-1); }
   else if(act==='r-search-next'){ jumpToInBookMatch(inBookSearchIdx+1); }
+  else if(act==='r-wake'){
+    if(wakeLock){ await releaseScreenWakeLock(); }
+    else { wakeLockWanted=true; await requestScreenWakeLock(); }
+  }
   else if(act==='r-tts'){
     if(!('speechSynthesis' in window)){ toast('音声合成未対応です'); return; }
     if(speechSynthesis.speaking){ speechSynthesis.cancel(); toast('朗読を停止しました'); }
@@ -2181,20 +2246,26 @@ function initHomeHeroMotion(){
 }
 
 window.addEventListener('DOMContentLoaded',async()=>{
+  setBootStage(12,'表示環境を確認中…');
   applyPerformanceMode();
+  setBootStage(30,'保存データを読み込み中…');
   await load();
   applyPerformanceMode();
+  setBootStage(52,'読書設定を反映中…');
   applySettings();
   applyReaderConfig();
   initHomeHeroMotion();
   bindPressPhysics();
   bindUiRipple();
+  setBootStage(70,'本棚を準備中…');
   await checkCatalog();
+  setBootStage(88,'仕上げています…');
   if(!document.body.classList.contains('low-power')) startFeatTimer();
   if(!document.body.classList.contains('low-power')) startAudit();
   
   // Ollama接続確認
   pingOllama();
+  finishBoot();
 
   // 検索入力遅延実行
   let searchTimer=null;
