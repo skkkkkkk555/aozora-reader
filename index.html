@@ -2532,9 +2532,105 @@ input[type="range"]{accent-color:var(--apple-blue)}
     transition:none!important;
   }
 }
+
+/* ===== Final polish: stable transitions, loading continuity, accessibility ===== */
+.rich-motion .view.active{animation:none!important}
+.rich-motion .view.view-slide-forward{animation:iosViewPush 460ms cubic-bezier(.16,1,.3,1) both!important}
+.rich-motion .view.view-slide-backward{animation:iosViewPop 460ms cubic-bezier(.16,1,.3,1) both!important}
+.low-power .view.active,.low-power .view.view-exit-forward,.low-power .view.view-exit-backward{animation:none!important}
+@media (prefers-reduced-motion:reduce){
+  .view.active,.view.view-slide-forward,.view.view-slide-backward,.view.view-exit-forward,.view.view-exit-backward{animation:none!important}
+}
+
+#app-boot{
+  position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--bg) 94%,transparent);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  transition:opacity 360ms var(--spring),visibility 360ms;
+  animation:bootFailsafe 8s ease forwards;
+}
+#app-boot.done{opacity:0;visibility:hidden;pointer-events:none;animation:none}
+#app-boot .boot-card{
+  width:min(360px,calc(100vw - 40px));padding:28px;text-align:center;
+  border:1px solid var(--line);border-radius:24px;background:var(--card);box-shadow:var(--shadow);
+}
+#app-boot .boot-mark{
+  width:58px;height:58px;margin:0 auto 16px;border-radius:18px;background:var(--ac);color:var(--onac);
+  display:grid;place-items:center;font-size:26px;font-weight:800;
+}
+#app-boot .boot-title{font-size:21px;font-weight:800;letter-spacing:-.02em}
+#app-boot .boot-sub{margin-top:6px;color:var(--sub);font-size:13px}
+#app-boot .boot-track{height:5px;margin-top:20px;border-radius:999px;background:var(--card-sub);overflow:hidden}
+#app-boot .boot-fill{height:100%;width:8%;border-radius:999px;background:var(--ac);transition:width 420ms var(--spring)}
+#app-boot .boot-stage{margin-top:10px;min-height:20px;color:var(--sub);font-size:12px}
+@keyframes bootFailsafe{0%,86%{opacity:1;visibility:visible;pointer-events:auto}100%{opacity:0;visibility:hidden;pointer-events:none}}
+
+.reader-loading,.reader-error-state{
+  min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  padding:48px 24px;box-sizing:border-box;
+}
+.reader-loading-orb{
+  width:54px;height:54px;border-radius:50%;border:4px solid var(--card-sub);border-top-color:var(--ac);
+  animation:readerLoaderSpin 900ms linear infinite;
+}
+.reader-loading-title{margin-top:18px;font-size:18px;font-weight:800}
+.reader-loading-sub{margin-top:6px;color:var(--sub);font-size:13px}
+.reader-loading-bar{width:min(280px,70vw);height:5px;margin-top:18px;border-radius:99px;background:var(--card-sub);overflow:hidden}
+.reader-loading-bar span{display:block;width:40%;height:100%;background:var(--ac);border-radius:99px;animation:readerLoaderSweep 1.25s var(--ease) infinite}
+@keyframes readerLoaderSpin{to{transform:rotate(360deg)}}
+@keyframes readerLoaderSweep{0%{transform:translateX(-120%)}100%{transform:translateX(360%)}}
+.reader-error-icon{
+  width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:rgba(255,59,48,.10);
+  color:#ff3b30;font-size:28px;font-weight:800;
+}
+.reader-error-title{margin-top:16px;font-size:18px;font-weight:800}
+.reader-error-text{margin-top:7px;color:var(--sub);font-size:13px;max-width:360px;line-height:1.6}
+
+@keyframes stateBump{0%{transform:scale(1)}45%{transform:scale(.94)}72%{transform:scale(1.04)}100%{transform:scale(1)}}
+.rich-motion .state-bump{animation:stateBump 360ms cubic-bezier(.16,1,.3,1) both!important}
+.rich-motion .r-dock-btn[data-act="r-wake"].is-on{color:var(--apple-blue);background:rgba(0,122,255,.10);border-radius:10px}
+.rich-motion #r-prog{transition:transform 220ms var(--spring),opacity 180ms}
+.rich-motion #r-prog.progress-bump{animation:stateBump 260ms var(--spring) both}
+.rich-motion #feat-body.content-swap{animation:motionContentSwap 340ms var(--spring) both}
+@keyframes motionContentSwap{
+  0%{opacity:0;transform:translateY(4px)}
+  100%{opacity:1;transform:none}
+}
+
+.loading-bar-live{position:relative;overflow:hidden}
+.loading-bar-live::after{
+  content:"";position:absolute;inset:0;width:38%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);
+  transform:translateX(-140%);animation:loadingSweep 1.1s var(--ease) infinite;
+}
+@keyframes loadingSweep{to{transform:translateX(360%)}}
+
+@media (prefers-reduced-motion:reduce){
+  #app-boot{animation:none}
+  .reader-loading-orb,.reader-loading-bar span,.loading-bar-live::after{animation:none}
+  .rich-motion .state-bump,.rich-motion #feat-body.content-swap,.rich-motion #r-prog.progress-bump{animation:none!important}
+}
+.low-power #app-boot{backdrop-filter:none;-webkit-backdrop-filter:none}
+.low-power .reader-loading-orb{animation:none;border-top-color:var(--ac)}
+.low-power .reader-loading-bar span,.low-power .loading-bar-live::after{animation:none}
+.low-power .state-bump,.low-power #feat-body.content-swap,.low-power #r-prog.progress-bump{animation:none!important}
+
+@media (max-width:520px){
+  #app-boot .boot-card{padding:24px}
+  .reader-loading{padding:36px 18px}
+}
+
 </style>
 </head>
 <body>
+<div id="app-boot" aria-live="polite">
+  <div class="boot-card">
+    <div class="boot-mark">青</div>
+    <div class="boot-title">青空リーダー</div>
+    <div class="boot-sub">読書環境を準備しています</div>
+    <div class="boot-track"><div id="boot-fill" class="boot-fill"></div></div>
+    <div id="boot-stage" class="boot-stage">起動しています…</div>
+  </div>
+</div>
 
 <div id="app">
   <!-- PC向けサイドバー (900px以上) -->
