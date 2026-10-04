@@ -242,15 +242,28 @@ box-shadow:0 14px 30px rgba(100,80,160,.18);}
   backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
 }
 .low-power *, .low-power *::before, .low-power *::after {
-  animation-duration: 0.001ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.001ms !important;
-  scroll-behavior: auto !important;
+  animation:none !important;
+  transition:none !important;
+  scroll-behavior:auto !important;
+  filter:none !important;
+}
+.low-power .ai-feature-card{
+  animation:aiRainbow 24s linear infinite !important;
+  background-size:180% 180% !important;
 }
 .low-power .block, .low-power .tile, .low-power .insight-card, .low-power .card-tint {
-  animation: none !important;
+  animation:none !important;
 }
-.low-power .block::before, .low-power .block::after { display: none !important; }
+.low-power .block,
+.low-power .tile,
+.low-power .insight-card,
+.low-power .card-tint {
+  box-shadow:none !important;
+  background-image:none !important;
+}
+.low-power .block::before,
+.low-power .block::after,
+.low-power .insight-card::before { display:none !important; }
 .low-power .block:hover, .low-power button:hover {
   transform: none !important;
 }
@@ -1147,7 +1160,7 @@ async function parseCsv(csv){
 // 欠落検査 (4並列・自動除外)
 let auditIdx=0, auditTimer=null;
 function startAudit(){
-  if(st.offline||!works.length) return;
+  if(st.offline||!works.length||document.body.classList.contains('low-power')) return;
   clearInterval(auditTimer);
   auditTimer=setInterval(async()=>{
     if(document.hidden||$('reader').classList.contains('open')) return;
@@ -1358,7 +1371,7 @@ function startFeatTimer(){
       featIdx=(featIdx+1)%featList.length;
       renderFeatItem();
     }
-  },1000);
+  },2000);
 }
 
 function showBanner(msg){
@@ -1707,6 +1720,9 @@ async function openReader(w){
   closeSheet();
   closeOneLineMode();
   curWork=w;
+  lastProgressPct=-1;
+  lastProgressSave=0;
+  if(progressRaf!==null){cancelAnimationFrame(progressRaf);progressRaf=null;}
   const tId=++readerTok;
   $('r-title').textContent=w.t;
   $('body').innerHTML='<div style="padding:60px 0; text-align:center; color:var(--sub)">読み込んでいます…</div>';
@@ -1753,29 +1769,53 @@ function closeReader(fromPop=false){
   save(); renderHome();
 }
 
-function updateProgress(){
+let progressRaf=null;
+let lastProgressPct=-1;
+let lastProgressSave=0;
+
+function updateProgress(force=false){
+  if(!curWork) return;
   const b=$('body'), isV=b.classList.contains('v');
   const max=isV?Math.max(1,b.scrollWidth-b.clientWidth):Math.max(1,b.scrollHeight-b.clientHeight);
   const f=Math.min(1,Math.max(0,(isV?Math.abs(b.scrollLeft):b.scrollTop)/max));
-  pos[curWork.id]={f,t:Date.now()};
-  if(f>=0.97) done.add(curWork.id);
   const pct=Math.round(f*100);
-  $('r-prog').textContent=pct+'%';
-  $('r-slider').value=pct;
+  const now=Date.now();
 
-  const totalChars=curWork.plain?.length||8000;
-  const readChars=Math.floor(totalChars * f);
-  const totalP=Math.max(1,Math.ceil(totalChars/800));
-  const curP=Math.max(1,Math.ceil(totalP*f));
-  const remM=Math.max(1,Math.ceil((totalChars*(1-f))/st.readSpeed));
-  
-  $('r-page-lbl').textContent=`${pct}% · ${curP}/${totalP}ページ · 残り約${remM}分 · ${readChars}/${totalChars}字読了`;
+  pos[curWork.id]={f,t:now};
+  if(f>=0.97) done.add(curWork.id);
 
-  hist=hist.filter(h=>h.id!==curWork.id);
-  hist.unshift({id:curWork.id,t:Date.now()});
-  if(hist.length>50) hist.pop();
+  // DOM更新は進捗率が変わった時だけ
+  if(force || pct!==lastProgressPct){
+    lastProgressPct=pct;
+    $('r-prog').textContent=pct+'%';
+    $('r-slider').value=pct;
+
+    const totalChars=curWork.plain?.length||8000;
+    const readChars=Math.floor(totalChars*f);
+    const totalP=Math.max(1,Math.ceil(totalChars/800));
+    const curP=Math.max(1,Math.ceil(totalP*f));
+    const remM=Math.max(1,Math.ceil((totalChars*(1-f))/st.readSpeed));
+    $('r-page-lbl').textContent=`${pct}% · ${curP}/${totalP}ページ · 残り約${remM}分 · ${readChars}/${totalChars}字読了`;
+  }
+
+  // 履歴は最大3秒に1回だけ更新
+  if(force || now-lastProgressSave>=3000){
+    lastProgressSave=now;
+    hist=hist.filter(h=>h.id!==curWork.id);
+    hist.unshift({id:curWork.id,t:now});
+    if(hist.length>50) hist.pop();
+  }
 }
-$('body').onscroll=()=>{ lastUserActivityTime=Date.now(); updateProgress(); };
+
+$('body').onscroll=()=>{
+  lastUserActivityTime=Date.now();
+  if(progressRaf===null){
+    progressRaf=requestAnimationFrame(()=>{
+      progressRaf=null;
+      updateProgress();
+    });
+  }
+};
 
 // 本文タップ
 $('body').onclick=(e)=>{
@@ -2063,7 +2103,7 @@ setInterval(()=>{
       const todayKey=localDateKey();
       calData[todayKey]=(calData[todayKey]||0)+1;
       save();
-      renderHome();
+      // 読書中はホーム全体を再描画しない。閉じた時にまとめて更新する。
     }
   }
 },60000);
