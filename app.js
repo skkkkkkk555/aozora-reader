@@ -1453,7 +1453,6 @@ function turnReaderPage(dir){
     try{navigator.vibrate?.(12);}catch{}
     return false;
   }
-  playPaperTurn(dir);
   setReaderPage(next,true);
   return true;
 }
@@ -1637,96 +1636,6 @@ function jumpToInBookMatch(idx){
   target.scrollIntoView({behavior:'auto',block:'nearest',inline:'nearest'});
   updateProgress(true);
 }
-async function closeReader(fromPop=false){
-  closeOneLineMode();
-  await releaseScreenWakeLock();
-  $('reader').classList.remove('open');
-  $('reader').classList.remove('reader-night', 'mode-focus');
-  applySettings();
-  if(window.speechSynthesis) speechSynthesis.cancel();
-  popLayer('reader');
-  save(); renderHome();
-}
-
-let progressRaf=null;
-let lastProgressPct=-1;
-let lastProgressSave=0;
-
-function updateProgress(force=false){
-  if(!curWork) return;
-  const b=$('body'), isV=b.classList.contains('v');
-  const max=isV?Math.max(1,b.scrollWidth-b.clientWidth):Math.max(1,b.scrollHeight-b.clientHeight);
-  const f=Math.min(1,Math.max(0,(isV?Math.abs(b.scrollLeft):b.scrollTop)/max));
-  const pct=Math.round(f*100);
-  const now=Date.now();
-
-  pos[curWork.id]={f,t:now};
-  if(f>=0.97) done.add(curWork.id);
-
-  // DOM更新は進捗率が変わった時だけ
-  if(force || pct!==lastProgressPct){
-    lastProgressPct=pct;
-    $('r-prog').textContent=pct+'%';
-    $('r-slider').value=pct;
-    const prog=$('r-prog');
-    if(prog&&!document.body.classList.contains('low-power')){
-      prog.classList.remove('progress-bump'); void prog.offsetWidth; prog.classList.add('progress-bump');
-      window.setTimeout(()=>prog.classList.remove('progress-bump'),280);
-    }
-
-    const totalChars=curWork.plain?.length||8000;
-    const readChars=Math.floor(totalChars*f);
-    const totalP=Math.max(1,Math.ceil(totalChars/800));
-    const curP=Math.max(1,Math.ceil(totalP*f));
-    const remM=Math.max(1,Math.ceil((totalChars*(1-f))/st.readSpeed));
-    $('r-page-lbl').textContent=`${pct}% · ${curP}/${totalP}ページ · 残り約${remM}分 · ${readChars}/${totalChars}字読了`;
-  }
-
-  // 履歴は最大3秒に1回だけ更新
-  if(force || now-lastProgressSave>=3000){
-    lastProgressSave=now;
-    hist=hist.filter(h=>h.id!==curWork.id);
-    hist.unshift({id:curWork.id,t:now});
-    if(hist.length>50) hist.pop();
-  }
-}
-
-$('body').onscroll=()=>{
-  lastUserActivityTime=Date.now();
-  if(progressRaf===null){
-    progressRaf=requestAnimationFrame(()=>{
-      progressRaf=null;
-      updateProgress();
-    });
-  }
-};
-
-// 本文タップ
-$('body').onclick=(e)=>{
-  lastUserActivityTime=Date.now();
-  if(e.target.closest('.keyphrase,u,b,ruby')||getSelection().toString()) return;
-  const w=innerWidth, x=e.clientX;
-
-  if($('reader').classList.contains('mode-focus')){
-    const topBar=$('r-top'), dock=$('r-dock'), botBar=$('r-bottom-info');
-    topBar.classList.toggle('show-temp');
-    dock.classList.toggle('show-temp');
-    botBar.classList.toggle('show-temp');
-    return;
-  }
-
-  if(x>w*0.35 && x<w*0.65){
-    $('r-top').classList.toggle('hide');
-    $('r-dock').classList.toggle('hide');
-    $('r-bottom-info').classList.toggle('hide');
-    return;
-  }
-  const b=$('body'), isV=b.classList.contains('v'), step=(isV?b.clientWidth:b.clientHeight)*0.88;
-  const dir=isV ? ((x<=w*0.35)?'prev':'next') : ((x>=w*0.65)?'next':'prev');
-  animateReaderPage(dir);
-  b.scrollBy({left:isV?(x<=w*0.35?-step:step):0, top:isV?0:(x>=w*0.65?step:-step), behavior:'smooth'});
-};
-
 // 本文内検索
 function animateReaderPage(direction){
   if(document.body.classList.contains('low-power')) return;
