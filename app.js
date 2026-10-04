@@ -1820,56 +1820,6 @@ $('body').onclick=(e)=>{
 };
 
 function animateReaderPage(direction){
-  playPaperTurn(direction);
-}
-
-function execInBookSearch(){
-  const q=$('r-search-inp').value.trim();
-  if(q.length>500){$('r-search-count').textContent='検索語が長すぎます';return;}
-  const body=$('body');
-  body.querySelectorAll('.search-hl').forEach(el=>{
-    el.replaceWith(document.createTextNode(el.textContent));
-  });
-  inBookSearchResults=[];
-  inBookSearchIdx=0;
-
-  if(!q){
-    $('r-search-count').textContent='0件';
-    return;
-  }
-
-  const walker=document.createTreeWalker(body,NodeFilter.SHOW_TEXT);
-  const nodes=[]; let n;
-  while((n=walker.nextNode())) nodes.push(n);
-
-  nodes.forEach(node=>{
-    if(node.parentElement.closest('rt,rp,ruby,#r-search-bar')) return;
-    const txt=node.nodeValue;
-    const idx=txt.indexOf(q);
-    if(idx!==-1){
-      const span=document.createElement('span');
-      const safePattern = new RegExp(escRe(q), 'g');
-      span.innerHTML=esc(txt).replace(safePattern, m=>`<mark class="search-hl">${m}</mark>`);
-      node.parentNode.replaceChild(span, node);
-    }
-  });
-
-  inBookSearchResults=[...body.querySelectorAll('.search-hl')];
-  $('r-search-count').textContent=`${inBookSearchResults.length}件`;
-  if(inBookSearchResults.length>0) jumpToInBookMatch(0);
-}
-
-function jumpToInBookMatch(idx){
-  if(!inBookSearchResults.length) return;
-  inBookSearchIdx=(idx+inBookSearchResults.length)%inBookSearchResults.length;
-  inBookSearchResults.forEach((el,i)=>el.style.outline=(i===inBookSearchIdx?'3px solid #ff5722':'none'));
-  const target=inBookSearchResults[inBookSearchIdx];
-  if(!target)return;
-  target.scrollIntoView({behavior:'auto',block:'nearest',inline:'nearest'});
-  updateProgress(true);
-}
-// 本文内検索
-function animateReaderPage(direction){
   if(document.body.classList.contains('low-power')) return;
   const b=$('body');
   b.classList.remove('reader-page-next','reader-page-prev');
@@ -1922,7 +1872,9 @@ function jumpToInBookMatch(idx){
   inBookSearchIdx=(idx+inBookSearchResults.length)%inBookSearchResults.length;
   inBookSearchResults.forEach((el,i)=>el.style.outline=(i===inBookSearchIdx?'3px solid #ff5722':'none'));
   inBookSearchResults[inBookSearchIdx].scrollIntoView({ behavior:'smooth', block:'center' });
+  updateProgress(true);
 }
+
 
 // 読書モード切替 (通常・集中・夜間)
 function openModeSelectSheet(){
