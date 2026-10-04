@@ -3106,7 +3106,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   }
   function renderPhoneShelf(){
     setPhoneTitle('本棚');const c=phone('#phone-content');if(!c)return;
-    const ids=new Set([...Object.keys(fav||{}),...Object.keys(want||{}),...Object.keys(done||{}),...Object.keys(bm||{}),...Object.keys(notes||{}),...Object.keys(pos||{})]);
+    const ids=new Set([...(fav||[]),...(want||[]),...(done||[]),...Object.keys(bm||{}),...Object.keys(notes||{}),...Object.keys(pos||{})].map(String));
     const ws=phoneWorks().filter(w=>ids.has(String(w.id)));
     c.innerHTML='<section class="phone-screen"><div class="phone-grid">'+ws.map(bookCard).join('')+'</div>'+
       (ws.length?'':'<div class="phone-empty" style="grid-column:1/-1">本棚はまだ空です</div>')+'</section>';
