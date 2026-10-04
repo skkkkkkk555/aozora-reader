@@ -1806,6 +1806,54 @@ body{background:#f2f2f7!important;}
   animation:none!important;
 }
 
+
+/* ================= Task 6: physical interaction ================= */
+.rich-motion .book-cover-inner{
+  transform:
+    perspective(900px)
+    rotateX(var(--tilt-x,0deg))
+    rotateY(var(--tilt-y,0deg))
+    translate3d(0,calc(var(--lift,0) * -5px),0);
+}
+.rich-motion .book-cover-card.physics-pressed .book-cover-inner{
+  transform:
+    perspective(900px)
+    rotateX(var(--tilt-x,0deg))
+    rotateY(var(--tilt-y,0deg))
+    translate3d(0,2px,0)
+    scale(.94)!important;
+  transition:transform 90ms cubic-bezier(.4,0,.2,1)!important;
+  filter:brightness(.96)!important;
+}
+.rich-motion button.physics-pressed,
+.rich-motion .block[data-act].physics-pressed,
+.rich-motion .tile[data-act].physics-pressed{
+  transform:scale(.965)!important;
+  transition:transform 80ms cubic-bezier(.4,0,.2,1)!important;
+}
+.rich-motion button.physics-pressed::after,
+.rich-motion .block[data-act].physics-pressed::after,
+.rich-motion .tile[data-act].physics-pressed::after{
+  opacity:.08;
+}
+@keyframes iosReleaseSpring{
+  0%{transform:scale(.965)}
+  58%{transform:scale(1.015)}
+  100%{transform:scale(1)}
+}
+.rich-motion button:not(.physics-pressed),
+.rich-motion .block[data-act]:not(.physics-pressed),
+.rich-motion .tile[data-act]:not(.physics-pressed){
+  /* クリック解除時の自然な戻り */
+  transition-timing-function:cubic-bezier(.16,1,.3,1);
+}
+.low-power .book-cover-inner{
+  transform:none!important;
+}
+.low-power .physics-pressed{
+  transform:none!important;
+}
+
 </style>
 </head>
 <body>
@@ -2346,6 +2394,66 @@ const tileHtml=(w,i=0)=>`
 
 
 let bookRevealObserver=null;
+let bookPhysicsBound=new WeakSet();
+function bindBookPhysics(root){
+  if(!window.matchMedia || !matchMedia('(hover:hover)').matches) return;
+  const list=(root||document).querySelectorAll?.('.book-cover-card');
+  if(!list) return;
+  list.forEach(card=>{
+    if(bookPhysicsBound.has(card)) return;
+    bookPhysicsBound.add(card);
+    let raf=0;
+    card.addEventListener('pointermove',e=>{
+      if(document.body.classList.contains('low-power')) return;
+      const inner=card.querySelector('.book-cover-inner');
+      if(!inner) return;
+      if(raf) cancelAnimationFrame(raf);
+      raf=requestAnimationFrame(()=>{
+        const r=inner.getBoundingClientRect();
+        const px=((e.clientX-r.left)/r.width-.5)*2;
+        const py=((e.clientY-r.top)/r.height-.5)*2;
+        inner.style.setProperty('--tilt-x',(py*-3.2).toFixed(2)+'deg');
+        inner.style.setProperty('--tilt-y',(px*4.2).toFixed(2)+'deg');
+        inner.style.setProperty('--lift',Math.max(0,1-Math.abs(px)*.35-Math.abs(py)*.35).toFixed(2));
+      });
+    });
+    const reset=()=>{
+      if(raf) cancelAnimationFrame(raf);
+      raf=0;
+      const inner=card.querySelector('.book-cover-inner');
+      if(inner){
+        inner.style.setProperty('--tilt-x','0deg');
+        inner.style.setProperty('--tilt-y','0deg');
+        inner.style.setProperty('--lift','0');
+      }
+      card.classList.remove('physics-pressed');
+    };
+    card.addEventListener('pointerleave',reset);
+    card.addEventListener('pointerdown',()=>{
+      if(document.body.classList.contains('low-power')) return;
+      card.classList.add('physics-pressed');
+    });
+    card.addEventListener('pointerup',()=>card.classList.remove('physics-pressed'));
+    card.addEventListener('pointercancel',reset);
+  });
+}
+
+function bindPressPhysics(){
+  const selector='button,.block[data-act],.tile[data-act]';
+  document.addEventListener('pointerdown',e=>{
+    if(document.body.classList.contains('low-power')) return;
+    const el=e.target.closest(selector);
+    if(!el) return;
+    el.classList.add('physics-pressed');
+  },{passive:true});
+  const clear=e=>{
+    const el=e.target.closest?.(selector);
+    if(el) el.classList.remove('physics-pressed');
+  };
+  document.addEventListener('pointerup',clear,{passive:true});
+  document.addEventListener('pointercancel',clear,{passive:true});
+}
+
 function watchBookCovers(root){
   const list=(root||document).querySelectorAll?.('.book-cover-card:not(.is-visible)');
   if(!list) return;
@@ -2364,6 +2472,7 @@ function watchBookCovers(root){
     },{root:null,rootMargin:'0px 0px 6% 0px',threshold:0.08});
   }
   list.forEach(el=>bookRevealObserver.observe(el));
+  bindBookPhysics(root);
 }
 
 function sheet(title, html){
@@ -4067,6 +4176,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
   applySettings();
   applyReaderConfig();
   initHomeHeroMotion();
+  bindPressPhysics();
   await checkCatalog();
   if(!document.body.classList.contains('low-power')) startFeatTimer();
   if(!document.body.classList.contains('low-power')) startAudit();
