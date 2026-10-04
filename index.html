@@ -3701,7 +3701,7 @@ html[data-theme="dark"][data-device="smartphone"] .phone-tabbar{background:rgba(
 
 </style>
 </head>
-<body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),t=(navigator.maxTouchPoints||0)>0,s=Math.min(innerWidth||0,innerHeight||0);if(m&&t&&s<=899)document.documentElement.dataset.device="smartphone";}catch(e){}})();</script>
+<body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),s=Math.min(innerWidth||0,innerHeight||0);if(m&&s<=899)document.documentElement.dataset.device="smartphone";else document.documentElement.dataset.device="desktop";}catch(e){}})();</script>
 <!-- iOS-inspired smartphone shell. Desktop DOM remains untouched. -->
 <div id="phone-app" aria-hidden="true">
   <header class="phone-topbar">
