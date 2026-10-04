@@ -1406,9 +1406,11 @@ async function fetchBody(w){
   if(c&&typeof c==='object'&&typeof c.html==='string'&&c.html.length<=4*1024*1024){
     const safeHtml=sanitizeReaderHtml(c.html);
     const safePlain=toPlain(safeHtml);
-    if(safeHtml.length<=4*1024*1024&&safePlain.length<=SEC.maxBookBytes){
+    if(safeHtml.length<=4*1024*1024&&safePlain.length<=SEC.maxBookBytes&&safePlain.trim().length>=20){
       c.html=safeHtml;c.plain=safePlain;return c;
     }
+    // 壊れた/空の旧キャッシュを残すと、通信に成功しても永遠に空本文を返すため破棄して再取得する。
+    try{await idb.del('docs',w.id);}catch{}
   }
   if(st.offline) throw new Error('オフラインです');
   const urls=[
