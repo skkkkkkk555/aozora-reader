@@ -423,7 +423,7 @@ function sheet(title, html){
     $('sheet').querySelector('[data-act="close-sheet"]')?.focus({preventScroll:true});
   });
 }
-function closeSheet(){
+function closeSheet(fromPop=false){
   $('sheet').classList.remove('open');
   $('sheet').setAttribute('aria-hidden','true');
   $('scrim').classList.remove('open');
@@ -436,6 +436,13 @@ function closeSheet(){
   });
 }
 
+document.addEventListener('click',e=>{
+  if(e.target.id==='scrim'){
+    e.preventDefault();
+    e.stopPropagation();
+    closeSheet(false);
+  }
+},{capture:true});
 let toastTimer=null, undoFn=null, restoreFocusEl=null;
 function toast(m, undo){
   $('toast-m').textContent=m; undoFn=undo;
@@ -447,23 +454,47 @@ function toast(m, undo){
 
 /* ==================== 3. 画面層 & 戻る管理 ==================== */
 const layers=[];
-function pushLayer(n){ if(layers[layers.length-1]!==n){ layers.push(n); history.pushState({layer:n},''); } }
-function popLayer(n){ const idx=layers.lastIndexOf(n); if(idx>=0) layers.splice(idx,1); }
-
+let handlingPopstate=false;
+let closingLayer=false;
+function pushLayer(n){
+  if(layers[layers.length-1]!==n){
+    layers.push(n);
+    history.pushState({layer:n},'',location.href);
+  }
+}
+function popLayer(n){
+  const idx=layers.lastIndexOf(n);
+  if(idx>=0) layers.splice(idx,1);
+}
+function closeLayerByUser(n,fn){
+  if(closingLayer)return;
+  closingLayer=true;
+  popLayer(n);
+  fn?.();
+  if(history.state?.layer===n) history.back();
+  else {
+    // 既存の状態が残っている場合も1段だけ戻す。
+    history.back();
+  }
+  setTimeout(()=>{closingLayer=false},120);
+}
 window.addEventListener('popstate',()=>{
+  if(closingLayer){closingLayer=false;return;}
   if(layers.length){
     const l=layers.pop();
-    if(l==='sheet') closeSheet();
+    if(l==='sheet') closeSheet(true);
     else if(l==='reader') closeReader(true);
     else if(l==='pop') $('pop').classList.remove('open');
+  } else {
+    switchView('v-home');
   }
 });
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(layers.length){
       const l=layers[layers.length-1];
-      if(l==='sheet') closeSheet();
-      else if(l==='reader') closeReader();
+      if(l==='sheet') closeSheet(false);
+      else if(l==='reader') closeReader(false);
       else if(l==='pop') $('pop').classList.remove('open');
       history.back();
     }
@@ -695,6 +726,42 @@ function startAudit(){
 let featIdx=0, featTimer=null, featProg=0, featList=[], featQuotes=new Map();
 const FAMOUS=['夏目漱石','芥川龍之介','太宰治','宮沢賢治','中島敦','森鴎外','樋口一葉','梶井基次郎','坂口安吾','江戸川乱歩','夢野久作','新美南吉'];
 
+function bookmarkEntriesForHome(){
+  const groups=[];
+  Object.entries(bm).forEach(([id,arr])=>{
+    const w=byId.get(id);
+    if(!w||!Array.isArray(arr)||!arr.length)return;
+    const clean=arr.filter(x=>x&&Number.isFinite(Number(x.f))).map(x=>({...x,f:Math.max(0,Math.min(1,Number(x.f)))})).sort((a,b)=>(b.t||0)-(a.t||0));
+    if(clean.length) groups.push({w,items:clean});
+  });
+  groups.sort((a,b)=>(b.items[0]?.t||0)-(a.items[0]?.t||0));
+  return groups;
+}
+function renderHomeBookmarks(){
+  const box=$('home-bookmarks'), section=$('home-bookmarks-section');
+  if(!box||!section)return;
+  const groups=bookmarkEntriesForHome();
+  section.style.display=groups.length?'block':'none';
+  box.style.display=groups.length?'flex':'none';
+  if(!groups.length){box.innerHTML='';return;}
+  box.innerHTML=groups.slice(0,8).map(g=>{
+    const marks=g.items.slice(0,6);
+    return `<div class="home-bookmark-card">
+      <button class="home-bookmark-main" data-act="open-bookmark" data-id="${escAttr(g.w.id)}" data-f="${marks[0].f}">
+        <span class="home-bookmark-icon">🔖</span>
+        <span class="home-bookmark-text">
+          <strong>${esc(g.w.t)}</strong>
+          <small>${esc(g.w.a)} · ${marks.length}個のしおり</small>
+        </span>
+      </button>
+      <div class="home-bookmark-points">
+        ${marks.map((m,i)=>`<button class="home-bookmark-point ${i===0?'active':''}" title="${Math.round(m.f*100)}%" data-act="open-bookmark" data-id="${escAttr(g.w.id)}" data-f="${m.f}">
+          <span>${i+1}</span><em>${Math.round(m.f*100)}%</em>
+        </button>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
 function renderHome(){
   $('home-clock').textContent=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
 
@@ -724,6 +791,8 @@ function renderHome(){
     $('res-ring').textContent='0%'; $('res-rem').textContent='読了まで約--分';
     $('blk-resume').dataset.wid='';
   }
+
+  renderHomeBookmarks();
 
   // 最近読んだ本 (最大5冊)
   const recentWorks=hist.slice(0,5).map(h=>byId.get(h.id)).filter(Boolean);
@@ -1354,7 +1423,7 @@ function updateWakeButton(){
 let lastUserActivityTime=Date.now();
 let inBookSearchResults=[], inBookSearchIdx=0;
 
-async function openReader(w){
+async function openReader(w, fromDetail=false, bookmarkF=null){
   closeSheet();
   closeOneLineMode();
   curWork=w;
@@ -1379,7 +1448,7 @@ async function openReader(w){
 
     requestAnimationFrame(()=>{
       requestAnimationFrame(()=>{
-        const f=pos[w.id]?.f||0;
+        const f=(bookmarkF!==null&&Number.isFinite(Number(bookmarkF)))?Math.max(0,Math.min(1,Number(bookmarkF))):(pos[w.id]?.f||0);
         const page=getReaderPageCount();
         const idx=Math.max(0,Math.min(page-1,Math.round(f*Math.max(0,page-1))));
         setReaderPage(idx,false);
@@ -1498,7 +1567,7 @@ async function closeReader(fromPop=false){
   applySettings();
   if(window.speechSynthesis) speechSynthesis.cancel();
   popLayer('reader');
-  save(); renderHome();
+  save(); switchView('v-home'); renderHome();
 }
 
 let progressRaf=null;
@@ -2142,7 +2211,7 @@ document.addEventListener('click',async(e)=>{
   // ナビゲーション
   if(act==='nav') switchView(b.dataset.v);
   else if(act==='back-home') switchView('v-home');
-  else if(act==='close-sheet') closeSheet();
+  else if(act==='close-sheet'){ e.preventDefault(); e.stopPropagation(); closeSheet(false); }
   else if(act==='ban-btn') switchView('v-settings');
   else if(act==='nav-settings') switchView('v-settings');
 
@@ -2254,10 +2323,22 @@ document.addEventListener('click',async(e)=>{
     if(wid&&byId.has(wid)) openBookDetail(byId.get(wid));
   }
 
+  // ホームのしおり
+  else if(act==='open-bookmark'){
+    e.preventDefault();
+    e.stopPropagation();
+    const w=byId.get(b.dataset.id);
+    const f=Number(b.dataset.f);
+    if(w){
+      closeSheet();
+      openReader(w,false,Number.isFinite(f)?f:null);
+    }
+  }
+
   // 本の操作
   else if(act==='resume-click'){
     const wid=b.dataset.wid;
-    if(wid&&byId.has(wid)) openReader(byId.get(wid));
+    if(wid&&byId.has(wid)){ closeSheet(); openReader(byId.get(wid)); }
     else if(featList.length) openBookDetail(featList[0]);
   }
   else if(act==='feat-click'){
@@ -2293,7 +2374,7 @@ document.addEventListener('click',async(e)=>{
     const w=byId.get(b.dataset.id);
     if(w) openBookDetail(w);
   }
-  else if(act==='read-now'){ closeSheet(); openReader(activeBook, false); }
+  else if(act==='read-now'){ e.stopPropagation(); closeSheet(); openReader(activeBook, false); }
   else if(act==='toggle-want'){
     want.has(activeBook.id)?want.delete(activeBook.id):want.add(activeBook.id);
     save(); pulseState(b); openBookDetail(activeBook);
