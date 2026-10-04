@@ -10,6 +10,21 @@ document.addEventListener('click',e=>{if(synthetic)return;if(suppressEl&&Date.no
 /* ==================== 1. 状態 & ユーティリティ ==================== */
 if(window.top!==window.self){document.documentElement.style.display='none';throw new Error('framed-context-blocked');}
 const $=i=>document.getElementById(i);
+/* ================= Smartphone UI auto-detection ================= */
+const refreshSmartphoneUI = ()=>{
+  const ua = String(navigator.userAgent || '');
+  const mobileUA = navigator.userAgentData?.mobile === true ||
+    /Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini|Mobile Safari/i.test(ua);
+  const shortestSide = Math.min(window.innerWidth || 0, window.innerHeight || 0);
+  const touchDevice = (navigator.maxTouchPoints || 0) > 0;
+  const isSmartphone = !!mobileUA && !!touchDevice && shortestSide <= 899;
+  document.documentElement.classList.toggle('smartphone-ui', isSmartphone);
+  document.documentElement.dataset.device = isSmartphone ? 'smartphone' : 'desktop';
+  return isSmartphone;
+};
+refreshSmartphoneUI();
+window.addEventListener('resize', refreshSmartphoneUI, {passive:true});
+
 const esc=s=>(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]||c));
 const escAttr=esc;
 
