@@ -2268,41 +2268,62 @@ const viewOrder=['v-home','v-search','v-shelf','v-cal','v-settings'];
 function switchView(vid){
   if(vid===currentView){
     const same=$(vid);
-    if(same && same.scrollTop>24 && !document.body.classList.contains('low-power')) same.scrollTo({top:0,behavior:'smooth'});
+    if(same && same.scrollTop>24 && !document.body.classList.contains('low-power')){
+      same.scrollTo({top:0,behavior:'smooth'});
+    }
     return;
   }
+
   const prev=currentView;
   const direction=viewOrder.indexOf(vid)>=viewOrder.indexOf(prev)?'forward':'backward';
-  const current=$(prev), next=$(vid), low=document.body.classList.contains('low-power');
-  document.querySelectorAll('.view').forEach(v=>{
-    v.classList.remove('view-slide-forward','view-slide-backward','view-exit-forward','view-exit-backward');
-  });
+  const current=$(prev), next=$(vid);
   if(!next)return;
-  if(!low && current){
-    current.classList.add('active','view-exit-'+direction);
-    const exitingView=current, exitingId=prev;
-    setTimeout(()=>{
-      if(currentView!==exitingId)exitingView.classList.remove('active','view-exit-'+direction);
-    },320);
-  }else if(current){
-    current.classList.remove('active','view-exit-forward','view-exit-backward');
-  }
-  next.classList.add('active',direction==='forward'?'view-slide-forward':'view-slide-backward');
-  currentView=vid;
+
+  // 画面切替中の二重表示を防ぐため、旧画面は先に完全に非表示にする。
+  // 新画面だけをアニメーションさせる方式に統一する。
   window.clearTimeout(window.__viewInTimer);
-  window.__viewInTimer=window.setTimeout(()=>next.classList.remove('view-slide-forward','view-slide-backward'),480);
-  document.querySelectorAll('.nav-btn, .b-nav-btn').forEach(b=>{
-    const active=b.dataset.v===vid;
-    b.classList.toggle('active',active);
-    if(active) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  document.querySelectorAll('.view').forEach(v=>{
+    v.classList.remove(
+      'active',
+      'view-slide-forward',
+      'view-slide-backward',
+      'view-exit-forward',
+      'view-exit-backward'
+    );
   });
-  const targetView=$(vid);
-  if(targetView && !document.body.classList.contains('low-power')) targetView.scrollTop=0;
+
+  current?.setAttribute('aria-hidden','true');
+  next.setAttribute('aria-hidden','false');
+
+  currentView=vid;
+
+  // 表示前に内容とスクロール位置を確定。
+  if(next)next.scrollTop=0;
   if(vid==='v-home') renderHome();
   else if(vid==='v-search') renderSearchInit();
   else if(vid==='v-shelf') renderShelf();
   else if(vid==='v-cal') renderCalendar();
   else if(vid==='v-settings') renderSettingsPage();
+
+  next.classList.add('active');
+
+  const reduced=document.body.classList.contains('low-power') ||
+    !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if(!reduced){
+    // 一度レイアウトを確定させてから、次画面だけを滑らせる。
+    void next.offsetWidth;
+    next.classList.add(direction==='forward'?'view-slide-forward':'view-slide-backward');
+    window.__viewInTimer=window.setTimeout(()=>{
+      next.classList.remove('view-slide-forward','view-slide-backward');
+    },480);
+  }
+
+  document.querySelectorAll('.nav-btn, .b-nav-btn').forEach(b=>{
+    const active=b.dataset.v===vid;
+    b.classList.toggle('active',active);
+    if(active)b.setAttribute('aria-current','page');
+    else b.removeAttribute('aria-current');
+  });
 }
 
 document.addEventListener('input',e=>{
