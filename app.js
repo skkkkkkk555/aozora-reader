@@ -45,7 +45,10 @@ const $=i=>document.getElementById(i);
     const detail=document.getElementById('phone-detail');
     const content=document.getElementById('phone-content');
     const tabs=document.querySelector('.phone-tabbar');
-    if(app){app.style.display='flex';app.setAttribute('aria-hidden','false');}
+    const readerActive=!!reader?.classList.contains('phone-open');
+    const detailActive=!!detail&&!detail.hidden&&detail.style.display!=='none';
+    if(!app||readerActive||detailActive)return;
+    app.style.display='flex';app.setAttribute('aria-hidden','false');
     if(reader){reader.hidden=true;reader.classList.remove('phone-open');reader.style.display='none';}
     if(detail){detail.hidden=true;detail.classList.remove('phone-open');detail.style.display='none';}
     if(content){content.hidden=false;content.style.display='block';}
