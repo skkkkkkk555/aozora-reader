@@ -3252,7 +3252,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     searchIndex:0,
     readerDoc:null,
     sheetOpen:false,
-    headerCompact:false
+    headerCompact:false,
+    readerFromDetail:false
   };
 
   const escP=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -3631,6 +3632,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       target.style.visibility='visible';
       target.removeAttribute('inert');
       target.setAttribute('aria-hidden','false');
+      if(target===reader)reader.classList.add('phone-open');
       if(!reduce){
         void target.offsetWidth;
         target.classList.add(direction==='back'?'phone-screen-pop':'phone-screen-push');
@@ -3640,6 +3642,8 @@ window.addEventListener('DOMContentLoaded',()=>{
         },340);
       }
     }
+
+    if(target!==reader)reader?.classList.remove('phone-open');
 
     if(mode==='main'&&tabs){
       tabs.hidden=false;
@@ -3677,9 +3681,10 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
   }
 
-  function openDetail(w,direction='forward'){
+  function openDetail(w,direction='forward',fromHistory=false){
     if(!w)return;
     state.work=w;
+    if(!fromHistory&&history.state?.phoneLayer!=='phone-detail')history.pushState({...history.state,phoneLayer:'phone-detail'},'',location.href);
     syncScreens('detail',direction);
     const d=$p('#phone-detail');if(!d)return;
     const p=Math.round(progressOf(w)*100), f=progressOf(w);
@@ -3725,9 +3730,10 @@ window.addEventListener('DOMContentLoaded',()=>{
     const bar=$p('#phone-reader-progress span');if(bar)bar.style.width=Math.round(f*100)+'%';
   }
 
-  async function openReader(w){
+  async function openReader(w,fromDetail=state.readerFromDetail){
     if(!w)return;
-    state.work=w;state.reader=true;state.readerDoc=null;
+    state.work=w;curWork=w;state.reader=true;state.readerDoc=null;state.readerFromDetail=!!fromDetail;
+    if(history.state?.phoneLayer!=='phone-reader')history.pushState({...history.state,phoneLayer:'phone-reader'},'',location.href);
     syncScreens('reader','forward');
     const titleEl=$p('#phone-reader-title');if(titleEl)titleEl.textContent=wt(w);
     const body=currentReaderBody();if(!body)return;
@@ -3752,11 +3758,13 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
   }
 
-  function closeReader(){
+  function closeReader(fromHistory=false){
     saveReaderProgress();state.reader=false;state.readerDoc=null;
     const b=currentReaderBody();if(b)b.onscroll=null;
-    if(state.work){openDetail(state.work,'back');}
-    else showScreen(state.screen,'back');
+    const w=state.work;
+    if(!fromHistory&&history.state?.phoneLayer==='phone-reader'){history.back();return;}
+    if(w&&state.readerFromDetail){openDetail(w,'back',true);}
+    else{state.work=null;state.readerFromDetail=false;showScreen(state.screen,'back');}
   }
 
   function addBookmark(){
@@ -3777,11 +3785,13 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!state.work)return;
     const sel=getSelection?.();const text=sel?.toString?.().trim()||'';
     if(!text){toast('本文を選択してから蛍光ペンを押してください');return;}
+    let applied=false;
     try{
       const range=sel.getRangeAt(0);
-      const mark=document.createElement('span');mark.className='hl-y';range.surroundContents(mark);
+      const mark=document.createElement('span');mark.className='hl-y';range.surroundContents(mark);applied=true;
     }catch{}
-    (hls[state.work.id]=hls[state.work.id]||[]).push({t:text.slice(0,500),c:'hl-y',d:Date.now()});
+    if(!applied){toast('この範囲には蛍光ペンを付けられません');return;}
+    (hls[state.work.id]=hls[state.work.id]||[]).push({t:text.slice(0,500),c:'hl-y',d:Date.now(),f:fraction()});
     save();if(sel)sel.removeAllRanges();toast('蛍光ペンを保存しました');
   }
   function speakReader(){
@@ -3833,6 +3843,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   function openPhoneSheet(title,html){
     const sheet=$p('#phone-sheet'),scrim=$p('#phone-sheet-scrim'),stitle=$p('#phone-sheet-title'),body=$p('#phone-sheet-body');
     if(!sheet||!scrim||!body)return;
+    if(history.state?.phoneLayer!=='phone-sheet')history.pushState({...history.state,phoneLayer:'phone-sheet'},'',location.href);
     stitle.textContent=title;
     body.innerHTML=html;
     // 閉じた後に残る inert/hidden が次回の操作をブロックしないよう、開く時に必ず解除する。
@@ -3847,7 +3858,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     state.sheetOpen=true;
     bindPhoneSheetDrag();
   }
-  function closePhoneSheet(){
+  function closePhoneSheet(fromHistory=false){
     const sheet=$p('#phone-sheet'),scrim=$p('#phone-sheet-scrim');
     if(!sheet||!scrim)return;
     state.sheetOpen=false;
@@ -3865,6 +3876,7 @@ window.addEventListener('DOMContentLoaded',()=>{
         scrim.hidden=true;
       }
     },380);
+    if(!fromHistory&&history.state?.phoneLayer==='phone-sheet')history.back();
   }
 
   function readerMenu(){
@@ -3965,7 +3977,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='shelf-filter'){state.shelf=el.dataset.filter||'reading';if(state.shelf==='records'){showScreen('records')}else renderShelf();return}
     if(act==='record-filter'){state.record=el.dataset.filter||'all';renderRecords();return}
     if(act==='detail-back'){state.work=null;showScreen(state.screen,'back');return}
-    if(act==='detail-read'){openReader(state.work);return}
+    if(act==='detail-read'){openReader(state.work,true);return}
     if(act==='detail-more'){
       const w=state.work;if(!w)return;
       openPhoneSheet('作品の操作',
@@ -3986,7 +3998,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='detail-want'){if(want.has(state.work.id))want.delete(state.work.id);else want.add(state.work.id);save();openDetail(state.work);return}
     if(act==='detail-done'){if(done.has(state.work.id))done.delete(state.work.id);else done.add(state.work.id);save();openDetail(state.work);return}
     if(act==='reader-back'){closeReader();return}
-    if(act==='reader-retry'){openReader(state.work);return}
+    if(act==='reader-retry'){openReader(state.work,state.readerFromDetail);return}
     if(act==='bookmark'){addBookmark();return}
     if(act==='note'){addMemo();return}
     if(act==='highlight'){addHighlight();return}
@@ -4197,6 +4209,9 @@ window.addEventListener('DOMContentLoaded',()=>{
       document.getElementById('app-boot')?.classList.add('done');
     }catch{}
   }
+
+  window.__aozoraPhoneOpenSheet=openPhoneSheet;
+  window.__aozoraPhoneCloseSheet=closePhoneSheet;
 
   window.addEventListener('aozora-phone-data-ready',()=>{
     if(!isPhone()||state.reader)return;
