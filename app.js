@@ -16,8 +16,8 @@ const refreshSmartphoneUI = ()=>{
   const mobileUA = navigator.userAgentData?.mobile === true ||
     /Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini|Mobile Safari/i.test(ua);
   const shortestSide = Math.min(window.innerWidth || 0, window.innerHeight || 0);
-  const touchDevice = (navigator.maxTouchPoints || 0) > 0;
-  const isSmartphone = !!mobileUA && !!touchDevice && shortestSide <= 899;
+  // タッチ対応判定はAndroid WebView等で0になることがあるため、端末判定には使用しない。
+  const isSmartphone = !!mobileUA && shortestSide <= 899;
   document.documentElement.classList.toggle('smartphone-ui', isSmartphone);
   document.documentElement.dataset.device = isSmartphone ? 'smartphone' : 'desktop';
   return isSmartphone;
@@ -572,6 +572,7 @@ async function checkCatalog(){
 function filterWorks(){
   works = allWorks.filter(w => !dead.has(w.id) && isPublicWork(w));
   byId = new Map(works.map(w => [w.id, w]));
+  try{window.dispatchEvent(new Event('aozora-phone-data-ready'));}catch{}
 }
 function openCatalogIntro(){
   const html=`
@@ -3281,6 +3282,11 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
     syncPhoneVisibility();
   }
+  window.addEventListener('aozora-phone-data-ready',()=>{
+    if(!isPhone()||state.reader)return;
+    try{showScreen(state.screen);}catch(err){console.error('Phone refresh failed',err);}
+    syncPhoneVisibility();
+  });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initPhoneShell,{once:true});
   else initPhoneShell();
 })();
