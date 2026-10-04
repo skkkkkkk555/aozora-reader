@@ -555,6 +555,7 @@ function closeLayerByUser(n,fn){
   setTimeout(()=>{closingLayer=false},120);
 }
 window.addEventListener('popstate',()=>{
+  if(document.documentElement.dataset.device==='smartphone')return;
   if(closingLayer){closingLayer=false;return;}
   const target=history.state?.layer||null;
 
@@ -2013,7 +2014,7 @@ function extractKeyphrases(txt){
 }
 
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible'&&wakeLockWanted&&$('reader').classList.contains('open')) requestScreenWakeLock();
+  if(document.visibilityState==='visible'&&wakeLockWanted&&isAnyReaderOpen()) requestScreenWakeLock();
 });
 document.addEventListener('keydown',e=>{
   if(!$('reader').classList.contains('open'))return;
