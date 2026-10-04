@@ -2824,6 +2824,120 @@ img,svg,canvas,video{max-width:100%}
   #mobile-fab{animation:none!important}
 }
 
+
+/* ================= Paper pagination v5 ================= */
+/* 読書画面を「連続スクロール」ではなく一枚ずつめくる紙面に */
+#body.paper-paged{
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  overscroll-behavior:none!important;
+  scroll-behavior:auto!important;
+  scrollbar-width:none!important;
+  -ms-overflow-style:none;
+  column-width:100%!important;
+  column-gap:0!important;
+  column-fill:auto!important;
+  column-rule:1px solid rgba(120,120,128,.12);
+  background:
+    linear-gradient(90deg,rgba(0,0,0,.035),transparent 4%,transparent 96%,rgba(0,0,0,.035));
+  touch-action:pan-x;
+  contain:layout paint;
+}
+#body.paper-paged::-webkit-scrollbar{display:none}
+#body.paper-paged>*{
+  break-inside:auto;
+}
+#body.paper-paged h2,
+#body.paper-paged h3{
+  break-after:avoid;
+}
+#body.paper-paged .aozora-page-break{
+  break-after:column;
+}
+#body.paper-paged::selection{background:rgba(0,122,255,.22)}
+
+#r-page-turn{
+  position:fixed;
+  inset:0;
+  z-index:18;
+  pointer-events:none;
+  display:none;
+  perspective:1200px;
+}
+#r-page-turn::before{
+  content:"";
+  position:absolute;
+  top:0;bottom:0;width:52%;
+  background:linear-gradient(90deg,rgba(255,255,255,.42),rgba(255,255,255,0));
+  opacity:0;
+  filter:blur(1px);
+}
+#r-page-turn.next::before{
+  left:-4%;
+  transform-origin:left center;
+  animation:paperTurnNext 360ms cubic-bezier(.16,1,.3,1) both;
+}
+#r-page-turn.prev::before{
+  right:-4%;
+  transform-origin:right center;
+  background:linear-gradient(270deg,rgba(255,255,255,.42),rgba(255,255,255,0));
+  animation:paperTurnPrev 360ms cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes paperTurnNext{
+  0%{opacity:0;transform:translateX(-10%) rotateY(0deg);box-shadow:none}
+  25%{opacity:.8}
+  100%{opacity:0;transform:translateX(110%) rotateY(-10deg);box-shadow:20px 0 34px rgba(0,0,0,.12)}
+}
+@keyframes paperTurnPrev{
+  0%{opacity:0;transform:translateX(10%) rotateY(0deg);box-shadow:none}
+  25%{opacity:.8}
+  100%{opacity:0;transform:translateX(-110%) rotateY(10deg);box-shadow:-20px 0 34px rgba(0,0,0,.12)}
+}
+.rich-motion #body.paper-paged{
+  transition:opacity 120ms ease;
+}
+.rich-motion #body.paper-paged.paper-turning-next{animation:paperContentNext 280ms cubic-bezier(.16,1,.3,1)}
+.rich-motion #body.paper-paged.paper-turning-prev{animation:paperContentPrev 280ms cubic-bezier(.16,1,.3,1)}
+@keyframes paperContentNext{
+  0%{opacity:.82;transform:translateX(10px)}
+  100%{opacity:1;transform:none}
+}
+@keyframes paperContentPrev{
+  0%{opacity:.82;transform:translateX(-10px)}
+  100%{opacity:1;transform:none}
+}
+#r-paper-hint{
+  position:absolute;
+  left:50%;
+  bottom:calc(60px + env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  z-index:17;
+  pointer-events:none;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(28,28,30,.72);
+  color:#fff;
+  font-size:11px;
+  opacity:0;
+  transition:opacity 180ms ease;
+}
+#reader.paper-first-open #r-paper-hint{opacity:.9}
+@media(max-width:899px){
+  #body.paper-paged{
+    padding:18px 20px!important;
+    column-width:100%!important;
+    column-gap:0!important;
+  }
+  #r-paper-hint{bottom:calc(96px + env(safe-area-inset-bottom))}
+}
+@media(max-width:520px){
+  #body.paper-paged{padding:16px 18px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  #r-page-turn,.rich-motion #body.paper-paged.paper-turning-next,.rich-motion #body.paper-paged.paper-turning-prev{animation:none!important}
+  #r-paper-hint{transition:none}
+}
+
 </style>
 </head>
 <body>
@@ -3188,6 +3302,7 @@ img,svg,canvas,video{max-width:100%}
   <button id="mobile-fab" data-act="mobile-quick" aria-label="クイックメニュー"><span class="mf-plus">＋</span><span class="mf-label">クイック</span></button>
   <button id="focus-timer-pill" data-act="focus-timer" aria-label="集中読書タイマー"><span class="ftp-dot"></span><span id="focus-timer-label">25:00</span></button>
 
+  <div id="r-page-turn" aria-hidden="true"></div>
   <!-- 読書画面 -->
   <div id="reader"><div id="r-scroll-progress" aria-hidden="true"></div>
     <button id="btn-exit-focus" data-act="r-exit-focus">集中解除</button>
@@ -3210,6 +3325,7 @@ img,svg,canvas,video{max-width:100%}
     </div>
 
     <div id="body" class="v serif"></div>
+    <div id="r-paper-hint">左右をタップしてページをめくる</div>
     
     <div class="r-dock" id="r-dock">
       <button class="r-dock-btn" data-act="r-bm"><svg class="icon"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>しおり</button>
@@ -3253,6 +3369,6 @@ img,svg,canvas,video{max-width:100%}
   <div id="toast" class="toast"><span id="toast-m"></span><button id="toast-u" data-act="toast-undo" style="color:var(--ac); font-weight:700">元に戻す</button></div>
 </div>
 
-<script src="./app.js?v=mobileux-20261004-1"></script>
+<script src="./app.js?v=paper-v5-20261005-1"></script>
 </body>
 </html>
