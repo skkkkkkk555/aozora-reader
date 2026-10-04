@@ -1615,26 +1615,34 @@ ${ctx}`;
 }
 
 async function pingOllama(){
+  if(ollamaPingController)try{ollamaPingController.abort()}catch{}
+  ollamaPingController=new AbortController();
   aiConn.ok=false; aiConn.models=[]; aiConn.err='';
-  if (!st.ollamaEnabled || !canUseOllama()) {
+  if(!st.ollamaEnabled||!canUseOllama()){
     renderHome();
     return;
   }
-  try {
-    const url = normalizeOllamaUrl(st.oUrl);
-    const res=await secureFetch(url+'/api/tags',{signal:sig(4000)});
+  const controller=ollamaPingController;
+  try{
+    const url=normalizeOllamaUrl(st.oUrl);
+    const timer=setTimeout(()=>controller.abort(),4000);
+    const res=await secureFetch(url+'/api/tags',{signal:controller.signal});
+    clearTimeout(timer);
     if(res.ok){
-      const raw=await readResponseBytes(res,64*1024); if(!raw)throw new Error('AI model list unavailable');
+      const raw=await readResponseBytes(res,64*1024);
+      if(!raw)throw new Error('AI model list unavailable');
       const d=JSON.parse(new TextDecoder().decode(raw));
       const models=Array.isArray(d.models)?d.models.map(m=>String(m?.name||'').trim()).filter(n=>/^[A-Za-z0-9._:/-]{1,128}$/.test(n)).slice(0,200):[];
       aiConn.ok=true; aiConn.models=models;
-      if(!st.oMod&&models.length) st.oMod=models[0];
-    } else {
+      if(!st.oMod&&models.length)st.oMod=models[0];
+    }else{
       aiConn.err='Ollama が応答しませんでした';
     }
   }catch(e){
-    aiConn.err = e && e.message ? e.message : '接続失敗';
+    if(e?.name!=='AbortError')aiConn.err=e?.message||'接続失敗';
     aiConn.ok=false;
+  }finally{
+    if(ollamaPingController===controller)ollamaPingController=null;
   }
   renderHome();
 }
@@ -1657,16 +1665,20 @@ function renderCalendar(){
 }
 
 // 読書分数タイマー
-setInterval(()=>{
-  if($('reader').classList.contains('open') && !document.hidden){
-    if(Date.now() - lastUserActivityTime < 65000){
-      const todayKey=localDateKey();
-      calData[todayKey]=(calData[todayKey]||0)+1;
-      save();
-      // 読書中はホーム全体を再描画しない。閉じた時にまとめて更新する。
-    }
+readingMinuteTimer=setInterval(()=>{
+  if(!$('reader').classList.contains('open')||document.hidden)return;
+  if(Date.now()-lastUserActivityTime<65000){
+    const todayKey=localDateKey();
+    calData[todayKey]=(calData[todayKey]||0)+1;
+    save();
   }
 },60000);
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&$('reader').classList.contains('open')){
+    lastUserActivityTime=Date.now();
+  }
+});
 
 /* ==================== 13. 設定画面レンダリング ==================== */
 function renderSettingsPage(){
