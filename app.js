@@ -3305,6 +3305,70 @@ window.addEventListener('DOMContentLoaded',()=>{
     },{passive:true});
   }
 
+  function bindReaderChrome(){
+    const body=$p('#phone-reader-body'),reader=$p('#phone-reader');
+    if(!body||!reader||body.dataset.chromeBound==='1')return;
+    body.dataset.chromeBound='1';
+    let last=body.scrollTop,raf=0;
+    const update=()=>{
+      raf=0;
+      const now=body.scrollTop;
+      const delta=now-last;
+      last=now;
+      if(now<18 || delta<-3){
+        reader.classList.remove('reader-chrome-hidden');
+      }else if(delta>4 && now>48){
+        reader.classList.add('reader-chrome-hidden');
+      }
+    };
+    body.addEventListener('scroll',()=>{
+      if(raf)return;
+      raf=requestAnimationFrame(update);
+    },{passive:true});
+    body.addEventListener('click',e=>{
+      if(e.target.closest?.('a,button,input,select,textarea'))return;
+      reader.classList.toggle('reader-chrome-hidden');
+    },{passive:true});
+  }
+
+  function bindPhoneSheetDrag(){
+    const sheet=$p('#phone-sheet');
+    if(!sheet||sheet.dataset.dragBound==='1')return;
+    sheet.dataset.dragBound='1';
+    const head=$p('.phone-sheet-head');
+    if(!head)return;
+    let startY=0,dragging=false,active=false;
+    const reset=()=>{
+      sheet.style.transform='';
+      sheet.style.transition='';
+      dragging=false;active=false;
+    };
+    head.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse'||e.target.closest?.('.phone-icon-button'))return;
+      startY=e.clientY;dragging=true;active=true;
+      sheet.style.transition='none';
+    },{passive:true});
+    head.addEventListener('pointermove',e=>{
+      if(!active)return;
+      const dy=Math.max(0,e.clientY-startY);
+      if(dy>0)sheet.style.transform='translate3d(0,'+dy+'px,0)';
+    },{passive:true});
+    head.addEventListener('pointerup',e=>{
+      if(!active)return;
+      const dy=Math.max(0,e.clientY-startY);
+      sheet.style.transition='';
+      if(dy>92){
+        reset();
+        closePhoneSheet();
+      }else{
+        sheet.style.transform='translate3d(0,0,0)';
+        setTimeout(()=>{if(!dragging)sheet.style.transform='';},220);
+      }
+      dragging=false;active=false;
+    },{passive:true});
+    head.addEventListener('pointercancel',reset,{passive:true});
+  }
+
   function bookVisual(w,cls='phone-book-cover',detail=false){
     const img=cover(w);
     if(img)return '<img class="'+cls+'" src="'+escP(img)+'" alt="" loading="lazy">';
