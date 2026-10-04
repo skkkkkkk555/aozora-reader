@@ -358,6 +358,22 @@ function bindBookPhysics(root){
   });
 }
 
+function enhanceActionables(root=document){
+  const list=root.querySelectorAll?.('[data-act]:not(button):not(input):not(select):not(textarea):not(label):not(a)')||[];
+  list.forEach(el=>{
+    if(!el.hasAttribute('role'))el.setAttribute('role','button');
+    if(!el.hasAttribute('tabindex'))el.setAttribute('tabindex','0');
+    if(el.dataset.keyActionBound)return;
+    el.dataset.keyActionBound='1';
+    el.addEventListener('keydown',e=>{
+      if(e.key==='Enter'||e.key===' '){
+        e.preventDefault();
+        el.click();
+      }
+    });
+  });
+}
+
 function bindPressPhysics(){
   const selector='button,.block[data-act],.tile[data-act]';
   document.addEventListener('pointerdown',e=>{
@@ -1584,6 +1600,14 @@ document.addEventListener('keydown',e=>{
     }
   }
 });
+const actionObserver=new MutationObserver(muts=>{
+  for(const m of muts){
+    for(const n of m.addedNodes){
+      if(n.nodeType===1)enhanceActionables(n);
+    }
+  }
+});
+document.addEventListener('DOMContentLoaded',()=>actionObserver.observe(document.body,{childList:true,subtree:true}),{once:true});
 document.addEventListener('selectionchange',()=>{
   lastUserActivityTime=Date.now();
   const s=getSelection(), t=s?.toString().trim();
@@ -2377,6 +2401,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
   applySettings();
   applyReaderConfig();
   initHomeHeroMotion();
+  enhanceActionables();
   bindPressPhysics();
   bindUiRipple();
   setBootStage(70,'本棚を準備中…');
