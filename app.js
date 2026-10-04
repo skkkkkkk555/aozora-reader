@@ -159,7 +159,7 @@ const sanitizeReaderHtml=html=>{
       const ok=allowHid||allowHeadClass||allowClass;
       if(!ok)el.removeAttribute(a.name);
     });
-    if((tag==='SPAN'||tag==='EM')&&el.hasAttribute('class')){
+    if((tag==='SPAN'||tag==='EM'||tag==='H2'||tag==='H3')&&el.hasAttribute('class')){
       const allowedClass=['em','tcy','serif','aozora-page-break'];
       el.setAttribute('class',el.getAttribute('class').split(/\s+/).filter(c=>allowedClass.includes(c)).join(' '));
       if(!el.getAttribute('class'))el.removeAttribute('class');
