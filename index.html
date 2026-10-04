@@ -4755,6 +4755,18 @@ html[data-device="desktop"] .tile[data-act]:focus-visible{
   }
 }
 
+
+/* Smartphone boot must never block the dedicated phone shell. */
+html[data-device="smartphone"] #app-boot{
+  display:none!important;
+  pointer-events:none!important;
+  visibility:hidden!important;
+}
+html[data-device="smartphone"] #phone-app{
+  opacity:1!important;
+  visibility:visible!important;
+}
+
 </style>
 </head>
 <body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),s=Math.min(innerWidth||0,innerHeight||0);if(m&&s<=899)document.documentElement.dataset.device="smartphone";else document.documentElement.dataset.device="desktop";}catch(e){}})();</script>
@@ -5258,6 +5270,6 @@ html[data-device="desktop"] .tile[data-act]:focus-visible{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=phone-v3-20261005-1"></script>
+<script src="./app.js?v=phone-v4-20261005-2"></script>
 </body>
 </html>
