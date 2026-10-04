@@ -176,7 +176,8 @@ const idb={
   d:new Promise(r=>{try{const o=indexedDB.open('aozora_terminal_v17',1);o.onupgradeneeded=()=>{const db=o.result;if(!db.objectStoreNames.contains('k'))db.createObjectStore('k');if(!db.objectStoreNames.contains('docs'))db.createObjectStore('docs');};o.onsuccess=()=>r(o.result);o.onerror=()=>r(null);o.onblocked=()=>r(null)}catch{r(null)}}),
   async get(s,k){try{const db=await this.d;return new Promise(r=>{const q=db.transaction(s,'readonly').objectStore(s).get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)})}catch{return null}},
   async set(s,k,v){try{const db=await this.d;db.transaction(s,'readwrite').objectStore(s).put(v,k)}catch{}},
-  async del(s,k){try{const db=await this.d;db.transaction(s,'readwrite').objectStore(s).delete(k)}catch{}}
+  async del(s,k){try{const db=await this.d;db.transaction(s,'readwrite').objectStore(s).delete(k)}catch{}},
+  async keys(s){try{const db=await this.d;return await new Promise(resolve=>{const q=db.transaction(s,'readonly').objectStore(s).getAllKeys();q.onsuccess=()=>resolve(q.result||[]);q.onerror=()=>resolve([])})}catch{return[]}}
 };
 
 let allWorks=[], works=[], byId=new Map(), dead=new Set();
@@ -203,6 +204,11 @@ const normalizeOllamaUrl=(value='')=>{
 };
 const canUseOllama=()=>st.ollamaEnabled&&!st.offline&&isSafeOllamaUrl(st.oUrl);
 const safeEl = id => document.getElementById(id) || null;
+async function hydrateSavedKeys(){
+  const keys=await idb.keys('docs');
+  savedKeys=new Set(keys.map(String).filter(safeStateKey));
+}
+
 const safeText = (id, value) => { const el = safeEl(id); if (el) el.textContent = String(value ?? ''); };
 const safeHTML = (id, value) => { const el = safeEl(id); if (el) el.innerHTML = String(value ?? ''); };
 const safeDisplay = (id, show) => { const el = safeEl(id); if (el) el.style.display = show ? '' : 'none'; };
@@ -1114,7 +1120,8 @@ function openBookDetail(w){
 /* ==================== 8. 本文取得 & パース ==================== */
 async function fetchHead(w){
   if(!w||typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))return '本文の取得をお試しください。';
-  const c=await idb.get('docs',w.id); if(c?.plain) return c.plain.slice(0,90);
+  const c=await idb.get('docs',w.id);
+  if(c&&typeof c==='object'&&typeof c.plain==='string'&&c.plain.length<=SEC.maxBookBytes/2)return c.plain.slice(0,90);
   const u=`https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${w.x}`;
   try {
     const res=await secureFetch(u,{headers:{'Range':'bytes=0-3500'},signal:sig(5000)});
@@ -1130,7 +1137,14 @@ async function fetchHead(w){
 let readerTok=0;
 async function fetchBody(w){
   if(!w||typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))throw new Error('invalid-book-path');
-  const c=await idb.get('docs',w.id); if(c?.html){c.html=sanitizeReaderHtml(c.html);c.plain=toPlain(c.html);return c;}
+  const c=await idb.get('docs',w.id);
+  if(c&&typeof c==='object'&&typeof c.html==='string'&&c.html.length<=4*1024*1024){
+    const safeHtml=sanitizeReaderHtml(c.html);
+    const safePlain=toPlain(safeHtml);
+    if(safeHtml.length<=4*1024*1024&&safePlain.length<=SEC.maxBookBytes){
+      c.html=safeHtml;c.plain=safePlain;return c;
+    }
+  }
   if(st.offline) throw new Error('オフラインです');
   const urls=[
     `https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${w.x}`,
@@ -2345,6 +2359,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
   bindUiRipple();
   setBootStage(70,'本棚を準備中…');
   await checkCatalog();
+  await hydrateSavedKeys();
   document.body.classList.add('app-ready');
   setBootStage(88,'仕上げています…');
   if(!document.body.classList.contains('low-power')) startFeatTimer();
