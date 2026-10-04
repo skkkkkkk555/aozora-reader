@@ -1238,6 +1238,40 @@ function setBootStage(percent,text){
   if(fill)fill.style.width=Math.max(0,Math.min(100,percent))+'%';
   if(stage)stage.textContent=text;
 }
+function bindMobileUx(){
+  const body=$('body');
+  const reader=$('reader');
+  const page=$('body');
+  if(!body||!reader||!page||page.dataset.uxBound)return;
+  page.dataset.uxBound='1';
+  let raf=0;
+  page.addEventListener('scroll',()=>{
+    if(raf)return;
+    raf=requestAnimationFrame(()=>{
+      raf=0;
+      const max=page.scrollHeight-page.clientHeight;
+      const p=max>0?page.scrollTop/max:0;
+      reader.style.setProperty('--read-scroll-progress',String(Math.max(0,Math.min(1,p))));
+      const bar=$('r-scroll-progress');
+      if(bar)bar.style.transform=`scaleX(${p})`;
+    });
+  },{passive:true});
+  let lastY=0, ticking=false;
+  page.addEventListener('touchstart',e=>{lastY=e.touches[0]?.clientY||0},{passive:true});
+  page.addEventListener('touchmove',e=>{
+    const y=e.touches[0]?.clientY||lastY,dy=y-lastY;lastY=y;
+    if(Math.abs(dy)<4||ticking)return;
+    ticking=true;
+    requestAnimationFrame(()=>{
+      ticking=false;
+      if(page.scrollTop>28){
+        if(dy<0)reader.classList.add('reader-scrolled');
+        else if(dy>0)reader.classList.remove('reader-scrolled');
+      }else reader.classList.remove('reader-scrolled');
+    });
+  },{passive:true});
+}
+
 function finishBoot(){
   setBootStage(100,'準備完了');
   const boot=$('app-boot');
