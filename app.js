@@ -580,7 +580,7 @@ async function fetchCatalog(){
     if(names.length>60000)throw new Error('catalog-entries-too-many');
     const cf=names.find(n=>n.toLowerCase().endsWith('.csv'));
     if(!cf||!z.files[cf]||z.files[cf].dir)throw new Error('catalog-csv-missing');
-    const csvText=await z.files[cf].async('string');
+    csvText=await z.files[cf].async('string');
     if(csvText.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
     await parseCsv(csvText);
   }catch(e){
