@@ -80,24 +80,31 @@ function visible(el){
     await waitFor(()=>d.querySelector('#phone-search-input'),4000);
   }else{
     if(device==='smartphone')fail('desktop detection unexpectedly smartphone');
-    await waitFor(()=>d.querySelector('#v-home [data-act="open-book"]'),16000);
-    const books=[...d.querySelectorAll('#v-home [data-act="open-book"]')].slice(0,8);
+    await waitFor(()=>d.querySelectorAll('#v-home [data-act="feat-read"],#v-home [data-act="open-book"],#v-home [data-act="feat-click"],#v-home [data-act="resume-click"]').length>0,20000);
+    const books=[...d.querySelectorAll('#v-home [data-act="feat-read"],#v-home [data-act="open-book"],#v-home [data-act="feat-click"],#v-home [data-act="resume-click"]')].slice(0,12);
     let readOk=false;
     for(const book of books){
       book.click();
       try{
-        await waitFor(()=>d.querySelector('#reader')?.classList.contains('open'),5000);
+        await waitFor(()=>d.querySelector('#reader')?.classList.contains('open')||d.querySelector('#sheet')?.classList.contains('open'),7000);
+        if(!d.querySelector('#reader')?.classList.contains('open')){
+          const readNow=d.querySelector('#sheet [data-act="read-now"]');
+          if(!readNow)throw new Error('desktop detail read action missing');
+          readNow.click();
+          await waitFor(()=>d.querySelector('#reader')?.classList.contains('open'),7000);
+        }
         await waitFor(()=>{
           const body=d.querySelector('#body');
           const text=(body?.innerText||'').trim();
           return text.length>80&&!/本文を読み込んでいます/.test(text)&&!/本文を読み込めませんでした/.test(text);
-        },12000);
+        },20000);
         readOk=true;
         d.querySelector('[data-act="r-back"]')?.click();
-        await waitFor(()=>!d.querySelector('#reader')?.classList.contains('open'),4000);
+        await waitFor(()=>!d.querySelector('#reader')?.classList.contains('open'),5000);
         break;
       }catch(err){
         d.querySelector('[data-act="r-back"]')?.click();
+        d.querySelector('#sheet [data-act="close-sheet"]')?.click();
         await wait(250);
       }
     }
@@ -111,6 +118,7 @@ function visible(el){
     search.click();
     await waitFor(()=>d.querySelector('#q-input'),4000);
   }
+
   document.title='SMOKE_OK';
   document.body.textContent='SMOKE_OK';
 })().catch(err=>{
