@@ -2605,7 +2605,25 @@ const esc=s=>(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"
 
 /* ==================== SECURITY HARDENING ==================== */
 const SEC={maxCatalogBytes:30*1024*1024,maxCatalogText:32*1024*1024,maxLocalFileBytes:30*1024*1024,maxBookBytes:16*1024*1024,maxResponseHeadBytes:4096,maxStateChars:4*1024*1024};
-const secureFetch=(input,init={})=>window.fetch(input,{...init,referrerPolicy:'no-referrer',cache:init.cache||'no-store'});
+const NETWORK_HOSTS=new Set(['www.aozora.gr.jp','aozorahack.org','raw.githubusercontent.com','corsproxy.io','corsproxy.org','api.allorigins.win']);
+const secureUrl=input=>{
+  try{
+    const u=new URL(typeof input==='string'?input:input.url,location.href);
+    if(!['http:','https:'].includes(u.protocol))return null;
+    if(u.origin===location.origin)return u;
+    if(NETWORK_HOSTS.has(u.hostname))return u;
+    if(u.protocol==='https:'&&isSafeOllamaUrl(u.href))return u;
+  }catch{}
+  return null;
+};
+const secureFetch=async(input,init={})=>{
+  const u=secureUrl(input);
+  if(!u)throw new Error('blocked-network-destination');
+  const method=String(init.method||'GET').toUpperCase();
+  const isOllama=typeof isSafeOllamaUrl==='function'&&isSafeOllamaUrl(u.href);
+  if(!isOllama&&!['GET','HEAD'].includes(method))throw new Error('blocked-network-method');
+  return window.fetch(u.href,{...init,referrerPolicy:'no-referrer',cache:init.cache||'no-store'});
+};
 async function readResponseBytes(res,maxBytes){
   if(!res||!res.ok)return null;
   const len=Number(res.headers.get('content-length')||0);
@@ -3043,7 +3061,8 @@ async function parseCsv(csv){
   if(typeof csv!=='string'||csv.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
   $('c-bar').style.width='70%'; $('c-log').textContent='解析中…';
   const lines=csv.split('\n');
-  const h=lines[0].split(',').map(s=>s.replace(/^["\uFEFF]|["\r]/g,'').trim());
+  if(!lines.length||lines[0].length>200000)throw new Error('catalog-header-invalid');
+  const h=lines[0].split(',').map(s=>s.replace(/^["\uFEFF]|["\r]/g,'').trim()).slice(0,100);
   const col={ id:h.indexOf('作品ID'), t:h.indexOf('作品名'), a:h.indexOf('姓'), am:h.indexOf('名'), tk:h.indexOf('作品名読み'), ak:h.indexOf('姓読み'), x:h.indexOf('テキストファイルURL'), d:h.indexOf('公開日'), k:h.indexOf('文字遣い種別'), c:h.indexOf('作品著作権フラグ'), ndc:h.indexOf('分類番号') };
   const m=new Map();
 
@@ -3955,6 +3974,9 @@ function openAiChat(initQ=''){
 }
 
 async function sendAiMessage(q){
+  q=String(q||'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g,'').trim();
+  if(q.length>4000){toast('質問が長すぎます（最大4000文字）');return;}
+  if(!/^[A-Za-z0-9._:/-]{1,128}$/.test(String(st.oMod||''))){toast('AIモデル名が不正です');return;}
   if(st.offline){ toast('オフライン設定中です'); return; }
   if(!canUseOllama() || !aiConn.ok || !st.oMod){ toast('Ollama未接続またはモデル未選択です'); return; }
 
@@ -3990,10 +4012,12 @@ ${ctx}`;
 
     clearTimeout(firstWordTimer);
     const r=res.body.getReader(), dec=new TextDecoder();
-    let full='', buf='';
+    let full='', buf=''; let responseBytes=0; const maxAiBytes=2*1024*1024;
 
     while(true){
       const {done,value}=await r.read(); if(done) break;
+      responseBytes+=value.byteLength;
+      if(responseBytes>maxAiBytes){try{await r.cancel();}catch{};throw new Error('AI応答が大きすぎます');}
       buf+=dec.decode(value,{stream:true});
       const lines=buf.split('\n'); buf=lines.pop();
       for(const l of lines){
@@ -4025,9 +4049,11 @@ async function pingOllama(){
     const url = normalizeOllamaUrl(st.oUrl);
     const res=await secureFetch(url+'/api/tags',{signal:sig(4000)});
     if(res.ok){
-      const d=await res.json();
-      aiConn.ok=true; aiConn.models=(d.models||[]).map(m=>m.name);
-      if(!st.oMod&&aiConn.models.length) st.oMod=aiConn.models[0];
+      const raw=await readResponseBytes(res,64*1024); if(!raw)throw new Error('AI model list unavailable');
+      const d=JSON.parse(new TextDecoder().decode(raw));
+      const models=Array.isArray(d.models)?d.models.map(m=>String(m?.name||'').trim()).filter(n=>/^[A-Za-z0-9._:/-]{1,128}$/.test(n)).slice(0,200):[];
+      aiConn.ok=true; aiConn.models=models;
+      if(!st.oMod&&models.length) st.oMod=models[0];
     } else {
       aiConn.err='Ollama が応答しませんでした';
     }
