@@ -2507,3 +2507,272 @@ window.addEventListener('DOMContentLoaded',async()=>{
     }
   }).observe($('search-sentinel'));
 });
+
+/* ================= Mobile UX / Focus Timer v4 ================= */
+let mobileFocusTimer=null;
+let mobileFocusTimerTick=null;
+
+function focusTimerFormat(ms){
+  const sec=Math.max(0,Math.ceil(ms/1000));
+  const m=Math.floor(sec/60), s=sec%60;
+  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+function getResumeWork(){
+  const unfinished=hist.map(h=>byId.get(h.id)).filter(w=>w&&((pos[w.id]?.f||0)<0.97));
+  return unfinished[0]||null;
+}
+function getTodayQuickWork(){
+  const today=localDateKey();
+  if(st.todayBook&&st.todayBook.date===today&&byId.has(st.todayBook.id)) return byId.get(st.todayBook.id);
+  return featList[featIdx]||works[Math.floor(Math.random()*Math.max(1,works.length))]||null;
+}
+function renderFocusTimerPill(){
+  const pill=$('focus-timer-pill'), label=$('focus-timer-label');
+  if(!pill||!label)return;
+  if(!mobileFocusTimer){
+    pill.style.display='none';
+    return;
+  }
+  const remaining=mobileFocusTimer.running
+    ? Math.max(0,mobileFocusTimer.end-Date.now())
+    : mobileFocusTimer.remaining;
+  label.textContent=focusTimerFormat(remaining);
+  pill.classList.toggle('paused',!mobileFocusTimer.running);
+  pill.style.display=window.innerWidth<=899?'inline-flex':'none';
+}
+function stopFocusTimerTicker(){
+  if(mobileFocusTimerTick){clearInterval(mobileFocusTimerTick);mobileFocusTimerTick=null;}
+}
+function finishFocusTimer(){
+  stopFocusTimerTicker();
+  mobileFocusTimer=null;
+  renderFocusTimerPill();
+  try{navigator.vibrate?.([180,90,180]);}catch{}
+  toast('集中読書タイマーが終了しました 📖');
+}
+function updateFocusTimer(){
+  if(!mobileFocusTimer)return;
+  if(mobileFocusTimer.running){
+    mobileFocusTimer.remaining=Math.max(0,mobileFocusTimer.end-Date.now());
+    if(mobileFocusTimer.remaining<=0){finishFocusTimer();return;}
+  }
+  renderFocusTimerPill();
+}
+function startFocusTimer(minutes){
+  const duration=Math.max(1,Number(minutes)||25)*60*1000;
+  mobileFocusTimer={duration,remaining:duration,end:Date.now()+duration,running:true};
+  stopFocusTimerTicker();
+  mobileFocusTimerTick=setInterval(updateFocusTimer,250);
+  renderFocusTimerPill();
+  toast(minutes+'分の集中読書を開始しました');
+}
+function pauseFocusTimer(){
+  if(!mobileFocusTimer)return;
+  updateFocusTimer();
+  mobileFocusTimer.running=false;
+  mobileFocusTimer.remaining=Math.max(0,mobileFocusTimer.end-Date.now());
+  stopFocusTimerTicker();
+  renderFocusTimerPill();
+}
+function resumeFocusTimer(){
+  if(!mobileFocusTimer)return;
+  if(mobileFocusTimer.remaining<=0){finishFocusTimer();return;}
+  mobileFocusTimer.end=Date.now()+mobileFocusTimer.remaining;
+  mobileFocusTimer.running=true;
+  stopFocusTimerTicker();
+  mobileFocusTimerTick=setInterval(updateFocusTimer,250);
+  renderFocusTimerPill();
+}
+function resetFocusTimer(){
+  stopFocusTimerTicker();
+  mobileFocusTimer=null;
+  renderFocusTimerPill();
+}
+function openFocusTimerSheet(){
+  const current=mobileFocusTimer;
+  const live=current?(current.running?Math.max(0,current.end-Date.now()):current.remaining):25*60*1000;
+  if(current){
+    sheet('集中読書タイマー',`
+      <div class="focus-timer-hero">
+        <div class="focus-timer-clock" id="focus-sheet-clock">${focusTimerFormat(live)}</div>
+        <div class="focus-timer-caption">${current.running?'集中して読んでいます':'一時停止中です'}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        ${current.running
+          ? '<button class="primary" data-act="focus-pause" style="flex:2">一時停止</button>'
+          : '<button class="primary" data-act="focus-resume" style="flex:2">再開</button>'}
+        <button class="secondary" data-act="focus-reset" style="flex:1">リセット</button>
+      </div>
+      <div style="font-size:13px;color:var(--sub);line-height:1.6">タイマーは画面を閉じても端末の時刻を基準に進みます。終了時は通知とバイブレーションを試みます。</div>
+    `);
+    const timerSheetRefresh=()=>{
+      const el=$('focus-sheet-clock');
+      if(!el||!mobileFocusTimer)return;
+      const left=mobileFocusTimer.running?Math.max(0,mobileFocusTimer.end-Date.now()):mobileFocusTimer.remaining;
+      el.textContent=focusTimerFormat(left);
+      if(left<=0) finishFocusTimer();
+    };
+    const id=setInterval(()=>{
+      if(!$('sheet').classList.contains('open')){clearInterval(id);return;}
+      timerSheetRefresh();
+    },250);
+    return;
+  }
+  sheet('集中読書タイマー',`
+    <div class="focus-timer-hero">
+      <div class="focus-timer-clock" id="focus-sheet-clock">25:00</div>
+      <div class="focus-timer-caption">本を開いて、集中する時間を決めよう</div>
+    </div>
+    <div class="focus-preset-grid">
+      <button class="secondary" data-act="focus-preset" data-min="5">5分</button>
+      <button class="secondary" data-act="focus-preset" data-min="15">15分</button>
+      <button class="secondary" data-act="focus-preset" data-min="25">25分</button>
+    </div>
+    <div class="focus-preset-grid">
+      <button class="secondary" data-act="focus-preset" data-min="45">45分</button>
+      <button class="secondary" data-act="focus-preset" data-min="60">60分</button>
+      <button class="primary" data-act="focus-start" data-min="25">25分で開始</button>
+    </div>
+    <div style="font-size:13px;color:var(--sub);line-height:1.6">読書中は残り時間が小さく表示されます。ページを離れてもタイマーは動き続けます。</div>
+  `);
+}
+function openMobileQuickSheet(){
+  const resume=getResumeWork();
+  const today=getTodayQuickWork();
+  const random=works.length?works[Math.floor(Math.random()*works.length)]:null;
+  const readLabel=resume?'続きから読む':'おすすめを読む';
+  sheet('クイックメニュー',`
+    <div class="mobile-quick-grid">
+      <button class="block mobile-quick-card blue" data-act="quick-resume">
+        <span class="mq-icon">↻</span>
+        <span class="mq-title">${readLabel}</span>
+        <span class="mq-sub">${resume?esc(resume.t):'まず一冊を開きます'}</span>
+      </button>
+      <button class="block mobile-quick-card green" data-act="quick-today">
+        <span class="mq-icon">✦</span>
+        <span class="mq-title">今日の一冊</span>
+        <span class="mq-sub">${today?esc(today.t):'おすすめを探します'}</span>
+      </button>
+      <button class="block mobile-quick-card orange" data-act="quick-random" ${random?'':'disabled'}>
+        <span class="mq-icon">⌘</span>
+        <span class="mq-title">ランダム</span>
+        <span class="mq-sub">思いがけない一冊へ</span>
+      </button>
+      <button class="block mobile-quick-card purple" data-act="quick-timer">
+        <span class="mq-icon">◷</span>
+        <span class="mq-title">${mobileFocusTimer?'タイマーを開く':'集中タイマー'}</span>
+        <span class="mq-sub">${mobileFocusTimer?focusTimerFormat(mobileFocusTimer.running?mobileFocusTimer.end-Date.now():mobileFocusTimer.remaining):'5〜60分から選択'}</span>
+      </button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px">
+      <button class="secondary" data-act="quick-search">検索を開く</button>
+      <button class="secondary" data-act="quick-shelf">本棚を開く</button>
+    </div>
+  `);
+}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest?.('[data-act]');
+  if(!b)return;
+  const act=b.dataset.act;
+  if(act==='mobile-quick'){openMobileQuickSheet();return;}
+  if(act==='focus-timer'){openFocusTimerSheet();return;}
+  if(act==='quick-resume'){
+    const w=getResumeWork()||featList[featIdx]||works[0];
+    closeSheet();
+    if(w) openReader(w); else toast('作品カタログを準備してください');
+    return;
+  }
+  if(act==='quick-today'){
+    const w=getTodayQuickWork();
+    closeSheet();
+    if(w) openBookDetail(w); else toast('作品カタログを準備してください');
+    return;
+  }
+  if(act==='quick-random'){
+    const w=works.length?works[Math.floor(Math.random()*works.length)]:null;
+    closeSheet();
+    if(w) openBookDetail(w); else toast('作品カタログを準備してください');
+    return;
+  }
+  if(act==='quick-search'){
+    closeSheet();
+    switchView('v-search');
+    requestAnimationFrame(()=>$('q-input')?.focus());
+    return;
+  }
+  if(act==='quick-shelf'){
+    closeSheet();
+    switchView('v-shelf');
+    return;
+  }
+  if(act==='quick-timer'){
+    openFocusTimerSheet();
+    return;
+  }
+  if(act==='focus-preset'){
+    const min=Number(b.dataset.min)||25;
+    const preview=$('focus-sheet-clock');
+    if(preview)preview.textContent=String(min).padStart(2,'0')+':00';
+    document.querySelectorAll('[data-act="focus-preset"]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const startBtn=document.querySelector('[data-act="focus-start"]');
+    if(startBtn)startBtn.dataset.min=String(min);
+    if(startBtn)startBtn.textContent=min+'分で開始';
+    return;
+  }
+  if(act==='focus-start'){
+    startFocusTimer(Number(b.dataset.min)||25);
+    closeSheet();
+    return;
+  }
+  if(act==='focus-pause'){
+    pauseFocusTimer();
+    openFocusTimerSheet();
+    return;
+  }
+  if(act==='focus-resume'){
+    resumeFocusTimer();
+    openFocusTimerSheet();
+    return;
+  }
+  if(act==='focus-reset'){
+    resetFocusTimer();
+    closeSheet();
+    toast('集中タイマーをリセットしました');
+    return;
+  }
+});
+
+function bindMobilePageSwipe(){
+  const page=$('body');
+  if(!page||page.dataset.swipeUxBound)return;
+  page.dataset.swipeUxBound='1';
+  let sx=0,sy=0,active=false;
+  page.addEventListener('touchstart',e=>{
+    if(!page.classList.contains('v')){active=false;return;}
+    const t=e.touches[0];if(!t){active=false;return;}
+    sx=t.clientX;sy=t.clientY;active=true;
+  },{passive:true});
+  page.addEventListener('touchend',e=>{
+    if(!active||!page.classList.contains('v'))return;
+    active=false;
+    const t=e.changedTouches[0];if(!t)return;
+    const dx=t.clientX-sx,dy=t.clientY-sy;
+    if(Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.35)return;
+    const next=dx<0;
+    const amount=Math.max(220,Math.min(page.clientWidth*.86,700));
+    page.classList.remove('reader-page-next','reader-page-prev');
+    void page.offsetWidth;
+    page.classList.add(next?'reader-page-next':'reader-page-prev');
+    page.scrollBy({left:next?-amount:amount,behavior:'smooth'});
+    setTimeout(()=>page.classList.remove('reader-page-next','reader-page-prev'),380);
+  });
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  bindMobilePageSwipe();
+  renderFocusTimerPill();
+  window.addEventListener('resize',renderFocusTimerPill,{passive:true});
+});
+
