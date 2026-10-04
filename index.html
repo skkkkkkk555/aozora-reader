@@ -651,6 +651,329 @@ input[type="range"] { border:0!important; padding:0!important; background:transp
   box-shadow:none!important;
 }
 
+
+/* ================= Apple Books / iOS App Structure ================= */
+body{background:#f2f2f7!important;}
+:root[data-theme="dark"] body{background:#000!important;}
+#app{max-width:1440px;}
+@media(min-width:900px){
+  #sidebar{
+    width:220px;
+    padding:28px 12px;
+    background:#f2f2f7;
+  }
+  #sidebar::before{
+    content:"青空文庫";
+    display:block;
+    padding:2px 14px 20px;
+    font-size:28px;
+    font-weight:700;
+    letter-spacing:-.03em;
+    color:var(--fg);
+  }
+  :root[data-theme="dark"] #sidebar{background:#1c1c1e;}
+  .nav-btn{min-height:44px;border-radius:10px;font-size:15px;}
+}
+.view{
+  max-width:1100px;
+  margin:0 auto;
+  width:100%;
+  padding:24px 28px calc(90px + env(safe-area-inset-bottom));
+}
+.view h1{
+  font-family:var(--font-sans)!important;
+  font-size:34px!important;
+  font-weight:700!important;
+  letter-spacing:-.035em;
+}
+#v-home > div:first-child{
+  margin-bottom:22px!important;
+  padding-top:4px;
+}
+#v-home .brand-wrap{align-items:flex-end;}
+#v-home .brand-mark{
+  font-size:38px;
+  line-height:1;
+  font-weight:750;
+}
+#v-home .brand-sub{display:none;}
+#home-today-info{margin-top:8px!important;font-size:13px!important;}
+#home-clock{padding-top:0!important;font-size:12px!important;}
+
+#v-home .insight-bar{
+  grid-template-columns:repeat(3,1fr);
+  gap:1px;
+  background:var(--line);
+  border-radius:16px;
+  overflow:hidden;
+  margin:0 0 24px;
+}
+#v-home .insight-card{
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  padding:14px 15px;
+}
+#v-home .insight-kicker{font-size:12px;}
+#v-home .insight-value{font-size:24px;}
+
+#v-home .grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+#v-home .grid > .block{
+  border-radius:18px;
+}
+#v-home .grid > #blk-resume{
+  grid-column:1/-1;
+  min-height:220px;
+  padding:24px;
+  background:#007aff;
+  color:#fff;
+}
+#v-home .grid > #blk-feat{
+  grid-column:1/-1;
+  min-height:190px;
+  padding:22px;
+}
+#v-home .grid > #blk-recent{
+  grid-column:1/-1;
+}
+#blk-recent{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  padding:0!important;
+}
+#blk-recent > div:first-child{
+  font-size:22px!important;
+  margin-bottom:12px!important;
+}
+#recent-scroll{
+  gap:12px!important;
+  overflow-x:auto!important;
+  scrollbar-width:none;
+}
+#recent-scroll::-webkit-scrollbar{display:none;}
+#recent-scroll > *{
+  min-width:150px;
+}
+#v-home .grid > #blk-smart-rec,
+#v-home .grid > .green{
+  min-height:148px;
+}
+#v-home .grid > .search-cta{
+  grid-column:1/-1;
+  min-height:64px;
+  border-radius:16px;
+  padding:10px 16px;
+}
+#v-home .grid > #blk-ai{grid-column:1/-1;}
+#v-home .grid > .blue,
+#v-home .grid > .green,
+#v-home .grid > .orange,
+#v-home .grid > .purple{
+  background:var(--card);
+}
+#v-home .grid > .blue,
+#v-home .grid > .green,
+#v-home .grid > .orange,
+#v-home .grid > .purple,
+#v-home .grid > .block[data-act="open-rand"],
+#v-home .grid > .block[data-act="tab-shelf-fav"],
+#v-home .grid > .block[data-act="open-fav-authors"],
+#v-home .grid > .block[data-act="tab-shelf-want"],
+#v-home .grid > .block[data-act="tab-shelf-notes"],
+#v-home .grid > .block[data-act="nav-settings"]{
+  min-height:76px;
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  gap:13px;
+  padding:14px 16px;
+}
+#v-home .grid > .blue .icon,
+#v-home .grid > .green .icon,
+#v-home .grid > .orange .icon,
+#v-home .grid > .purple .icon{
+  color:var(--ac);
+}
+#v-home .grid > .block[data-act="nav-settings"]{display:flex;}
+
+#v-search > div:first-child > button,
+#v-shelf > div:first-child > button,
+#v-cal > div:first-child > button,
+#v-settings > div:first-child > button{display:none;}
+#v-search > div:first-child{gap:0!important;margin-bottom:18px!important;}
+#v-search > div:first-child > div{box-shadow:none!important;background:transparent!important;}
+#v-search > div:first-child > div::before{
+  content:"探す";
+  display:block;
+  font-size:34px;
+  font-weight:700;
+  letter-spacing:-.035em;
+  margin:0 0 14px;
+}
+#q-input{height:48px!important;background:#e5e5ea!important;border:0!important;border-radius:12px!important;font-size:17px!important;}
+#q-input:focus{box-shadow:0 0 0 3px rgba(0,122,255,.14)!important;}
+#v-search > div:nth-child(3) .seg{
+  background:#e5e5ea;
+}
+
+#v-shelf .seg,
+#v-search #sort-seg{
+  width:100%!important;
+  overflow:auto;
+  scrollbar-width:none;
+}
+#v-shelf .seg::-webkit-scrollbar,
+#v-search #sort-seg::-webkit-scrollbar{display:none;}
+#v-shelf .seg button,
+#v-search #sort-seg button{
+  white-space:nowrap;
+  min-width:max-content;
+  padding:0 14px;
+}
+#shelf-tiles{
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:24px 14px;
+}
+#shelf-tiles .tile{
+  min-height:0;
+  aspect-ratio:2/3;
+  padding:14px;
+  border-radius:8px;
+  border:1px solid rgba(0,0,0,.08);
+  box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+#shelf-tiles .tile-t{
+  font-size:17px;
+  line-height:1.35;
+}
+#search-tiles{
+  gap:14px;
+}
+#search-tiles .tile{
+  min-height:220px;
+  border-radius:8px;
+  padding:15px;
+}
+
+#v-cal .block,
+#v-settings .block{
+  box-shadow:none;
+  border:0;
+}
+#v-cal .block{
+  border-radius:16px;
+  border:1px solid var(--line);
+}
+#settings-area{gap:22px!important;}
+#settings-area .block{
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:var(--card);
+}
+#settings-area .block > div{
+  min-height:54px;
+  display:flex;
+  align-items:center;
+}
+#settings-area .block > div > div:first-child{flex:1;}
+#settings-area .block > button{
+  min-height:52px;
+}
+#v-settings h1,#v-shelf h1,#v-cal h1{
+  font-family:var(--font-sans)!important;
+}
+
+#bottom-nav{
+  height:calc(64px + env(safe-area-inset-bottom));
+  background:rgba(248,248,250,.94);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+}
+:root[data-theme="dark"] #bottom-nav{background:rgba(28,28,30,.94);}
+.b-nav-btn{font-size:10px;min-height:unset!important;}
+.b-nav-btn.active{font-weight:600;}
+
+.r-bar{
+  height:calc(54px + env(safe-area-inset-top));
+  background:rgba(248,248,250,.94);
+}
+.r-bottom-bar{
+  height:calc(52px + env(safe-area-inset-bottom));
+  background:rgba(248,248,250,.94);
+}
+.r-dock{
+  min-height:50px;
+  background:rgba(248,248,250,.94);
+}
+#r-title{
+  font-family:var(--font-sans)!important;
+  font-size:16px!important;
+}
+#body,#body.v{
+  max-width:900px;
+  margin:auto;
+}
+.sheet{
+  max-width:720px;
+  left:50%;
+  right:auto;
+  width:100%;
+  transform:translate(-50%,105%);
+  border-radius:22px 22px 0 0;
+}
+.sheet.open{transform:translate(-50%,0);}
+.popover{border-radius:13px;}
+@media(max-width:899px){
+  .view{
+    max-width:none;
+    padding:18px 16px calc(82px + env(safe-area-inset-bottom));
+  }
+  #v-home > div:first-child{margin-bottom:20px!important;}
+  #v-home .brand-mark{font-size:34px;}
+  #v-home .grid{grid-template-columns:1fr;gap:12px;}
+  #v-home .grid > #blk-resume,
+  #v-home .grid > #blk-feat,
+  #v-home .grid > #blk-recent,
+  #v-home .grid > .search-cta,
+  #v-home .grid > #blk-ai,
+  #v-home .grid > #blk-smart-rec,
+  #v-home .grid > .green{grid-column:1/-1;}
+  #v-home .grid > .blue,
+  #v-home .grid > .green,
+  #v-home .grid > .orange,
+  #v-home .grid > .purple,
+  #v-home .grid > .block[data-act="open-rand"],
+  #v-home .grid > .block[data-act="tab-shelf-fav"],
+  #v-home .grid > .block[data-act="open-fav-authors"],
+  #v-home .grid > .block[data-act="tab-shelf-want"],
+  #v-home .grid > .block[data-act="tab-shelf-notes"],
+  #v-home .grid > .block[data-act="nav-settings"]{
+    min-height:64px;
+  }
+  #v-search > div:first-child > div::before{font-size:32px;}
+  #shelf-tiles{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:20px 10px;
+  }
+  #search-tiles{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:430px){
+  #v-home .insight-bar{grid-template-columns:1fr 1fr 1fr;}
+  #v-home .insight-card{padding:12px 8px;}
+  #v-home .insight-kicker{font-size:10px;}
+  #v-home .insight-value{font-size:20px;}
+  #shelf-tiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 8px;}
+  #search-tiles{grid-template-columns:1fr;}
+  #bottom-nav{height:calc(62px + env(safe-area-inset-bottom));}
+}
+
 </style>
 </head>
 <body>
@@ -658,7 +981,7 @@ input[type="range"] { border:0!important; padding:0!important; background:transp
   <!-- PC向けサイドバー (900px以上) -->
   <aside id="sidebar">
     <div style="height: 12px"></div>
-    <button class="nav-btn active" data-act="nav" data-v="v-home"><svg class="icon"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>ホーム</button>
+    <button class="nav-btn active" data-act="nav" data-v="v-home"><svg class="icon"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>今読む</button>
     <button class="nav-btn" data-act="nav" data-v="v-search"><svg class="icon"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>探す</button>
     <button class="nav-btn" data-act="nav" data-v="v-shelf"><svg class="icon"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>本棚</button>
     <button class="nav-btn" data-act="nav" data-v="v-cal"><svg class="icon"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>読書カレンダー</button>
@@ -991,6 +1314,7 @@ input[type="range"] { border:0!important; padding:0!important; background:transp
     <button class="b-nav-btn active" data-act="nav" data-v="v-home"><svg class="icon"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>ホーム</button>
     <button class="b-nav-btn" data-act="nav" data-v="v-search"><svg class="icon"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>探す</button>
     <button class="b-nav-btn" data-act="nav" data-v="v-shelf"><svg class="icon"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>本棚</button>
+    <button class="b-nav-btn" data-act="nav" data-v="v-cal"><svg class="icon"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>読書記録</button>
     <button class="b-nav-btn" data-act="nav" data-v="v-settings"><svg class="icon"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>設定</button>
   </nav>
 
