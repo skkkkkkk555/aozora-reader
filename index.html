@@ -5379,6 +5379,498 @@ html[data-device="desktop"]:not(.smartphone-ui).low-power #v-home .grid > #blk-s
   background:var(--card) !important;
 }
 
+
+/* =========================================================
+   iOS Deep Fidelity Pass — no Liquid Glass
+   Inspired by Apple's navigation, list, toolbar and motion
+   guidance while preserving the app's non-glass visual system.
+   ========================================================= */
+
+/* ---- Smartphone chrome ---- */
+html[data-device="smartphone"] #phone-app{
+  --phone-blue:#007aff;
+  --phone-blue-soft:rgba(0,122,255,.10);
+  --phone-fill:#f2f2f7;
+  --phone-card:#fff;
+  --phone-secondary:#8e8e93;
+  --phone-separator:#d1d1d6;
+  --phone-pressed:#e5e5ea;
+  background:var(--phone-fill);
+}
+html[data-theme="dark"][data-device="smartphone"] #phone-app{
+  --phone-fill:#000;
+  --phone-card:#1c1c1e;
+  --phone-secondary:#98989d;
+  --phone-separator:#38383a;
+  --phone-pressed:#2c2c2e;
+}
+
+html[data-device="smartphone"] .phone-header{
+  position:relative;
+  z-index:30;
+  min-height:112px;
+  padding:calc(9px + env(safe-area-inset-top)) 20px 12px;
+  background:rgba(242,242,247,.94);
+  border-bottom:0;
+  box-shadow:none;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-header{
+  background:rgba(0,0,0,.94);
+}
+html[data-device="smartphone"] .phone-header::after{
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:0;
+  height:1px;
+  background:transparent;
+  transition:background .18s ease;
+}
+html[data-device="smartphone"] .phone-header.compact{
+  min-height:calc(56px + env(safe-area-inset-top));
+  padding:env(safe-area-inset-top) 14px 7px;
+  background:rgba(242,242,247,.96);
+  box-shadow:0 1px 0 rgba(60,60,67,.13);
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-header.compact{
+  background:rgba(0,0,0,.96);
+  box-shadow:0 1px 0 rgba(255,255,255,.10);
+}
+html[data-device="smartphone"] .phone-header.compact::after{
+  background:var(--phone-separator);
+  opacity:.55;
+}
+html[data-device="smartphone"] .phone-header-copy{
+  transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .22s ease;
+  transform-origin:left bottom;
+}
+html[data-device="smartphone"] .phone-header.compact .phone-header-copy{
+  position:absolute;
+  left:50%;
+  top:calc(50% + env(safe-area-inset-top)/2);
+  transform:translate(-50%,-50%);
+  text-align:center;
+}
+html[data-device="smartphone"] .phone-header-title{
+  font-size:34px;
+  font-weight:800;
+  letter-spacing:-.04em;
+  line-height:1.02;
+  transition:font-size .28s cubic-bezier(.2,.8,.2,1),letter-spacing .28s ease;
+}
+html[data-device="smartphone"] .phone-header.compact .phone-header-title{
+  font-size:17px;
+  font-weight:720;
+  letter-spacing:-.018em;
+}
+html[data-device="smartphone"] .phone-header-actions{
+  z-index:2;
+}
+html[data-device="smartphone"] .phone-icon-button{
+  width:38px;height:38px;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:var(--phone-blue);
+  transition:transform .16s cubic-bezier(.2,.8,.2,1),opacity .12s ease,background .16s ease;
+}
+html[data-device="smartphone"] .phone-icon-button::before{
+  content:"";
+  position:absolute;
+}
+html[data-device="smartphone"] .phone-icon-button:active{
+  transform:scale(.88)!important;
+  opacity:.55;
+}
+html[data-device="smartphone"] .phone-content{
+  padding:0 16px calc(102px + env(safe-area-inset-bottom));
+  scroll-padding-top:20px;
+  overscroll-behavior-y:contain;
+}
+html[data-device="smartphone"] .phone-section{
+  margin-bottom:30px;
+}
+html[data-device="smartphone"] .phone-section-head{
+  margin:30px 2px 11px;
+}
+html[data-device="smartphone"] .phone-section-title{
+  font-size:20px;
+  font-weight:740;
+  letter-spacing:-.028em;
+}
+html[data-device="smartphone"] .phone-section-link{
+  min-height:32px;
+  display:inline-flex;
+  align-items:center;
+  padding:0 4px;
+}
+
+/* ---- Native-feeling search field ---- */
+html[data-device="smartphone"] .phone-search-wrap{
+  margin:16px 0 9px;
+}
+html[data-device="smartphone"] .phone-search{
+  height:42px;
+  border-radius:11px;
+  background:#e5e5ea!important;
+  font-size:16px;
+  padding-left:38px;
+  box-shadow:none;
+  border:0!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-search{
+  background:#1c1c1e!important;
+}
+html[data-device="smartphone"] .phone-search:focus{
+  outline:2px solid rgba(0,122,255,.28);
+  outline-offset:-1px;
+}
+html[data-device="smartphone"] .phone-search-icon{
+  left:12px;
+}
+
+/* ---- iOS grouped-list language ---- */
+html[data-device="smartphone"] .phone-card,
+html[data-device="smartphone"] .phone-list,
+html[data-device="smartphone"] .phone-stat-row{
+  border:0;
+  box-shadow:none;
+  background:var(--phone-card);
+}
+html[data-device="smartphone"] .phone-list,
+html[data-device="smartphone"] .phone-stat-row{
+  border-radius:13px;
+  overflow:hidden;
+}
+html[data-device="smartphone"] .phone-row{
+  min-height:60px;
+  padding:10px 16px;
+  border-bottom-color:rgba(60,60,67,.14)!important;
+  transition:background .12s ease,transform .12s ease;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-row{
+  border-bottom-color:rgba(255,255,255,.11)!important;
+}
+html[data-device="smartphone"] .phone-row:active{
+  background:var(--phone-pressed);
+  transform:none;
+}
+html[data-device="smartphone"] .phone-row-icon{
+  width:30px;
+  color:var(--phone-blue);
+}
+html[data-device="smartphone"] .phone-chevron{
+  color:#c7c7cc;
+  font-size:25px;
+  transform:translateY(-1px);
+}
+html[data-device="smartphone"] .phone-row-title{
+  font-size:16px;
+  font-weight:560;
+}
+html[data-device="smartphone"] .phone-row-sub{
+  font-size:12px;
+}
+
+/* ---- Primary action like iOS filled buttons ---- */
+html[data-device="smartphone"] .phone-primary{
+  min-height:50px;
+  border-radius:12px!important;
+  font-size:16px!important;
+  font-weight:650!important;
+  box-shadow:none!important;
+  transition:transform .13s ease,opacity .13s ease;
+}
+html[data-device="smartphone"] .phone-primary:active{
+  transform:scale(.985)!important;
+  opacity:.72;
+}
+html[data-device="smartphone"] .phone-secondary{
+  background:transparent!important;
+  border:0!important;
+  color:var(--phone-blue)!important;
+  font-weight:600!important;
+}
+
+/* ---- Floating tab bar without Liquid Glass ---- */
+html[data-device="smartphone"] .phone-tabbar{
+  left:10px;
+  right:10px;
+  bottom:calc(9px + env(safe-area-inset-bottom));
+  height:64px;
+  border:1px solid rgba(60,60,67,.13);
+  border-radius:18px;
+  background:rgba(249,249,251,.97);
+  box-shadow:0 8px 28px rgba(0,0,0,.12);
+  padding:2px 3px;
+  gap:1px;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-tabbar{
+  background:rgba(29,29,31,.97);
+  border-color:#38383a;
+  box-shadow:0 8px 28px rgba(0,0,0,.42);
+}
+html[data-device="smartphone"] .phone-tab{
+  min-width:0;
+  height:58px;
+  border-radius:14px;
+  gap:2px;
+  color:#8e8e93;
+  transition:color .18s ease,transform .16s cubic-bezier(.2,.8,.2,1),background .18s ease;
+}
+html[data-device="smartphone"] .phone-tab.active{
+  color:var(--phone-blue)!important;
+  background:rgba(0,122,255,.08);
+}
+html[data-device="smartphone"] .phone-tab-icon{
+  width:28px;height:25px;
+  background:transparent!important;
+  transition:transform .18s cubic-bezier(.2,.8,.2,1);
+}
+html[data-device="smartphone"] .phone-tab.active .phone-tab-icon{
+  transform:translateY(-1px) scale(1.03);
+}
+html[data-device="smartphone"] .phone-tab small{
+  font-size:10px;
+  font-weight:620;
+}
+html[data-device="smartphone"] .phone-tab:active{
+  transform:scale(.96)!important;
+}
+
+/* ---- Cards: reduce "web card" feel ---- */
+html[data-device="smartphone"] .phone-quick{
+  min-height:105px;
+  border-radius:14px!important;
+  border:0!important;
+  background:var(--phone-card)!important;
+  box-shadow:none!important;
+}
+html[data-device="smartphone"] .phone-continue{
+  min-height:148px;
+  border-radius:16px!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+html[data-device="smartphone"] .phone-book-cover{
+  border-radius:9px;
+  box-shadow:0 4px 12px rgba(0,0,0,.14);
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-book-cover{
+  box-shadow:0 4px 12px rgba(0,0,0,.40);
+}
+
+/* ---- Navigation stack: opaque incoming page, old page never peeks through ---- */
+html[data-device="smartphone"] .phone-detail,
+html[data-device="smartphone"] .phone-reader{
+  will-change:transform,opacity;
+  backface-visibility:hidden;
+}
+html[data-device="smartphone"] .phone-detail{
+  background:var(--phone-fill);
+}
+html[data-device="smartphone"] .phone-reader{
+  background:#fbfaf7;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-reader{
+  background:#101010;
+}
+html[data-device="smartphone"] .phone-screen-push{
+  animation:phoneScreenPush .30s cubic-bezier(.2,.8,.2,1) both;
+}
+html[data-device="smartphone"] .phone-screen-pop{
+  animation:phoneScreenPop .26s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes phoneScreenPush{
+  from{opacity:.72;transform:translate3d(30px,0,0)}
+  to{opacity:1;transform:none}
+}
+@keyframes phoneScreenPop{
+  from{opacity:.72;transform:translate3d(-24px,0,0)}
+  to{opacity:1;transform:none}
+}
+
+/* ---- Detail header ---- */
+html[data-device="smartphone"] .phone-detail{
+  padding-top:calc(3px + env(safe-area-inset-top));
+}
+html[data-device="smartphone"] .phone-detail-nav{
+  height:50px;
+}
+html[data-device="smartphone"] .phone-detail-nav > b{
+  font-size:17px!important;
+  font-weight:650!important;
+}
+html[data-device="smartphone"] .phone-detail-cover{
+  width:min(58vw,224px);
+  height:min(82vw,320px);
+  border-radius:10px;
+  box-shadow:0 12px 28px rgba(0,0,0,.16);
+}
+html[data-device="smartphone"] .phone-detail-title{
+  font-size:27px;
+  font-weight:780;
+}
+html[data-device="smartphone"] .phone-detail-actions{
+  margin-top:14px;
+}
+html[data-device="smartphone"] .phone-detail-actions button{
+  border:0!important;
+  background:var(--phone-card)!important;
+}
+
+/* ---- Bottom sheet: native action-sheet proportions ---- */
+html[data-device="smartphone"] .phone-sheet-scrim{
+  background:rgba(0,0,0,.34);
+  transition:opacity .24s cubic-bezier(.2,.8,.2,1);
+}
+html[data-device="smartphone"] .phone-sheet{
+  left:8px;right:8px;
+  bottom:calc(8px + env(safe-area-inset-bottom));
+  border-radius:22px;
+  max-height:78vh;
+  background:var(--phone-card);
+  box-shadow:0 18px 52px rgba(0,0,0,.24);
+  transform:translate3d(0,calc(100% + 20px),0);
+  transition:transform .34s cubic-bezier(.16,1,.3,1);
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-sheet{
+  box-shadow:0 18px 52px rgba(0,0,0,.48);
+}
+html[data-device="smartphone"] .phone-sheet.open{
+  transform:none;
+}
+html[data-device="smartphone"] .phone-sheet-head{
+  padding:8px 16px 10px;
+  border-bottom:1px solid var(--phone-separator);
+}
+html[data-device="smartphone"] .phone-sheet-row{
+  min-height:54px;
+  border-radius:10px!important;
+}
+html[data-device="smartphone"] .phone-sheet-row:active{
+  background:var(--phone-pressed)!important;
+}
+html[data-device="smartphone"] .phone-sheet-row span:first-child{
+  width:30px;
+}
+
+/* ---- Reader chrome ---- */
+html[data-device="smartphone"] .phone-reader-header{
+  background:rgba(251,250,247,.94);
+  border-bottom:1px solid rgba(60,60,67,.10);
+  transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .18s ease;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-reader-header{
+  background:rgba(16,16,16,.94);
+}
+html[data-device="smartphone"] .phone-reader.reader-chrome-hidden .phone-reader-header{
+  transform:translateY(-100%);
+  opacity:0;
+  pointer-events:none;
+}
+html[data-device="smartphone"] .phone-reader.reader-chrome-hidden .phone-reader-toolbar{
+  transform:translateY(calc(100% + 18px));
+  opacity:0;
+  pointer-events:none;
+}
+html[data-device="smartphone"] .phone-reader-toolbar{
+  transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .18s ease;
+  background:rgba(249,249,249,.96);
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-reader-toolbar{
+  background:rgba(35,35,38,.96);
+}
+html[data-device="smartphone"] .phone-reader-tool{
+  transition:transform .12s ease,background .12s ease,color .12s ease;
+}
+html[data-device="smartphone"] .phone-reader-tool:active{
+  transform:scale(.92);
+  background:rgba(0,122,255,.10);
+}
+
+/* ---- Reader progress / page affordance ---- */
+html[data-device="smartphone"] .phone-reader-progress{
+  height:3px;
+  background:transparent;
+}
+html[data-device="smartphone"] .phone-reader-progress span{
+  box-shadow:none;
+}
+html[data-device="smartphone"] .phone-reader-body{
+  scroll-padding-top:26px;
+  scroll-padding-bottom:140px;
+}
+
+/* ---- Selection polish ---- */
+html[data-device="smartphone"] ::selection{
+  background:rgba(0,122,255,.22);
+}
+
+/* ---- Desktop / iPadOS-inspired refinement (non-phone) ---- */
+html[data-device="desktop"] .nav-btn{
+  border-radius:10px;
+  min-height:46px;
+  color:var(--sub);
+  transition:background .18s ease,color .18s ease,transform .16s ease;
+}
+html[data-device="desktop"] .nav-btn.active{
+  background:rgba(0,122,255,.10);
+  color:#007aff;
+  box-shadow:none;
+}
+html[data-device="desktop"] .nav-btn:active{
+  transform:scale(.985);
+}
+html[data-device="desktop"] #sidebar::before{
+  font-size:16px;
+  padding-bottom:18px;
+}
+html[data-device="desktop"] .view{
+  scroll-padding-top:20px;
+}
+html[data-device="desktop"] .view > div:first-child h1{
+  font-size:32px!important;
+  font-weight:780!important;
+  letter-spacing:-.035em;
+}
+html[data-device="desktop"] .block{
+  border-radius:16px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 22px rgba(28,28,32,.045);
+}
+html[data-device="desktop"] .block:active,
+html[data-device="desktop"] .tile:active{
+  transform:scale(.992);
+}
+html[data-device="desktop"] .seg{
+  border-radius:10px;
+}
+html[data-device="desktop"] .seg button{
+  border-radius:8px;
+}
+html[data-device="desktop"] .sheet{
+  border-radius:18px;
+}
+html[data-device="desktop"] .sheet-head{
+  border-bottom:1px solid var(--apple-separator);
+}
+
+/* ---- Motion accessibility ---- */
+@media(prefers-reduced-motion:reduce){
+  html[data-device="smartphone"] .phone-header,
+  html[data-device="smartphone"] .phone-header-copy,
+  html[data-device="smartphone"] .phone-header-title,
+  html[data-device="smartphone"] .phone-sheet,
+  html[data-device="smartphone"] .phone-reader-header,
+  html[data-device="smartphone"] .phone-reader-toolbar{
+    transition:none!important;
+  }
+  html[data-device="smartphone"] .phone-screen-push,
+  html[data-device="smartphone"] .phone-screen-pop{
+    animation:none!important;
+  }
+}
+
 </style>
 </head>
 <body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),s=Math.min(innerWidth||0,innerHeight||0);if(m&&s<=899)document.documentElement.dataset.device="smartphone";else document.documentElement.dataset.device="desktop";}catch(e){}})();</script>
