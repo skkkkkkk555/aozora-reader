@@ -4062,8 +4062,9 @@ window.addEventListener('DOMContentLoaded',()=>{
       e.stopPropagation();
       phoneHaptic(10);
       if(state.sheetOpen){closePhoneSheet();return;}
-      if(state.reader)closeReader();
-      else if(state.work)showScreen(state.screen,'back');
+      if(state.reader){closeReader();return;}
+      else if(state.work&&history.state?.phoneLayer==='phone-detail'){history.back();return;}
+      else if(state.work){state.work=null;showScreen(state.screen,'back');}
       else if(state.screen!=='home')showScreen('home','back');
       return;
     }
