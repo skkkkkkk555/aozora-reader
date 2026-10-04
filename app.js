@@ -3086,11 +3086,25 @@ window.addEventListener('DOMContentLoaded',()=>{
     searchHits:[],
     searchIndex:0,
     readerDoc:null,
-    sheetOpen:false
+    sheetOpen:false,
+    headerCompact:false
   };
 
   const escP=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const works=()=>Array.from(byId instanceof Map?byId.values():[]).filter(isPublicWork);
+
+  // Cache the smartphone catalog and precompute search text to reduce repeated work.
+  let phoneWorksCache=[];
+  let phoneWorksIndex=[];
+  let phoneWorksCacheSize=-1;
+  const works=()=>{
+    const size=byId instanceof Map?byId.size:-1;
+    if(size!==phoneWorksCacheSize){
+      phoneWorksCache=Array.from(byId instanceof Map?byId.values():[]).filter(isPublicWork);
+      phoneWorksIndex=phoneWorksCache.map(w=>({w,text:(wt(w)+' '+wa(w)).toLocaleLowerCase('ja')}));
+      phoneWorksCacheSize=size;
+    }
+    return phoneWorksCache;
+  };
   const getWork=id=>byId.get(String(id))||byId.get(id)||null;
   const wt=w=>w?.t||w?.title||'作品';
   const wa=w=>w?.a||w?.author||w?.authors||'';
@@ -3100,6 +3114,72 @@ window.addEventListener('DOMContentLoaded',()=>{
   const progressOf=w=>Math.max(0,Math.min(1,Number(pos?.[w?.id]?.f||0)));
   const dateText=t=>t?new Date(t).toLocaleDateString('ja-JP',{month:'short',day:'numeric'}):'';
   const setPhoneTitle=t=>{const e=$p('#phone-title');if(e)e.textContent=t;};
+
+  function phoneHaptic(ms=7){try{navigator.vibrate?.(ms)}catch{}}
+
+  function phoneSearchSave(){
+    const q=String(state.query||'').trim();
+    if(!q||q.length>120)return;
+    searchHistory=[q,...searchHistory.filter(x=>String(x)!==q)].slice(0,8);
+    save();
+  }
+
+  function phoneReadingStreak(){
+    const days=new Set();
+    for(const h of hist||[]){
+      const t=Number(h?.t)||0;
+      if(t>0)days.add(new Date(t).toLocaleDateString('en-CA',{timeZone:'Asia/Tokyo'}));
+    }
+    let streak=0,cursor=new Date();
+    cursor.setHours(0,0,0,0);
+    while(streak<366){
+      const key=cursor.toLocaleDateString('en-CA',{timeZone:'Asia/Tokyo'});
+      if(!days.has(key))break;
+      streak++;cursor.setDate(cursor.getDate()-1);
+    }
+    return streak;
+  }
+
+  async function sharePhoneWork(w=state.work){
+    if(!w)return;
+    const title=wt(w),author=wa(w);
+    const text=author?title+' — '+author:title;
+    const url=location.href.split('#')[0];
+    try{
+      if(navigator.share){await navigator.share({title,text,url});return;}
+      if(navigator.clipboard?.writeText){
+        await navigator.clipboard.writeText(text+'\\n'+url);
+        toast('作品情報をコピーしました');
+        return;
+      }
+    }catch(err){if(err?.name==='AbortError')return;}
+    toast('共有機能を利用できません');
+  }
+
+  function phonePress(el){
+    if(!el)return;
+    el.classList.add('phone-pressing');
+    clearTimeout(el.__phonePressTimer);
+    el.__phonePressTimer=setTimeout(()=>el.classList.remove('phone-pressing'),210);
+  }
+
+  function bindPhoneHeaderScroll(){
+    const content=$p('#phone-content'),header=$p('.phone-header');
+    if(!content||!header||content.dataset.headerBound==='1')return;
+    content.dataset.headerBound='1';
+    let raf=0;
+    content.addEventListener('scroll',()=>{
+      if(raf)return;
+      raf=requestAnimationFrame(()=>{
+        raf=0;
+        const compact=content.scrollTop>18;
+        if(compact!==state.headerCompact){
+          state.headerCompact=compact;
+          header.classList.toggle('compact',compact);
+        }
+      });
+    },{passive:true});
+  }
 
   function bookVisual(w,cls='phone-book-cover',detail=false){
     const img=cover(w);
