@@ -5809,6 +5809,8 @@ html[data-device="smartphone"] .phone-reader-progress span{
   box-shadow:none;
 }
 html[data-device="smartphone"] .phone-reader-body{
+  touch-action:pan-y!important;
+
   scroll-padding-top:26px;
   scroll-padding-bottom:140px;
 }
@@ -6002,7 +6004,7 @@ html[data-device="smartphone"] .phone-reader-header-actions .phone-icon-button:l
 
 </style>
 </head>
-<body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),s=Math.min(innerWidth||0,innerHeight||0);if(m&&s<=899)document.documentElement.dataset.device="smartphone";else document.documentElement.dataset.device="desktop";}catch(e){}})();</script>
+<body>
 <!-- Dedicated smartphone application shell -->
 <div id="phone-app" aria-hidden="true">
   <header class="phone-header">
@@ -6515,6 +6517,6 @@ html[data-device="smartphone"] .phone-reader-header-actions .phone-icon-button:l
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=ios-deep-20261005-1"></script>
+<script src="./app.js?v=ios-deep-20261005-4"></script>
 </body>
 </html>
