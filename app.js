@@ -3663,6 +3663,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     syncScreens('reader','forward');
     const titleEl=$p('#phone-reader-title');if(titleEl)titleEl.textContent=wt(w);
     const body=currentReaderBody();if(!body)return;
+    bindReaderChrome();
+    const reader=$p('#phone-reader');reader?.classList.remove('reader-chrome-hidden');
     body.style.setProperty('--phone-reader-fs',state.readerFs+'px');
     body.style.setProperty('--phone-reader-lh',state.readerLh);
     body.innerHTML='<div class="phone-empty">本文を読み込んでいます…</div>';
@@ -3672,7 +3674,9 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(!state.reader||String(state.work?.id)!==String(w.id))return;
       state.readerDoc=doc;
       body.innerHTML=sanitizeReaderHtml(doc.html);
+      body.scrollTop=0;
       body.onscroll=saveReaderProgress;
+      $p('#phone-reader')?.classList.remove('reader-chrome-hidden');
       requestAnimationFrame(()=>{const f=progressOf(w);body.scrollTop=f*Math.max(0,body.scrollHeight-body.clientHeight);saveReaderProgress();});
       hist=hist.filter(x=>String(x.id)!==String(w.id));hist.unshift({id:w.id,t:Date.now()});hist=hist.slice(0,200);save();
     }catch(err){
@@ -3763,12 +3767,12 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!sheet||!scrim||!body)return;
     stitle.textContent=title;body.innerHTML=html;
     sheet.hidden=false;sheet.setAttribute('aria-hidden','false');sheet.classList.add('open');
-    scrim.hidden=false;scrim.classList.add('open');state.sheetOpen=true;
+    scrim.hidden=false;scrim.setAttribute('aria-hidden','false');state.sheetOpen=true;bindPhoneSheetDrag();
   }
   function closePhoneSheet(){
     const sheet=$p('#phone-sheet'),scrim=$p('#phone-sheet-scrim');
     if(!sheet||!scrim)return;
-    sheet.classList.remove('open');scrim.classList.remove('open');
+    sheet.classList.remove('open');scrim.classList.remove('open');sheet.setAttribute('aria-hidden','true');scrim.setAttribute('aria-hidden','true');sheet.setAttribute('inert','');
     setTimeout(()=>{if(!state.sheetOpen){sheet.hidden=true;scrim.hidden=true;}},300);
     state.sheetOpen=false;
   }
