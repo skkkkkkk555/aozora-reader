@@ -2444,6 +2444,94 @@ input[type="range"]{accent-color:var(--apple-blue)}
   .rich-motion #q-input:focus,.rich-motion #r-search-inp:focus,.rich-motion #r-slider:focus,.rich-motion #rng-goal:focus,
   .rich-motion #search-scope-bar,.rich-motion #search-empty-msg,.rich-motion #shelf-empty{animation:none!important;transition:none!important}
 }
+
+/* ===== Motion/UI refinement v3.1: remaining quiet states ===== */
+@keyframes motionBannerIn{
+  0%{opacity:0;transform:translateY(-8px) scale(.985)}
+  70%{opacity:1;transform:translateY(1px) scale(1.002)}
+  100%{opacity:1;transform:none}
+}
+@keyframes motionOnboardIn{
+  0%{opacity:0;transform:translateY(12px) scale(.98)}
+  100%{opacity:1;transform:none}
+}
+@keyframes motionProgressFill{
+  0%{transform:scaleX(0);transform-origin:left center}
+  100%{transform:scaleX(1);transform-origin:left center}
+}
+@keyframes motionRecentIn{
+  0%{opacity:0;transform:translateX(18px) scale(.985)}
+  100%{opacity:1;transform:none}
+}
+@keyframes motionEmptyIn{
+  0%{opacity:0;transform:translateY(8px)}
+  100%{opacity:1;transform:none}
+}
+.rich-motion #banner{
+  animation:motionBannerIn 360ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #blk-onboard{
+  animation:motionOnboardIn 440ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #onboard-items > *{
+  animation:motionRecentIn 340ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #onboard-items > :nth-child(2){animation-delay:70ms}
+.rich-motion #onboard-items > :nth-child(3){animation-delay:140ms}
+.rich-motion #chal-pbar{
+  transform-origin:left center;
+  animation:motionProgressFill 620ms cubic-bezier(.16,1,.3,1) both;
+  transition:width 420ms cubic-bezier(.16,1,.3,1);
+}
+.rich-motion #blk-recent{
+  animation:motionRecentIn 460ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #recent-scroll .recent-book{
+  animation:motionRecentIn 430ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #recent-scroll .recent-book:nth-child(2){animation-delay:55ms}
+.rich-motion #recent-scroll .recent-book:nth-child(3){animation-delay:110ms}
+.rich-motion #recent-scroll .recent-book:nth-child(4){animation-delay:165ms}
+.rich-motion #recent-scroll .recent-book:nth-child(5){animation-delay:220ms}
+.rich-motion #search-init-box{
+  animation:motionEmptyIn 420ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #shelf-timeline-area{
+  animation:motionEmptyIn 420ms cubic-bezier(.16,1,.3,1) both;
+}
+.rich-motion #search-empty-msg{
+  transform-origin:center top;
+}
+.rich-motion #search-scope-text{
+  transition:opacity 180ms ease,transform 220ms var(--spring);
+}
+.rich-motion #search-scope-bar:hover #search-scope-text{
+  transform:translateX(2px);
+}
+.low-power #banner,
+.low-power #blk-onboard,
+.low-power #onboard-items > *,
+.low-power #chal-pbar,
+.low-power #blk-recent,
+.low-power #recent-scroll .recent-book,
+.low-power #search-init-box,
+.low-power #shelf-timeline-area{
+  animation:none!important;
+  transition:none!important;
+}
+@media (prefers-reduced-motion:reduce){
+  .rich-motion #banner,
+  .rich-motion #blk-onboard,
+  .rich-motion #onboard-items > *,
+  .rich-motion #chal-pbar,
+  .rich-motion #blk-recent,
+  .rich-motion #recent-scroll .recent-book,
+  .rich-motion #search-init-box,
+  .rich-motion #shelf-timeline-area{
+    animation:none!important;
+    transition:none!important;
+  }
+}
 </style>
 </head>
 <body>
