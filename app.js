@@ -3939,8 +3939,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   'use strict';
   const root=document.documentElement;
   const isGlassDevice=()=>root.dataset.device==='desktop'&&!root.classList.contains('smartphone-ui');
-  const MAX_SHAPES=20;
-  let canvas=null,gl=null,program=null,texture=null,raf=0;
+  const MAX_SHAPES=48;
+  let canvas=null,gl=null,program=null,raf=0;
   let resizeTimer=0,collectTimer=0;
   let shapes=[],shapeCount=0,lastW=0,lastH=0,lastDpr=0,lastCollect=0;
   let mouseX=.5,mouseY=.5,targetX=.5,targetY=.5,impact=0;
@@ -3958,10 +3958,9 @@ window.addEventListener('DOMContentLoaded',()=>{
     uniform vec2 u_lightPos;
     uniform float u_impact;
     uniform int u_shapeCount;
-    uniform vec4 u_shapes[20];
-    uniform vec4 u_style[20];
-    uniform sampler2D u_tex;
-
+    uniform vec4 u_shapes[48];
+    uniform vec4 u_style[48];
+    
     float sdRoundedBox(vec2 p,vec2 b,float r){
       vec2 q=abs(p)-b+r;
       return min(max(q.x,q.y),0.0)+length(max(q,0.0))-r;
@@ -3974,7 +3973,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
     float sceneSDF(vec2 p){
       float d=1e5;
-      for(int i=0;i<20;i++){
+      for(int i=0;i<48;i++){
         if(i<u_shapeCount){
           vec4 s=u_shapes[i],st=u_style[i];
           vec2 q=p-s.xy;
@@ -4068,11 +4067,10 @@ window.addEventListener('DOMContentLoaded',()=>{
         float rn=sqrt((fi+.5)/float(SAMPLES));
         vec2 off=vec2(cos(theta),sin(theta))*rn*blurAmount;
         vec2 base=texUv+refractOffset+off;
-        vec3 procedural=fieldBackground(base);
-        float rv=texture2D(u_tex,base-dispDir*1.2).r;
-        float gv=texture2D(u_tex,base).g;
-        float bv=texture2D(u_tex,base+dispDir*1.2).b;
-        col+=mix(procedural,vec3(rv,gv,bv),.72);
+        vec3 rCol=fieldBackground(base-dispDir*1.35);
+        vec3 gCol=fieldBackground(base);
+        vec3 bCol=fieldBackground(base+dispDir*1.35);
+        col+=vec3(rCol.r,gCol.g,bCol.b);
       }
       col/=float(SAMPLES);
 
@@ -4103,7 +4101,7 @@ window.addEventListener('DOMContentLoaded',()=>{
         *(.65*specular+tapGlow);
       vec3 finalGlow=vec3(fresnel*.35+spec1+spec2+rimHighlight+causticRing);
       finalGlow+=vec3(dispDir.x*.24,.018*(1.0-uRefract),-dispDir.x*.24);
-      gl_FragColor=vec4(col+finalGlow,.72+blurProgress*.20);
+      gl_FragColor=vec4(col+finalGlow,1.0);
     }
   `;
 
@@ -4119,44 +4117,6 @@ window.addEventListener('DOMContentLoaded',()=>{
     return s;
   }
 
-  function makeTexture(){
-    if(!gl||!texture)return;
-    const c=document.createElement('canvas');
-    const dpr=Math.min(window.devicePixelRatio||1,1.25);
-    c.width=Math.max(512,Math.floor(window.innerWidth*dpr));
-    c.height=Math.max(512,Math.floor(window.innerHeight*dpr));
-    const ctx=c.getContext('2d');
-
-    // 文字・記号は使わず、ガラス越しに見える背景だけを生成する。
-    const bg=ctx.createRadialGradient(
-      c.width*.22,c.height*.18,0,
-      c.width*.50,c.height*.52,Math.max(c.width,c.height)*.85
-    );
-    bg.addColorStop(0,'#0b1a2a');
-    bg.addColorStop(.28,'#07111f');
-    bg.addColorStop(.62,'#040914');
-    bg.addColorStop(1,'#020305');
-    ctx.fillStyle=bg;
-    ctx.fillRect(0,0,c.width,c.height);
-
-    const glows=[
-      [c.width*.16,c.height*.25,c.width*.23,'rgba(36,180,255,.16)'],
-      [c.width*.78,c.height*.20,c.width*.25,'rgba(120,80,255,.12)'],
-      [c.width*.55,c.height*.82,c.width*.28,'rgba(20,210,190,.10)'],
-      [c.width*.92,c.height*.78,c.width*.18,'rgba(255,140,80,.06)']
-    ];
-    for(const [x,y,r,color] of glows){
-      const g=ctx.createRadialGradient(x,y,0,x,y,r);
-      g.addColorStop(0,color);
-      g.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=g;
-      ctx.fillRect(0,0,c.width,c.height);
-    }
-
-    gl.bindTexture(gl.TEXTURE_2D,texture);
-    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c);
-  }
-
   function setup(){
     if(!isGlassDevice())return false;
     if(canvas&&gl)return true;
@@ -4164,7 +4124,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     canvas.id='liquid-glass-canvas';
     canvas.setAttribute('aria-hidden','true');
     document.body.insertBefore(canvas,document.body.firstChild);
-    gl=canvas.getContext('webgl',{antialias:true,alpha:true,premultipliedAlpha:true,powerPreference:'high-performance'});
+    gl=canvas.getContext('webgl',{antialias:true,alpha:false,premultipliedAlpha:false,powerPreference:'high-performance'});
     if(!gl){
       root.classList.add('liquid-glass-fallback');
       canvas.remove();
@@ -4206,17 +4166,9 @@ window.addEventListener('DOMContentLoaded',()=>{
       shapeCount:gl.getUniformLocation(program,'u_shapeCount'),
       shapes:gl.getUniformLocation(program,'u_shapes[0]'),
       style:gl.getUniformLocation(program,'u_style[0]'),
-      tex:gl.getUniformLocation(program,'u_tex')
     };
-    texture=gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D,texture);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-    makeTexture();
     resize();
     return true;
   }
@@ -4231,33 +4183,51 @@ window.addEventListener('DOMContentLoaded',()=>{
     canvas.width=w;
     canvas.height=h;
     gl.viewport(0,0,w,h);
-    makeTexture();
   }
 
   function collectShapes(){
     if(!canvas||!isGlassDevice())return;
     const selectors=[
       '#sidebar',
+      '#main-area',
       '#v-home .grid > #blk-resume',
       '#v-home .grid > #blk-feat',
       '#v-home .grid > #blk-goal',
       '#v-home .grid > #blk-smart-rec',
       '#v-home .grid > .search-cta',
+      '#v-home .grid > .block',
       '#v-home .insight-bar',
       '#v-search #q-input',
       '#v-search #sort-seg',
-      '#v-search .chip-btn:nth-child(-n+4)',
-      '#v-shelf #shelf-tiles .tile:nth-child(-n+6)',
-      '#settings-area .block:nth-child(-n+4)',
+      '#v-search .chip-btn:nth-child(-n+6)',
+      '#v-search #search-scope-bar',
+      '#v-search #search-init-box',
+      '#v-search #genre-grid > *',
+      '#v-search #kana-chips > *',
+      '#search-results-area .tile:nth-child(-n+8)',
+      '#search-results-area #search-result-summary',
+      '#search-empty-msg',
+      '#v-shelf #shelf-seg',
+      '#v-shelf #shelf-tiles .tile:nth-child(-n+10)',
+      '#v-shelf #shelf-timeline-area > *',
+      '#shelf-empty',
+      '#settings-area .block:nth-child(-n+8)',
       '#v-cal .block',
       '#bottom-nav',
+      '.books-section-title',
+      '#banner',
+      '#r-search-bar',
       '.focus-timer-pill',
       '#mobile-fab',
       '#toast',
       '#pop',
+      '.sheet',
       '#reader .r-bar',
       '#reader .r-dock',
-      '#reader .r-bottom-bar'
+      '#reader .r-bottom-bar',
+      '#reader .r-paper-hint',
+      '#app-boot .boot-card',
+      '#app button'
     ];
     const next=[];
     const dpr=Math.min(window.devicePixelRatio||1,1.25);
@@ -4316,10 +4286,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     gl.uniform1i(u.shapeCount,shapeCount);
     gl.uniform4fv(u.shapes,sd);
     gl.uniform4fv(u.style,st);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D,texture);
-    gl.uniform1i(u.tex,0);
-    gl.clearColor(0,0,0,0);
+    gl.clearColor(2/255,3/255,5/255,1);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES,0,6);
     raf=requestAnimationFrame(draw);
