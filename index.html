@@ -2964,6 +2964,15 @@ img,svg,canvas,video{max-width:100%}
 .sheet-head #sheet-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sheet-scrim.open{touch-action:none}
 @media(max-width:899px){
+  /* rich-motion のアニメーションが translate(-50%) を再適用していたため、モバイル専用に置き換える */
+  .rich-motion .sheet.open{animation:iosSheetInMobile 420ms cubic-bezier(.16,1,.3,1) both!important}
+  @keyframes iosSheetInMobile{
+    0%{transform:translate3d(0,105%,0);opacity:.7}
+    70%{transform:translate3d(0,-1.5%,0)}
+    100%{transform:translate3d(0,0,0);opacity:1}
+  }
+  .record-tile{overflow:hidden}
+  .record-delete{flex:none!important; min-height:40px!important; padding:0 10px!important; font-size:12px!important; color:var(--sub)}
   /* モバイルでは親要素の幅に依存させず、必ず端末のCSS viewport幅いっぱいにする */
   .sheet{
     position:fixed!important;
@@ -3462,6 +3471,6 @@ img,svg,canvas,video{max-width:100%}
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=mobile-fix-sheet-20261005-2"></script>
+<script src="./app.js?v=records-delete-sheetfix-20261005-1"></script>
 </body>
 </html>
