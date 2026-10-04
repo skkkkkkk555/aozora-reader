@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdnjs.cloudflare.com 'sha256-9CdkmWkq4EAa7XA/ir4m4QAJgzvePXzoILNNCbH3rew='; connect-src 'self' https: http:; worker-src 'none'; media-src 'self' blob:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdnjs.cloudflare.com 'sha256-oEPQbfSOp9Q7FHwlYMsJaIwwaM5ob6NgkV3/KZDQJvs='; connect-src 'self' https: http:; worker-src 'none'; media-src 'self' blob:">
 <title>青空文庫</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
@@ -2603,6 +2603,7 @@ input[type="range"]{accent-color:var(--apple-blue)}
 /* ==================== 1. 状態 & ユーティリティ ==================== */
 if(window.top!==window.self){document.documentElement.style.display='none';throw new Error('framed-context-blocked');}
 const $=i=>document.getElementById(i);
+const escAttr=esc;
 const esc=s=>(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]||c));
 
 /* ==================== SECURITY HARDENING ==================== */
@@ -2655,14 +2656,14 @@ function sanitizeCatalogRecords(v){
   for(const raw of v){
     if(out.length>=20000||!raw||typeof raw!=='object')break;
     const id=String(raw.id||'').slice(0,80),t=String(raw.t||'').slice(0,300),a=String(raw.a||'').slice(0,300),x=String(raw.x||'').slice(0,500);
-    if(!safeStateKey(id)||seen.has(id)||!t||!x||x.length>500||x.includes('..')||x.includes('\\')||x.startsWith('http')||x.startsWith('//'))continue;
+    if(!safeStateKey(id)||seen.has(id)||!t||!x||x.length>500||x.includes('..')||x.includes('\\')||x.startsWith('http')||x.startsWith('//')||!/^[A-Za-z0-9._\/-]+$/.test(x))continue;
     seen.add(id);
     out.push({id,t,a,tk:String(raw.tk||'').slice(0,300),ak:String(raw.ak||'').slice(0,300),d:String(raw.d||'').slice(0,80),k:Number(raw.k)===1?1:0,c:Number(raw.c)===1?1:0,ndc:String(raw.ndc||'').slice(0,80),norm:String(raw.norm||'').slice(0,700),x});
   }
   return out;
 }
 const SEC_STATE={maxItems:5000,maxAuthors:2000,maxHistory:200,maxNotesPerBook:50,maxText:2000,maxMapKeys:5000};
-const safeStateKey=k=>typeof k==='string'&&k.length>0&&k.length<=80&&!['__proto__','prototype','constructor'].includes(k);
+const safeStateKey=k=>typeof k==='string'&&/^[A-Za-z0-9._:-]{1,80}$/.test(k);
 const safeStateText=(v,max=SEC_STATE.maxText)=>typeof v==='string'?v.slice(0,max):'';
 const safeStateArray=(v,max=SEC_STATE.maxItems)=>Array.isArray(v)?v.filter(x=>typeof x==='string'&&x.length<=160).slice(0,max):[];
 function sanitizeStateMap(v,mapper,max=SEC_STATE.maxMapKeys){
@@ -2858,7 +2859,7 @@ window.addEventListener('error', (event) => {
 /* ==================== 2. レンダリング共通 ==================== */
 const rows=(arr,fn)=>arr.map((item,i)=>fn(item,i)).join('');
 const tileHtml=(w,i=0)=>`
-  <div class="tile book-cover-card" style="--book-color:${colorOf(w.t)}; --book-delay:${Math.min(i,20)*52}ms; --book-shine-delay:${1200+Math.min(i,8)*70}ms" data-act="open-book" data-id="${w.id}">
+  <div class="tile book-cover-card" style="--book-color:${colorOf(w.t)}; --book-delay:${Math.min(i,20)*52}ms; --book-shine-delay:${1200+Math.min(i,8)*70}ms" data-act="open-book" data-id="${escAttr(w.id)}">
     <div class="book-cover-inner">
       <div class="book-cover-top">
         ${savedKeys.has(w.id)?'<span class="book-badge">保存済</span>':'<span></span>'}
@@ -3041,7 +3042,8 @@ async function fetchCatalog(){
       const res=await secureFetch(URLS[i],{signal:sig(30000)});
       if(!res.ok) continue;
       const b=await readResponseBytes(res,SEC.maxCatalogBytes);
-      if(b&&new Uint8Array(b)[0]===0x50){buf=b;break;}
+      const u8=b&&new Uint8Array(b);
+      if(u8&&u8.length>=4&&u8[0]===0x50&&u8[1]===0x4b&&[0x03,0x05,0x07].includes(u8[2])){buf=b;break;}
     }catch{}
   }
   if(!buf){ $('c-log').textContent='自動取得に失敗しました。ファイルを選択してください。'; return; }
@@ -3065,7 +3067,7 @@ function parseFile(file){
   r.onload=async()=>{
     try{
       if(file.name.toLowerCase().endsWith('.zip')){
-        const z=await JSZip.loadAsync(r.result);
+        const z=await JSZip.loadAsync(r.result,{checkCRC32:true});
         const names=Object.keys(z.files);
         if(names.length>60000)throw new Error('catalog-entries-too-many');
         const totalUncompressed=names.reduce((sum,n)=>sum+Number(z.files[n]?._data?.uncompressedSize||0),0);
@@ -3111,7 +3113,8 @@ async function parseCsv(csv){
     const rawUrl=String(cols[col.x]||'').trim();
     let parsedUrl=null;try{parsedUrl=new URL(rawUrl);}catch{}
     if(!rawId||!parsedUrl||parsedUrl.protocol!=='https:'||parsedUrl.hostname!=='www.aozora.gr.jp'||!rawUrl.toLowerCase().endsWith('.zip'))continue;
-    const id=rawId.slice(0,80);
+    if(!safeStateKey(rawId))continue;
+    const id=rawId;
     const author=((cols[col.a]||'')+' '+(cols[col.am]||'')).trim();
     if(m.has(id)){
       const ex=m.get(id);
@@ -3194,7 +3197,7 @@ function renderHome(){
   if(recentWorks.length>0){
     $('blk-recent').style.display='block';
     $('recent-scroll').innerHTML=recentWorks.map(w=>`
-      <div class="recent-book" data-act="open-book" data-id="${w.id}" style="--book-color:${colorOf(w.t)}">
+      <div class="recent-book" data-act="open-book" data-id="${escAttr(w.id)}" style="--book-color:${colorOf(w.t)}">
         <div class="recent-book-cover">
           <div class="recent-book-title serif">${esc(w.t)}</div>
         </div>
@@ -3554,7 +3557,7 @@ function renderTimelineShelf(){
   }
 
   ta.innerHTML=events.slice(0,40).map(ev=>`
-    <div class="timeline-item" data-act="open-book" data-id="${ev.id}">
+    <div class="timeline-item" data-act="open-book" data-id="${escAttr(ev.id)}">
       <div class="timeline-dot"></div>
       <div style="flex:1">
         <div style="display:flex; justify-content:space-between">
@@ -3579,7 +3582,7 @@ function renderNotesShelf(){
   $('shelf-tiles').innerHTML=all.map(n=>{
     const w=byId.get(n.id); if(!w) return '';
     return `
-      <div class="block" data-act="open-book" data-id="${w.id}" style="min-height:100px; padding:16px">
+      <div class="block" data-act="open-book" data-id="${escAttr(w.id)}" style="min-height:100px; padding:16px">
         <div style="display:flex; justify-content:space-between"><span class="badge" style="background:var(--ac); color:#fff">${n.t}</span><span style="font-size:var(--fs-s); color:var(--sub)">${esc(w.t)}</span></div>
         <div style="font-size:var(--fs-b); font-weight:700; margin-top:8px">${esc(n.txt)}</div>
       </div>`;
@@ -3601,7 +3604,7 @@ function openBookDetail(w){
       nextRecHtml=`
         <div style="padding:16px; background:var(--c-blue); border-radius:var(--radius-sm); margin-top:8px">
           <div style="font-size:var(--fs-s); font-weight:700; color:var(--ac); margin-bottom:4px">読了！ 次におすすめの一冊</div>
-          <div style="font-weight:700; font-size:var(--fs-b); cursor:pointer" data-act="open-book" data-id="${nextWork.id}">${esc(nextWork.t)} (${esc(nextWork.a)}) ›</div>
+          <div style="font-weight:700; font-size:var(--fs-b); cursor:pointer" data-act="open-book" data-id="${escAttr(nextWork.id)}">${esc(nextWork.t)} (${esc(nextWork.a)}) ›</div>
         </div>`;
     }
   }
@@ -3615,7 +3618,7 @@ function openBookDetail(w){
           <button class="secondary sm-btn" data-act="toggle-fav-author" data-author="${esc(w.a)}" style="height:32px; padding:0 8px; font-size:12px">${isFA?'★ 推し作家':'☆ 作家フォロー'}</button>
         </div>
         <div style="display:flex; gap:6px; margin-top:8px">
-          <span class="badge">${w.d||'公開日不明'}</span>
+          <span class="badge">${esc(w.d||'公開日不明')}</span>
           <span class="badge">目安 ${estM}分</span>
           ${isS?'<span class="badge" style="background:var(--ac); color:#fff">保存済み</span>':''}
           ${isDone?'<span class="badge" style="background:#28a745; color:#fff">読了</span>':''}
@@ -3854,6 +3857,7 @@ function animateReaderPage(direction){
 
 function execInBookSearch(){
   const q=$('r-search-inp').value.trim();
+  if(q.length>500){$('r-search-count').textContent='検索語が長すぎます';return;}
   const body=$('body');
   body.querySelectorAll('.search-hl').forEach(el=>{
     el.replaceWith(document.createTextNode(el.textContent));
@@ -3955,12 +3959,14 @@ function extractKeyphrases(txt){
   }
   const top=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).slice(0,7).map(x=>x[0]);
   if(!top.length) return;
-  const re=new RegExp(top.join('|'),'g');
+  const re=new RegExp(top.map(escRe).join('|'),'gu');
   const w=document.createTreeWalker($('body'),NodeFilter.SHOW_TEXT);
   const nds=[]; let n; while((n=w.nextNode())) nds.push(n);
   nds.forEach(node=>{
     if(node.parentElement.closest('rt,rp,ruby,.keyphrase,.search-hl')) return;
+    re.lastIndex=0;
     if(re.test(node.nodeValue)){
+      re.lastIndex=0;
       const s=document.createElement('span');
       s.innerHTML=node.nodeValue.replace(re,m=>`<span class="keyphrase">${m}</span>`);
       node.parentNode.replaceChild(s,node);
@@ -4110,7 +4116,7 @@ function renderCalendar(){
     const k=d.toISOString().slice(0,10);
     const m=calData[k]||0;
     const bg=m===0?'var(--card-sub)':m>=goalMin?'var(--ac)':'color-mix(in srgb, var(--ac) 45%, var(--card-sub))';
-    hm.insertAdjacentHTML('beforeend',`<div style="width:18px; height:18px; border-radius:4px; background:${bg}" title="${k}: ${m}分"></div>`);
+    hm.insertAdjacentHTML('beforeend',`<div style="width:18px; height:18px; border-radius:4px; background:${bg}" title="${escAttr(k)}: ${m}分"></div>`);
     d.setDate(d.getDate()+1);
   }
 }
@@ -4223,7 +4229,7 @@ function renderSettingsPage(){
         favAuthors=new Set(d.favAuthors||[]);
         pos=d.pos||{}; bm=d.bm||{}; notes=d.notes||{}; hls=d.hls||{};
         hist=d.hist||[]; calData=d.calData||{}; goalMin=d.goalMin||30; searchHistory=d.searchHistory||[];
-        if(d.st) st=Object.assign(st,d.st);
+        if(d.st){ const safeImportedSt=Object.assign({},d.st,{ollamaEnabled:false,oUrl:'http://127.0.0.1:11434',oMod:''}); st=Object.assign(st,safeImportedSt); }
         save(); toast('データを復元しました'); applySettings(); filterWorks(); renderHome();
       }catch{ toast('不正なファイル形式です'); }
     };
@@ -4531,7 +4537,7 @@ document.addEventListener('click',async(e)=>{
           ${isAi?`<button class="secondary sm-btn" data-act="r-ai-action" data-m="要約" style="flex:1">AI要約</button>`:''}
         </div>
         <div style="font-weight:700">目次</div>
-        <div style="max-height:180px; overflow-y:auto">${[...$('body').querySelectorAll('[data-hid]')].map(h=>`<div style="padding:12px; border-bottom:1px solid var(--line); cursor:pointer" data-act="jmp-h" data-hid="${h.dataset.hid}">${esc(h.textContent)}</div>`).join('')||'<div style="color:var(--sub)">目次情報なし</div>'}</div>
+        <div style="max-height:180px; overflow-y:auto">${[...$('body').querySelectorAll('[data-hid]')].map(h=>`<div style="padding:12px; border-bottom:1px solid var(--line); cursor:pointer" data-act="jmp-h" data-hid="${escAttr(h.dataset.hid)}">${esc(h.textContent)}</div>`).join('')||'<div style="color:var(--sub)">目次情報なし</div>'}</div>
       </div>`);
   }
   else if(act==='jmp-h'){
@@ -4626,7 +4632,7 @@ document.addEventListener('click',async(e)=>{
   else if(act==='set-ft'){ st.font=b.dataset.v; applyReaderConfig(); save(); renderSettingsPage(); }
   else if(act==='set-save-url'){ st.oUrl = normalizeOllamaUrl($('set-ourl').value.trim()); save(); pingOllama(); toast('URLを保存しました'); }
   else if(act==='set-pick-mod'){
-    sheet('モデル選択',aiConn.models.map(m=>`<div class="block" data-act="set-mod-val" data-m="${m}" style="min-height:56px; padding:16px; margin-bottom:8px; font-weight:700">${m}</div>`).join('')||'<div>利用可能なモデルがありません</div>');
+    sheet('モデル選択',aiConn.models.map(m=>`<div class="block" data-act="set-mod-val" data-m="${escAttr(m)}" style="min-height:56px; padding:16px; margin-bottom:8px; font-weight:700">${esc(m)}</div>`).join('')||'<div>利用可能なモデルがありません</div>');
   }
   else if(act==='set-mod-val'){ st.oMod=b.dataset.m; save(); closeSheet(); renderSettingsPage(); }
   else if(act==='set-ping'){ await pingOllama(); toast(aiConn.ok?'接続を確認しました':'接続できませんでした'); renderSettingsPage(); }
