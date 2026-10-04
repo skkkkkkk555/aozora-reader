@@ -2279,8 +2279,8 @@ function switchView(vid){
   const current=$(prev), next=$(vid);
   if(!next)return;
 
-  // 画面切替中の二重表示を防ぐため、旧画面は先に完全に非表示にする。
-  // 新画面だけをアニメーションさせる方式に統一する。
+  // 旧画面と新画面を同時に描画しない。
+  // まず全画面をDOM上で完全に非表示にしてから、新画面だけを表示する。
   window.clearTimeout(window.__viewInTimer);
   document.querySelectorAll('.view').forEach(v=>{
     v.classList.remove(
@@ -2290,27 +2290,36 @@ function switchView(vid){
       'view-exit-forward',
       'view-exit-backward'
     );
+    v.hidden=true;
+    v.style.display='none';
+    v.style.visibility='hidden';
+    v.setAttribute('aria-hidden','true');
   });
 
   current?.setAttribute('aria-hidden','true');
-  next.setAttribute('aria-hidden','false');
 
   currentView=vid;
 
-  // 表示前に内容とスクロール位置を確定。
-  if(next)next.scrollTop=0;
+  // 表示前に新画面の内容とスクロール位置を確定。
+  next.scrollTop=0;
   if(vid==='v-home') renderHome();
   else if(vid==='v-search') renderSearchInit();
   else if(vid==='v-shelf') renderShelf();
   else if(vid==='v-cal') renderCalendar();
   else if(vid==='v-settings') renderSettingsPage();
 
+  // 新画面だけを描画対象にする。
+  next.hidden=false;
+  next.style.display='block';
+  next.style.visibility='visible';
+  next.setAttribute('aria-hidden','false');
   next.classList.add('active');
 
   const reduced=document.body.classList.contains('low-power') ||
     !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
   if(!reduced){
-    // 一度レイアウトを確定させてから、次画面だけを滑らせる。
+    // 表示状態を一度確定させてから、新画面だけに入場アニメーションを付ける。
     void next.offsetWidth;
     next.classList.add(direction==='forward'?'view-slide-forward':'view-slide-backward');
     window.__viewInTimer=window.setTimeout(()=>{
