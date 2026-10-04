@@ -40,7 +40,10 @@ const secureFetch=async(input,init={})=>{
     }
   }catch{}
   if(!isConfiguredOllama&&!['GET','HEAD'].includes(method))throw new Error('blocked-network-method');
-  return window.fetch(u.href,{...init,referrerPolicy:'no-referrer',cache:init.cache||'no-store'});
+  const response=await window.fetch(u.href,{...init,referrerPolicy:'no-referrer',cache:init.cache||'no-store',redirect:'follow'});
+  const finalUrl=secureUrl(response.url);
+  if(!finalUrl||finalUrl.origin!==u.origin)throw new Error('blocked-cross-origin-redirect');
+  return response;
 };
 async function readResponseBytes(res,maxBytes){
   if(!res||!res.ok)return null;
@@ -2274,8 +2277,13 @@ document.addEventListener('click',async(e)=>{
     savedKeys.clear(); toast('キャッシュを消去しました');
   }
   else if(act==='data-export'){
-    const blob=new Blob([JSON.stringify({allWorks,fav:[...fav],want:[...want],done:[...done],favAuthors:[...favAuthors],pos,bm,notes,hls,hist,calData,goalMin,st,searchHistory})],{type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='aozora_terminal_backup.json'; a.click();
+    try{
+      const blob=new Blob([JSON.stringify({allWorks,fav:[...fav],want:[...want],done:[...done],favAuthors:[...favAuthors],pos,bm,notes,hls,hist,calData,goalMin,st,searchHistory})],{type:'application/json'});
+      const url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download='aozora_terminal_backup.json';a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+      toast('バックアップを書き出しました');
+    }catch{toast('バックアップを書き出せませんでした');}
   }
   else if(act==='toast-undo'){
     if(undoFn) undoFn();
