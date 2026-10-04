@@ -3476,45 +3476,45 @@ window.addEventListener('DOMContentLoaded',()=>{
     '</div></section>';
   }
 
-  function syncScreens(mode){
+  function syncScreens(mode,direction='forward'){
     const content=$p('#phone-content'),tabs=$p('.phone-tabbar'),detail=$p('#phone-detail'),reader=$p('#phone-reader');
-    if(mode==='detail'){
-      if(content){content.hidden=true;content.style.display='none'}
-      if(tabs){tabs.hidden=true;tabs.style.display='none'}
-      if(reader){reader.hidden=true;reader.classList.remove('phone-open');reader.style.display='none'}
-      if(detail){detail.hidden=false;detail.classList.add('phone-open');detail.style.display='block';detail.setAttribute('aria-hidden','false')}
-    }else if(mode==='reader'){
-      if(content){content.hidden=true;content.style.display='none'}
-      if(tabs){tabs.hidden=true;tabs.style.display='none'}
-      if(detail){detail.hidden=true;detail.classList.remove('phone-open');detail.style.display='none'}
-      if(reader){reader.hidden=false;reader.classList.add('phone-open');reader.style.display='flex';reader.setAttribute('aria-hidden','false')}
-    }else{
-      if(detail){detail.hidden=true;detail.classList.remove('phone-open');detail.style.display='none';detail.setAttribute('aria-hidden','true')}
-      if(reader){reader.hidden=true;reader.classList.remove('phone-open');reader.style.display='none';reader.setAttribute('aria-hidden','true')}
-      if(content){content.hidden=false;content.style.display='block'}
-      if(tabs){tabs.hidden=false;tabs.style.display='flex'}
-    }
-  }
+    const layers=[content,detail,reader].filter(Boolean);
+    const reduce=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    layers.forEach(el=>{
+      el.classList.remove('phone-screen-push','phone-screen-pop');
+      el.hidden=true;
+      el.style.display='none';
+      el.style.visibility='hidden';
+      el.setAttribute('aria-hidden','true');
+      el.setAttribute('inert','');
+    });
+    if(tabs){tabs.hidden=true;tabs.style.display='none';}
 
-  function showScreen(name){
-    if(!isPhone())return;
-    closePhoneSheet();
-    const previous=state.screen;
-    state.screen=name;
-    syncScreens('main');
-    $$p('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===name));
-    /* phone navigation runtime fix */
-    const fn={home:renderHome,search:renderSearch,shelf:renderShelf,records:renderRecords,settings:renderSettings}[name]||renderHome;
-    fn();
-    const content=$p('#phone-content');
-    if(content){
-      content.scrollTop=0;
-      content.classList.remove('phone-route-in','phone-route-forward','phone-route-back');
-      void content.offsetWidth;
-      content.classList.add('phone-route-in');
-      content.classList.add((previous==='home'||name==='home')?'phone-route-back':'phone-route-forward');
-      clearTimeout(state.routeTimer);
-      state.routeTimer=setTimeout(()=>content.classList.remove('phone-route-in','phone-route-forward','phone-route-back'),360);
+    let target=null;
+    if(mode==='detail')target=detail;
+    else if(mode==='reader')target=reader;
+    else target=content;
+
+    if(target){
+      target.hidden=false;
+      target.style.display=target===reader?'flex':'block';
+      target.style.visibility='visible';
+      target.removeAttribute('inert');
+      target.setAttribute('aria-hidden','false');
+      if(!reduce){
+        void target.offsetWidth;
+        target.classList.add(direction==='back'?'phone-screen-pop':'phone-screen-push');
+        clearTimeout(target.__phoneRouteTimer);
+        target.__phoneRouteTimer=setTimeout(()=>{
+          target.classList.remove('phone-screen-push','phone-screen-pop');
+        },340);
+      }
+    }
+
+    if(mode==='main'&&tabs){
+      tabs.hidden=false;
+      tabs.style.display='flex';
+      tabs.removeAttribute('inert');
     }
   }
 
