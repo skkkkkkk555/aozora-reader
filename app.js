@@ -1365,7 +1365,8 @@ async function openReader(w){
   const tId=++readerTok;
   $('r-title').textContent=w.t;
   setReaderLoading(true);
-  $('reader').classList.add('open');
+  $('reader').classList.add('open','paper-reader');
+  $('reader').classList.add('paper-first-open');
   pushLayer('reader');
 
   try {
@@ -1376,22 +1377,22 @@ async function openReader(w){
     setReaderLoading(false);
     applyReaderConfig();
 
-    // 位置復元
     requestAnimationFrame(()=>{
       requestAnimationFrame(()=>{
         const f=pos[w.id]?.f||0;
-        const b=$('body'), isV=b.classList.contains('v');
-        const max=isV?b.scrollWidth-b.clientWidth:b.scrollHeight-b.clientHeight;
-        if(isV) b.scrollLeft=-Math.abs(f*max); else b.scrollTop=f*max;
-        updateProgress();
+        const page=getReaderPageCount();
+        const idx=Math.max(0,Math.min(page-1,Math.round(f*Math.max(0,page-1))));
+        setReaderPage(idx,false);
+        updateProgress(true);
+        window.setTimeout(()=>$('reader').classList.remove('paper-first-open'),900);
       });
     });
 
     if(st.kp && !document.body.classList.contains('low-power')) extractKeyphrases(doc.plain);
-} catch(e){
+  } catch(e){
     setReaderLoading(false);
     if(e.dead) toast('取得できない作品のため除外しました');
-    else $('body').innerHTML='<div class="reader-error-state"><div class="reader-error-icon">!</div><div class="reader-error-title">本文を読み込めませんでした</div><div class="reader-error-text">通信状態を確認して、もう一度お試しください。</div><button class="primary" data-act="r-retry" style="margin-top:16px">再試行</button></div>';
+    else $('body').innerHTML='<div class="reader-error-state"><div class="reader-error-icon">!</div><div class="reader-error-title">本文を読み込めませんでした</div><div class="reader-error-text">通信状態を確認して、もう一度お試しください。</div><button class="primary" data-act="r-retry" style="margin-top:16px">再試行</button>';
   }
 }
 
@@ -1403,6 +1404,7 @@ function setReaderLoading(show){
     body.innerHTML='<div class="reader-loading" role="status" aria-live="polite"><div class="reader-loading-orb"></div><div class="reader-loading-title">本文を読み込んでいます</div><div class="reader-loading-sub">青空文庫から本文を準備中…</div><div class="reader-loading-bar"><span></span></div></div>';
   }
 }
+
 function pulseState(el){
   if(!el||document.body.classList.contains('low-power'))return;
   el.classList.remove('state-bump');
@@ -1413,9 +1415,228 @@ function pulseState(el){
 
 function renderReaderBody(){
   if(!curDoc) return;
-  $('body').innerHTML=sanitizeReaderHtml(curDoc.html);
+  const body=$('body');
+  body.innerHTML=sanitizeReaderHtml(curDoc.html);
+  body.classList.add('paper-paged');
 }
 
+function getReaderPageSize(){
+  const b=$('body');
+  if(!b)return 1;
+  return Math.max(1,b.clientWidth||window.innerWidth||1);
+}
+function getReaderPageCount(){
+  const b=$('body');
+  if(!b)return 1;
+  const size=getReaderPageSize();
+  const total=Math.max(0,b.scrollWidth-size);
+  return Math.max(1,Math.round(total/Math.max(1,size))+1);
+}
+function getReaderPageIndex(){
+  const b=$('body');
+  const count=getReaderPageCount();
+  if(!b||count<=1)return 0;
+  const size=getReaderPageSize();
+  const raw=b.classList.contains('v')?Math.abs(b.scrollLeft):b.scrollLeft;
+  return Math.max(0,Math.min(count-1,Math.round(raw/size)));
+}
+function readerPageProgress(index=getReaderPageIndex()){
+  const count=getReaderPageCount();
+  return count<=1?0:index/(count-1);
+}
+function turnReaderPage(dir){
+  const count=getReaderPageCount();
+  if(count<=1)return false;
+  const current=getReaderPageIndex();
+  const next=Math.max(0,Math.min(count-1,current+(dir==='next'?1:-1)));
+  if(next===current){
+    try{navigator.vibrate?.(12);}catch{}
+    return false;
+  }
+  playPaperTurn(dir);
+  setReaderPage(next,true);
+  return true;
+}
+function setReaderPage(index,animate=true){
+  const b=$('body');
+  if(!b)return;
+  const count=getReaderPageCount();
+  const clamped=Math.max(0,Math.min(count-1,Number(index)||0));
+  const size=getReaderPageSize();
+  const target=clamped*size;
+  const isV=b.classList.contains('v');
+
+  if(animate) playPaperTurn(clamped>getReaderPageIndex()?'next':'prev');
+  b.scrollTo({
+    left:isV?-target:target,
+    top:0,
+    behavior:'auto'
+  });
+  updateProgress(true);
+}
+function playPaperTurn(direction){
+  if(document.body.classList.contains('low-power'))return;
+  const overlay=$('r-page-turn'),body=$('body');
+  if(!overlay||!body)return;
+  overlay.classList.remove('next','prev');
+  body.classList.remove('paper-turning-next','paper-turning-prev');
+  void overlay.offsetWidth;
+  void body.offsetWidth;
+  overlay.classList.add(direction==='next'?'next':'prev');
+  body.classList.add(direction==='next'?'paper-turning-next':'paper-turning-prev');
+  clearTimeout(window.__paperTurnTimer);
+  window.__paperTurnTimer=setTimeout(()=>{
+    overlay.classList.remove('next','prev');
+    body.classList.remove('paper-turning-next','paper-turning-prev');
+  },380);
+}
+
+async function closeReader(fromPop=false){
+  closeOneLineMode();
+  await releaseScreenWakeLock();
+  $('reader').classList.remove('open','paper-reader','paper-first-open');
+  $('reader').classList.remove('reader-night', 'mode-focus');
+  applySettings();
+  if(window.speechSynthesis) speechSynthesis.cancel();
+  popLayer('reader');
+  save(); renderHome();
+}
+
+let progressRaf=null;
+let lastProgressPct=-1;
+let lastProgressSave=0;
+
+function updateProgress(force=false){
+  if(!curWork) return;
+  const b=$('body');
+  const count=getReaderPageCount();
+  const idx=getReaderPageIndex();
+  const f=readerPageProgress(idx);
+  const pct=Math.round(f*100);
+  const now=Date.now();
+
+  pos[curWork.id]={f,t:now};
+  if(f>=0.999) done.add(curWork.id);
+
+  if(force || pct!==lastProgressPct){
+    lastProgressPct=pct;
+    safeText('r-prog',pct+'%');
+    const slider=$('r-slider');
+    if(slider){
+      slider.max=String(Math.max(1,count-1));
+      slider.value=String(idx);
+    }
+    const prog=$('r-prog');
+    if(prog&&!document.body.classList.contains('low-power')){
+      prog.classList.remove('progress-bump'); void prog.offsetWidth; prog.classList.add('progress-bump');
+      window.setTimeout(()=>prog.classList.remove('progress-bump'),280);
+    }
+
+    const totalChars=curWork.plain?.length||8000;
+    const readChars=Math.floor(totalChars*f);
+    const totalP=Math.max(1,count);
+    const curP=Math.min(totalP,idx+1);
+    const remM=Math.max(1,Math.ceil((totalChars*(1-f))/st.readSpeed));
+    safeText('r-page-lbl',`${pct}% · ${curP}/${totalP}ページ · 残り約${f>=.999?0:remM}分 · ${readChars}/${totalChars}字読了`);
+  }
+
+  if(force || now-lastProgressSave>=3000){
+    lastProgressSave=now;
+    hist=hist.filter(h=>h.id!==curWork.id);
+    hist.unshift({id:curWork.id,t:now});
+    if(hist.length>50) hist.pop();
+  }
+}
+
+$('body').onscroll=()=>{
+  lastUserActivityTime=Date.now();
+  if(progressRaf===null){
+    progressRaf=requestAnimationFrame(()=>{
+      progressRaf=null;
+      updateProgress();
+    });
+  }
+};
+
+$('body').onclick=(e)=>{
+  lastUserActivityTime=Date.now();
+  if(e.target.closest('.keyphrase,u,b,ruby')||getSelection().toString()) return;
+
+  const b=$('body');
+  if(!b.classList.contains('paper-paged')) return;
+  const w=innerWidth,x=e.clientX;
+
+  if($('reader').classList.contains('mode-focus')){
+    const topBar=$('r-top'),dock=$('r-dock'),botBar=$('r-bottom-info');
+    topBar.classList.toggle('show-temp');
+    dock.classList.toggle('show-temp');
+    botBar.classList.toggle('show-temp');
+    return;
+  }
+
+  if(x>w*0.35 && x<w*0.65){
+    $('r-top').classList.toggle('hide');
+    $('r-dock').classList.toggle('hide');
+    $('r-bottom-info').classList.toggle('hide');
+    return;
+  }
+
+  const vertical=b.classList.contains('v');
+  // 横書き: 左=前 / 右=次
+  // 縦書き: 右=前 / 左=次（紙のページ方向）
+  const dir=vertical ? (x>=w*0.65?'prev':'next') : (x<=w*0.35?'prev':'next');
+  turnReaderPage(dir);
+};
+
+function animateReaderPage(direction){
+  playPaperTurn(direction);
+}
+
+function execInBookSearch(){
+  const q=$('r-search-inp').value.trim();
+  if(q.length>500){$('r-search-count').textContent='検索語が長すぎます';return;}
+  const body=$('body');
+  body.querySelectorAll('.search-hl').forEach(el=>{
+    el.replaceWith(document.createTextNode(el.textContent));
+  });
+  inBookSearchResults=[];
+  inBookSearchIdx=0;
+
+  if(!q){
+    $('r-search-count').textContent='0件';
+    return;
+  }
+
+  const walker=document.createTreeWalker(body,NodeFilter.SHOW_TEXT);
+  const nodes=[]; let n;
+  while((n=walker.nextNode())) nodes.push(n);
+
+  nodes.forEach(node=>{
+    if(node.parentElement.closest('rt,rp,ruby,#r-search-bar')) return;
+    const txt=node.nodeValue;
+    const idx=txt.indexOf(q);
+    if(idx!==-1){
+      const span=document.createElement('span');
+      const safePattern = new RegExp(escRe(q), 'g');
+      span.innerHTML=esc(txt).replace(safePattern, m=>`<mark class="search-hl">${m}</mark>`);
+      node.parentNode.replaceChild(span, node);
+    }
+  });
+
+  inBookSearchResults=[...body.querySelectorAll('.search-hl')];
+  $('r-search-count').textContent=`${inBookSearchResults.length}件`;
+  if(inBookSearchResults.length>0) jumpToInBookMatch(0);
+}
+
+function jumpToInBookMatch(idx){
+  if(!inBookSearchResults.length) return;
+  inBookSearchIdx=(idx+inBookSearchResults.length)%inBookSearchResults.length;
+  inBookSearchResults.forEach((el,i)=>el.style.outline=(i===inBookSearchIdx?'3px solid #ff5722':'none'));
+  const target=inBookSearchResults[inBookSearchIdx];
+  if(!target)return;
+  target.scrollIntoView({behavior:'auto',block:'nearest',inline:'nearest'});
+  updateProgress(true);
+}
 async function closeReader(fromPop=false){
   closeOneLineMode();
   await releaseScreenWakeLock();
@@ -1604,7 +1825,9 @@ function applyReaderConfig(){
   $('body').style.setProperty('--r-lh',st.lh);
   $('body').style.fontFamily=st.font==='gothic'?'var(--font-sans)':'var(--font-serif)';
   $('body').classList.toggle('v',st.v!==false);
+  $('body').classList.add('paper-paged');
   applyReaderMode();
+  if($('reader')?.classList.contains('open')) requestAnimationFrame(()=>updateProgress(true));
 }
 
 function checkNightWarm(){
@@ -1657,18 +1880,9 @@ document.addEventListener('keydown',e=>{
   if(e.target.closest?.('input,textarea,select,[contenteditable="true"]'))return;
   if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='PageDown'||e.key==='PageUp'||e.key===' '){
     e.preventDefault();
-    const b=$('body'),w=innerWidth,isV=b.classList.contains('v');
-    const step=(isV?b.clientWidth:b.clientHeight)*0.88;
     let dir=(e.key==='ArrowLeft'||e.key==='PageUp')?'prev':'next';
     if(e.key===' '&&e.shiftKey)dir='prev';
-    animateReaderPage(dir);
-    if(isV){
-      const delta=dir==='next'?step:-step;
-      b.scrollBy({left:delta,behavior:'smooth'});
-    }else{
-      const delta=dir==='next'?step:-step;
-      b.scrollBy({top:delta,behavior:'smooth'});
-    }
+    turnReaderPage(dir);
   }
 });
 const actionObserver=new MutationObserver(muts=>{
@@ -2422,11 +2636,7 @@ else if(colorSchemeQuery.addListener) colorSchemeQuery.addListener(colorSchemeLi
 
 $('r-slider').oninput=e=>{
   lastUserActivityTime=Date.now();
-  const f=e.target.value/100;
-  const b=$('body'), isV=b.classList.contains('v');
-  const max=isV?b.scrollWidth-b.clientWidth:b.scrollHeight-b.clientHeight;
-  if(isV) b.scrollLeft=-Math.abs(f*max); else b.scrollTop=f*max;
-  updateProgress();
+  setReaderPage(Number(e.target.value)||0,false);
 };
 
 $('rng-goal').oninput=e=>{ goalMin=parseInt(e.target.value,10); $('cal-goal-txt').textContent=goalMin+'分'; save(); renderCalendar(); renderHome(); };
@@ -2769,12 +2979,7 @@ function bindMobilePageSwipe(){
     const dx=t.clientX-sx,dy=t.clientY-sy;
     if(Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.35)return;
     const next=dx<0;
-    const amount=Math.max(220,Math.min(page.clientWidth*.86,700));
-    page.classList.remove('reader-page-next','reader-page-prev');
-    void page.offsetWidth;
-    page.classList.add(next?'reader-page-next':'reader-page-prev');
-    page.scrollBy({left:next?-amount:amount,behavior:'smooth'});
-    setTimeout(()=>page.classList.remove('reader-page-next','reader-page-prev'),380);
+    turnReaderPage(next?'next':'prev');
   });
 }
 
