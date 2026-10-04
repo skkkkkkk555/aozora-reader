@@ -2712,6 +2712,118 @@ img,video,canvas,iframe{max-width:100%;height:auto}
   #r-scroll-progress{transition:none}
 }
 
+
+/* ================= Mobile Stability + UX v4 ================= */
+/* 横幅の「押し出し」を根本的に防止 */
+html,body,#app,#main-area{min-width:0;max-width:100%;width:100%}
+.view{min-width:0;max-width:100%;overflow-x:hidden;overscroll-behavior-x:none}
+.grid,.tile-grid,.insight-bar,.sheet-body,.r-bar,.r-bottom-bar{min-width:0}
+.grid>* ,.tile-grid>* ,.insight-card{min-width:0;max-width:100%}
+.insight-bar{grid-template-columns:repeat(3,minmax(0,1fr))}
+.insight-card{overflow:hidden}
+.insight-kicker,.insight-value,.insight-sub{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.home-hero-compact,.feature-meta,.ai-card-main,.ai-card-actions{min-width:0}
+.home-hero-compact{flex-wrap:wrap}
+.feature-meta,.ai-card-main,.ai-card-actions{flex-wrap:wrap}
+.block.span-4{min-width:0}
+button{min-width:0;max-width:100%}
+img,svg,canvas,video{max-width:100%}
+.sheet-body>*{min-width:0;max-width:100%}
+#bottom-nav .b-nav-btn{min-width:0;overflow:hidden;padding-left:3px;padding-right:3px;white-space:nowrap}
+#bottom-nav .b-nav-btn .icon{flex:none}
+#r-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#r-top>div:last-child{min-width:0}
+#r-top>div:last-child>button{flex:none}
+#r-bottom-info{min-width:0}
+#r-slider{min-width:0}
+#r-page-lbl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#r-dock{min-width:0}
+#r-search-bar{min-width:0}
+.mobile-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mobile-quick-card{min-height:104px!important;padding:14px!important;border-radius:16px!important;text-align:left;align-items:flex-start!important;justify-content:space-between!important;flex-direction:column!important;position:relative;overflow:hidden}
+.mobile-quick-card .mq-icon{font-size:26px;line-height:1}
+.mobile-quick-card .mq-title{font-size:15px;font-weight:800;letter-spacing:-.02em}
+.mobile-quick-card .mq-sub{font-size:11px;color:var(--sub);line-height:1.35}
+#mobile-fab{
+  position:fixed;right:16px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:45;
+  width:58px;height:58px;min-height:58px;padding:0;border-radius:20px;
+  background:var(--apple-blue,#007aff);color:#fff;
+  box-shadow:0 12px 30px rgba(0,122,255,.28);
+  display:none;flex-direction:column;gap:1px;
+  transition:transform 220ms var(--spring),box-shadow 220ms var(--ease),opacity 180ms;
+}
+#mobile-fab .mf-plus{font-size:22px;font-weight:300;line-height:20px}
+#mobile-fab .mf-label{font-size:9px;font-weight:800;letter-spacing:.02em}
+.rich-motion #mobile-fab{animation:mobileFabIn 520ms var(--spring) both}
+.rich-motion #mobile-fab:hover{transform:translateY(-3px) scale(1.03)}
+.rich-motion #mobile-fab:active{transform:scale(.9)}
+@keyframes mobileFabIn{0%{opacity:0;transform:translateY(14px) scale(.82)}100%{opacity:1;transform:none}}
+#focus-timer-pill{
+  position:fixed;right:16px;top:calc(60px + env(safe-area-inset-top));z-index:130;
+  display:none;align-items:center;gap:7px;padding:8px 11px 8px 9px;border-radius:999px;
+  background:rgba(28,28,30,.92);color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.18);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);font-size:12px;font-weight:800;
+}
+#focus-timer-pill .ftp-dot{width:8px;height:8px;border-radius:50%;background:#30d158;box-shadow:0 0 0 4px rgba(48,209,88,.14)}
+#focus-timer-pill.paused .ftp-dot{background:#ff9f0a;box-shadow:0 0 0 4px rgba(255,159,10,.14)}
+.focus-timer-hero{
+  border-radius:20px;padding:20px;text-align:center;
+  background:linear-gradient(145deg,rgba(0,122,255,.13),rgba(90,200,250,.06));
+  border:1px solid rgba(0,122,255,.10);
+}
+.focus-timer-clock{font-size:46px;line-height:1;font-weight:850;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.focus-timer-caption{margin-top:8px;color:var(--sub);font-size:12px}
+.focus-preset-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.focus-preset-grid button{min-height:52px}
+.rich-motion .mobile-quick-card{transition:transform 220ms var(--spring),box-shadow 220ms var(--ease),background-color 180ms}
+.rich-motion .mobile-quick-card:hover{transform:translateY(-3px)}
+.rich-motion .mobile-quick-card:active{transform:scale(.97)}
+.rich-motion .focus-timer-hero{animation:timerHeroIn 420ms var(--spring) both}
+@keyframes timerHeroIn{0%{opacity:0;transform:translateY(7px) scale(.98)}100%{opacity:1;transform:none}}
+@media(max-width:899px){
+  #mobile-fab{display:flex}
+  .view{padding-bottom:calc(94px + env(safe-area-inset-bottom))}
+  .insight-bar{grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
+  .insight-card{padding-left:7px;padding-right:7px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #r-search-bar{display:none;flex-wrap:wrap}
+  #r-search-bar #r-search-inp{flex:1 1 calc(100% - 48px);min-width:0}
+  #r-search-bar button{min-height:40px;padding:0 9px}
+  #r-search-bar #r-search-count{margin-left:2px;flex:0 0 auto}
+}
+@media(max-width:380px){
+  .view{padding-left:10px;padding-right:10px}
+  .block{padding:13px}
+  .tile-grid{grid-template-columns:1fr}
+  .insight-card{padding-left:5px;padding-right:5px}
+  .insight-kicker{font-size:9px}
+  .insight-value{font-size:17px}
+  .insight-sub{font-size:10px}
+  .mobile-quick-grid{grid-template-columns:1fr}
+  #mobile-fab{right:12px}
+}
+@media(max-width:520px){
+  .r-bar{padding-left:max(9px,env(safe-area-inset-left));padding-right:max(9px,env(safe-area-inset-right))}
+  #r-title{font-size:15px!important}
+  #r-top>div:last-child{gap:4px!important}
+  #r-top>div:last-child>button{padding-left:8px!important;padding-right:8px!important}
+  #r-prog{font-size:11px!important}
+  #r-bottom-info{gap:5px}
+  #r-page-lbl{flex:0 1 44%}
+  .sheet-head{padding-left:13px;padding-right:13px}
+  .sheet-body{padding-left:12px;padding-right:12px}
+}
+@media(orientation:landscape) and (max-height:520px){
+  #mobile-fab{bottom:12px}
+  #focus-timer-pill{top:12px}
+}
+.low-power #mobile-fab{box-shadow:none}
+.low-power #focus-timer-pill{backdrop-filter:none;-webkit-backdrop-filter:none}
+@media(prefers-reduced-motion:reduce){
+  #mobile-fab{animation:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -3072,6 +3184,10 @@ img,video,canvas,iframe{max-width:100%;height:auto}
     <button class="b-nav-btn" data-act="nav" data-v="v-settings"><svg class="icon"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>設定</button>
   </nav>
 
+  <!-- モバイル用クイックアクション / 集中タイマー -->
+  <button id="mobile-fab" data-act="mobile-quick" aria-label="クイックメニュー"><span class="mf-plus">＋</span><span class="mf-label">クイック</span></button>
+  <button id="focus-timer-pill" data-act="focus-timer" aria-label="集中読書タイマー"><span class="ftp-dot"></span><span id="focus-timer-label">25:00</span></button>
+
   <!-- 読書画面 -->
   <div id="reader"><div id="r-scroll-progress" aria-hidden="true"></div>
     <button id="btn-exit-focus" data-act="r-exit-focus">集中解除</button>
@@ -3137,6 +3253,6 @@ img,video,canvas,iframe{max-width:100%;height:auto}
   <div id="toast" class="toast"><span id="toast-m"></span><button id="toast-u" data-act="toast-undo" style="color:var(--ac); font-weight:700">元に戻す</button></div>
 </div>
 
-<script src="./app.js?v=8e1ca2feb3b872cb"></script>
+<script src="./app.js?v=mobileux-20261004-1"></script>
 </body>
 </html>
