@@ -3301,6 +3301,16 @@ window.addEventListener('DOMContentLoaded',()=>{
           state.headerCompact=compact;
           header.classList.toggle('compact',compact);
         }
+        const tabbar=$p('.phone-tabbar');
+        if(tabbar){
+          const now=content.scrollTop;
+          const delta=now-(content.__iosLastScroll||0);
+          const collapse=now>44&&delta>2;
+          const reveal=now<24||delta<-2;
+          if(reveal)tabbar.classList.remove('ios-tabbar-collapsed');
+          else if(collapse)tabbar.classList.add('ios-tabbar-collapsed');
+          content.__iosLastScroll=now;
+        }
       });
     },{passive:true});
   }
