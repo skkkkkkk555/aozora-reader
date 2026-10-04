@@ -3685,27 +3685,66 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='reader-wake'){toggleWake();return}
   }
 
-  /* Mobile interaction: use one activation path.
-     Pointerup activation caused Android's synthetic click + underlying
-     text selection to race with the screen transition. Native click is
-     intentionally the single command event now. */
+  let lastPhoneTabTap=0;
+  let lastPhoneTabName='';
+  let edgeSwipe=null;
+
   const phoneEvent=e=>{
     if(!isPhone()||e.type!=='click')return;
     const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
     if(!el)return;
-    if(e.defaultPrevented)return;
+
+    // The smartphone shell is authoritative. Desktop click routers never see this command.
     e.preventDefault();
-    e.stopPropagation();
+    e.stopImmediatePropagation();
+    phonePress(el);
+
+    if(el.matches('[data-phone-tab]')){
+      const name=el.dataset.phoneTab||'home';
+      if(state.screen===name&&!state.reader){
+        $p('#phone-content')?.scrollTo({top:0,behavior:'smooth'});
+        phoneHaptic(5);
+        return;
+      }
+      lastPhoneTabName=name;
+      lastPhoneTabTap=Date.now();
+    }
+
+    phoneHaptic(6);
     activatePhone(el);
   };
   document.addEventListener('click',phoneEvent,{capture:true});
+
+  const phonePressStart=e=>{
+    if(!isPhone()||e.pointerType!=='touch')return;
+    const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
+    if(el)phonePress(el);
+
+    const x=e.clientX,y=e.clientY;
+    if((state.screen==='home'||state.screen==='search'||state.screen==='shelf'||state.screen==='records'||state.screen==='settings')&&x<24)edgeSwipe={x,y};
+    else if(state.reader&&x<28)edgeSwipe={x,y};
+    else edgeSwipe=null;
+  };
+  const phonePressEnd=e=>{
+    if(!isPhone()||e.pointerType!=='touch'||!edgeSwipe)return;
+    const dx=e.clientX-edgeSwipe.x,dy=e.clientY-edgeSwipe.y;
+    const swiped=dx>82&&Math.abs(dx)>Math.abs(dy)*1.35;
+    edgeSwipe=null;
+    if(!swiped)return;
+    e.preventDefault();e.stopPropagation();phoneHaptic(10);
+    if(state.reader)closeReader();
+    else if(state.screen!=='home')showScreen('home');
+  };
+  document.addEventListener('pointerdown',phonePressStart,{capture:true,passive:true});
+  document.addEventListener('pointerup',phonePressEnd,{capture:true,passive:false});
+  document.addEventListener('pointercancel',()=>{edgeSwipe=null},{capture:true,passive:true});
 
   const phoneTouchGuard=e=>{
     if(!isPhone())return;
     const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
     if(!el)return;
     if(e.type==='contextmenu'){
-      e.preventDefault();e.stopPropagation();
+      e.preventDefault();e.stopImmediatePropagation();
     }
   };
   document.addEventListener('contextmenu',phoneTouchGuard,{capture:true});
@@ -3721,12 +3760,14 @@ window.addEventListener('DOMContentLoaded',()=>{
   function syncPhoneVisibility(){
     if(!isPhone())return;
     const app=$p('#phone-app');if(app){app.style.display='flex';app.setAttribute('aria-hidden','false')}
+    bindPhoneHeaderScroll();
     syncScreens(state.reader?'reader':'main');
   }
 
   function initPhone(){
     if(!isPhone())return;
     syncPhoneVisibility();
+    bindPhoneHeaderScroll();
     try{showScreen(state.screen||'home')}catch(err){console.error('Phone init failed',err)}
   }
 
