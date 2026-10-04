@@ -153,9 +153,17 @@ const sanitizeReaderHtml=html=>{
     const tag=el.tagName;
     if(!allowed.has(tag)){el.replaceWith(doc.createTextNode(el.textContent||''));return;}
     [...el.attributes].forEach(a=>{
-      const ok=((tag==='SPAN'||tag==='EM')&&a.name==='class')||((tag==='H2'||tag==='H3')&&(a.name==='class'||a.name==='data-hid'));
+      const allowClass=(tag==='SPAN'||tag==='EM')&&a.name==='class';
+      const allowHeadClass=(tag==='H2'||tag==='H3')&&a.name==='class';
+      const allowHid=(tag==='H2'||tag==='H3')&&a.name==='data-hid';
+      const ok=allowHid||allowHeadClass||allowClass;
       if(!ok)el.removeAttribute(a.name);
     });
+    if((tag==='SPAN'||tag==='EM')&&el.hasAttribute('class')){
+      const allowedClass=['em','tcy','serif','aozora-page-break'];
+      el.setAttribute('class',el.getAttribute('class').split(/\s+/).filter(c=>allowedClass.includes(c)).join(' '));
+      if(!el.getAttribute('class'))el.removeAttribute('class');
+    }
     if((tag==='H2'||tag==='H3')&&el.hasAttribute('data-hid')&&!/^h-[0-9]{1,9}$/.test(el.getAttribute('data-hid')))el.removeAttribute('data-hid');
   });
   doc.body.querySelectorAll('H2,H3').forEach(el=>el.removeAttribute('style'));
@@ -210,7 +218,6 @@ async function hydrateSavedKeys(){
 }
 
 const safeText = (id, value) => { const el = safeEl(id); if (el) el.textContent = String(value ?? ''); };
-const safeHTML = (id, value) => { const el = safeEl(id); if (el) el.innerHTML = String(value ?? ''); };
 const safeDisplay = (id, show) => { const el = safeEl(id); if (el) el.style.display = show ? '' : 'none'; };
 const closeOneLineMode = () => {};
 const escRe = s => (s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -785,7 +792,8 @@ function initSmartRec(){
   if(!candidate){
     const shortWorks=works.filter(w=>((w.plain?.length||8000)/st.readSpeed)<=15 && !hist.some(h=>h.id===w.id));
     if(shortWorks.length){
-      candidate=shortWorks[Math.floor(Math.random()*shortWorks.length)];
+      const seed=Number(localDateKey().replace(/-/g,''))||1;
+      candidate=shortWorks[seed%shortWorks.length];
       reason='サクッと読める短編作品';
     } else {
       candidate=works[0];
@@ -1864,7 +1872,10 @@ function switchView(vid){
   if(!next)return;
   if(!low && current){
     current.classList.add('active','view-exit-'+direction);
-    setTimeout(()=>current.classList.remove('active','view-exit-'+direction),320);
+    const exitingView=current, exitingId=prev;
+    setTimeout(()=>{
+      if(currentView!==exitingId)exitingView.classList.remove('active','view-exit-'+direction);
+    },320);
   }else if(current){
     current.classList.remove('active','view-exit-forward','view-exit-backward');
   }
