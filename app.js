@@ -2360,6 +2360,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
   setBootStage(70,'本棚を準備中…');
   await checkCatalog();
   await hydrateSavedKeys();
+  renderHome();
   document.body.classList.add('app-ready');
   setBootStage(88,'仕上げています…');
   if(!document.body.classList.contains('low-power')) startFeatTimer();
