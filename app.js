@@ -3570,22 +3570,31 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='reader-wake'){toggleWake();return}
   }
 
-  let lastPointerTarget=null,lastPointerAt=0;
+  /* Mobile interaction: use one activation path.
+     Pointerup activation caused Android's synthetic click + underlying
+     text selection to race with the screen transition. Native click is
+     intentionally the single command event now. */
   const phoneEvent=e=>{
-    if(!isPhone())return;
+    if(!isPhone()||e.type!=='click')return;
     const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
     if(!el)return;
-    if(e.type==='pointerup'){
-      if(e.pointerType!=='touch'&&e.pointerType!=='pen')return;
-      lastPointerTarget=el;lastPointerAt=Date.now();
-      activatePhone(el);e.preventDefault();
-    }else if(e.type==='click'){
-      if(lastPointerTarget===el&&Date.now()-lastPointerAt<650)return;
-      activatePhone(el);
+    if(e.defaultPrevented)return;
+    e.preventDefault();
+    e.stopPropagation();
+    activatePhone(el);
+  };
+  document.addEventListener('click',phoneEvent,{capture:true});
+
+  const phoneTouchGuard=e=>{
+    if(!isPhone())return;
+    const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
+    if(!el)return;
+    if(e.type==='contextmenu'){
+      e.preventDefault();e.stopPropagation();
     }
   };
-  document.addEventListener('pointerup',phoneEvent,{passive:false});
-  document.addEventListener('click',phoneEvent);
+  document.addEventListener('contextmenu',phoneTouchGuard,{capture:true});
+
 
   const searchInputListener=()=>{
     const inp=$p('#phone-reader-search-input');
