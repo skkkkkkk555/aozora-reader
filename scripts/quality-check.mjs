@@ -50,6 +50,9 @@ ok(app.includes("if(!w||!isPublicWork(w))return 'この作品はアプリの公�
 ok(app.includes('青空文庫 作品情報'),'Aozora source metadata rendering is missing');
 ok(!/const b=t\.search\(\/\\n底本：\//.test(app),'Aozora source metadata is still being discarded');
 ok(app.includes("if(!curWork||!isPublicWork(curWork))"),'AI public-work guard missing');
+ok(app.includes('phone-license'),'smartphone UI is missing its copyright/license section');
+ok(app.includes('クリエイティブ・コモンズ 表示 4.0 国際（CC BY 4.0）'),'smartphone license section is missing CC BY 4.0 attribution');
+ok(app.includes('青空文庫の公式アプリケーションではありません'),'smartphone unofficial-app disclaimer missing');
 
 if(fail.length){
   console.error('QUALITY CHECK FAILED');
