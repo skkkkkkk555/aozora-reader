@@ -1197,20 +1197,36 @@ function renderTimelineShelf(){
 
 function renderNotesShelf(){
   const all=[];
-  Object.entries(bm).forEach(([id,arr])=>arr.forEach(it=>all.push({id,t:'栞',txt:it.s,f:it.f,d:it.t})));
-  Object.entries(notes).forEach(([id,arr])=>arr.forEach(it=>all.push({id,t:'メモ',txt:it.m,d:it.t})));
-  Object.entries(hls).forEach(([id,arr])=>arr.forEach(it=>all.push({id,t:'蛍光ペン',txt:it.t,d:it.t})));
+  Object.entries(bm).forEach(([id,arr])=>arr.forEach((it,i)=>all.push({id,t:'栞',kind:'bookmark',i,txt:it.s||'この位置',f:it.f,d:Number(it.t)||0})));
+  Object.entries(notes).forEach(([id,arr])=>arr.forEach((it,i)=>all.push({id,t:'メモ',kind:'memo',i,txt:it.m||'',d:Number(it.t)||0})));
+  Object.entries(hls).forEach(([id,arr])=>arr.forEach((it,i)=>all.push({id,t:'蛍光ペン',kind:'highlight',i,txt:it.t||'',c:it.c,d:Number(it.d)||0})));
   all.sort((a,b)=>b.d-a.d);
 
   $('shelf-empty').style.display=all.length?'none':'block';
   $('shelf-tiles').innerHTML=all.map(n=>{
     const w=byId.get(n.id); if(!w) return '';
+    const color=n.kind==='highlight'?(n.c||'var(--ac)'):'var(--ac)';
     return `
-      <div class="block" data-act="open-book" data-id="${escAttr(w.id)}" style="min-height:100px; padding:16px">
-        <div style="display:flex; justify-content:space-between"><span class="badge" style="background:var(--ac); color:#fff">${n.t}</span><span style="font-size:var(--fs-s); color:var(--sub)">${esc(w.t)}</span></div>
+      <div class="block record-tile" data-act="open-book" data-id="${escAttr(w.id)}" style="min-height:100px; padding:16px">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
+          <span class="badge" style="background:${escAttr(color)}; color:#fff">${n.t}</span>
+          <div style="display:flex; align-items:center; gap:6px">
+            <span style="font-size:var(--fs-s); color:var(--sub); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${esc(w.t)}</span>
+            <button class="secondary sm-btn record-delete" data-act="delete-record" data-id="${escAttr(w.id)}" data-kind="${n.kind}" data-index="${n.i}" aria-label="${n.t}を削除" title="${n.t}を削除">削除</button>
+          </div>
+        </div>
         <div style="font-size:var(--fs-b); font-weight:700; margin-top:8px">${esc(n.txt)}</div>
       </div>`;
   }).join('');
+}
+
+function removeStoredRecord(kind,id,index){
+  const stores={bookmark:bm,memo:notes,highlight:hls};
+  const store=stores[kind], arr=store?.[id];
+  if(!Array.isArray(arr)||!Number.isInteger(index)||index<0||index>=arr.length)return false;
+  arr.splice(index,1);
+  if(!arr.length) delete store[id];
+  return true;
 }
 
 // 本の詳細シート
@@ -2344,6 +2360,20 @@ document.addEventListener('click',async(e)=>{
     if(w){
       closeSheet();
       openReader(w,false,Number.isFinite(f)?f:null);
+    }
+  }
+
+  // 栞・メモ・蛍光ペンの個別削除
+  else if(act==='delete-record'){
+    e.preventDefault();
+    e.stopPropagation();
+    const kind=b.dataset.kind, id=b.dataset.id, index=Number(b.dataset.index);
+    if(removeStoredRecord(kind,id,index)){
+      save();
+      renderNotesShelf();
+      renderHomeBookmarks();
+      const labels={bookmark:'栞',memo:'メモ',highlight:'蛍光ペン'};
+      toast((labels[kind]||'記録')+'を削除しました');
     }
   }
 
