@@ -213,19 +213,20 @@ const isSafeOllamaUrl=value=>{
 };
 const sanitizeReaderHtml=html=>{
   const doc=new DOMParser().parseFromString(String(html||''),'text/html');
-  const allowed=new Set(['BR','RUBY','RT','EM','U','B','SPAN','H2','H3','HR']);
+  const allowed=new Set(['BR','RUBY','RT','EM','U','B','SPAN','H2','H3','HR','SECTION','PRE']);
   [...doc.body.querySelectorAll('*')].forEach(el=>{
     const tag=el.tagName;
     if(!allowed.has(tag)){el.replaceWith(doc.createTextNode(el.textContent||''));return;}
     [...el.attributes].forEach(a=>{
       const allowClass=(tag==='SPAN'||tag==='EM')&&a.name==='class';
       const allowHeadClass=(tag==='H2'||tag==='H3')&&a.name==='class';
+      const allowSourceClass=(tag==='SECTION'||tag==='PRE')&&a.name==='class';
       const allowHid=(tag==='H2'||tag==='H3')&&a.name==='data-hid';
-      const ok=allowHid||allowHeadClass||allowClass;
+      const ok=allowHid||allowHeadClass||allowClass||allowSourceClass;
       if(!ok)el.removeAttribute(a.name);
     });
-    if((tag==='SPAN'||tag==='EM'||tag==='H2'||tag==='H3')&&el.hasAttribute('class')){
-      const allowedClass=['em','tcy','serif','aozora-page-break'];
+    if((tag==='SPAN'||tag==='EM'||tag==='H2'||tag==='H3'||tag==='SECTION'||tag==='PRE')&&el.hasAttribute('class')){
+      const allowedClass=['em','tcy','serif','aozora-page-break','aozora-source-info','aozora-source-title'];
       el.setAttribute('class',el.getAttribute('class').split(/\s+/).filter(c=>allowedClass.includes(c)).join(' '));
       if(!el.getAttribute('class'))el.removeAttribute('class');
     }
