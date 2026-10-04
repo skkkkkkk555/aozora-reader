@@ -3813,16 +3813,38 @@ window.addEventListener('DOMContentLoaded',()=>{
   function openPhoneSheet(title,html){
     const sheet=$p('#phone-sheet'),scrim=$p('#phone-sheet-scrim'),stitle=$p('#phone-sheet-title'),body=$p('#phone-sheet-body');
     if(!sheet||!scrim||!body)return;
-    stitle.textContent=title;body.innerHTML=html;
-    sheet.hidden=false;sheet.setAttribute('aria-hidden','false');sheet.classList.add('open');
-    scrim.hidden=false;scrim.setAttribute('aria-hidden','false');state.sheetOpen=true;bindPhoneSheetDrag();
+    stitle.textContent=title;
+    body.innerHTML=html;
+    // 閉じた後に残る inert/hidden が次回の操作をブロックしないよう、開く時に必ず解除する。
+    sheet.removeAttribute('inert');
+    scrim.removeAttribute('inert');
+    sheet.hidden=false;
+    scrim.hidden=false;
+    sheet.setAttribute('aria-hidden','false');
+    scrim.setAttribute('aria-hidden','false');
+    sheet.classList.add('open');
+    scrim.classList.add('open');
+    state.sheetOpen=true;
+    bindPhoneSheetDrag();
   }
   function closePhoneSheet(){
     const sheet=$p('#phone-sheet'),scrim=$p('#phone-sheet-scrim');
     if(!sheet||!scrim)return;
-    sheet.classList.remove('open');scrim.classList.remove('open');sheet.setAttribute('aria-hidden','true');scrim.setAttribute('aria-hidden','true');sheet.setAttribute('inert','');
-    setTimeout(()=>{if(!state.sheetOpen){sheet.hidden=true;scrim.hidden=true;}},300);
     state.sheetOpen=false;
+    sheet.classList.remove('open');
+    scrim.classList.remove('open');
+    sheet.setAttribute('aria-hidden','true');
+    scrim.setAttribute('aria-hidden','true');
+    sheet.setAttribute('inert','');
+    scrim.setAttribute('inert','');
+    // CSSアニメーション完了後に完全に非表示。再オープンされた場合は消さない。
+    clearTimeout(sheet.__hideTimer);
+    sheet.__hideTimer=setTimeout(()=>{
+      if(!state.sheetOpen){
+        sheet.hidden=true;
+        scrim.hidden=true;
+      }
+    },380);
   }
 
   function readerMenu(){
@@ -4070,6 +4092,18 @@ window.addEventListener('DOMContentLoaded',()=>{
       phoneActivateElement(el,true);
     },{capture:true,passive:false});
   }
+
+  // シートの閉じる操作は専用に即時処理し、Android WebView等でclick合成が遅れても確実に閉じる。
+  document.addEventListener('pointerup',e=>{
+    if(!isPhone()||e.pointerType!=='touch')return;
+    const closeEl=e.target.closest?.('#phone-sheet [data-phone-action="sheet-close"],#phone-sheet-scrim[data-phone-action="sheet-close"]');
+    if(!closeEl||!state.sheetOpen)return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    phonePointerHandledEl=closeEl;
+    phonePointerHandledUntil=Date.now()+650;
+    closePhoneSheet();
+  },{capture:true,passive:false});
 
   const phoneEvent=e=>{
     if(!isPhone()||e.type!=='click')return;
