@@ -3254,5 +3254,25 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
   window.addEventListener('popstate',()=>{if(!isPhone()||!state.reader)return;closePhoneReader();});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&isPhone()&&state.reader)updatePhoneProgress();});
-  document.addEventListener('DOMContentLoaded',()=>{if(isPhone())showScreen('home');});
+  function syncPhoneVisibility(){
+    if(!isPhone())return;
+    const app=phone('#phone-app'),content=phone('#phone-content'),detail=phone('#phone-detail'),reader=phone('#phone-reader'),tabs=phone('.phone-tabbar');
+    if(app){app.style.display='flex';app.setAttribute('aria-hidden','false');}
+    if(content){content.hidden=false;content.style.display='block';}
+    if(detail){detail.hidden=true;detail.style.display='none';detail.setAttribute('aria-hidden','true');}
+    if(reader){reader.hidden=true;reader.style.display='none';reader.setAttribute('aria-hidden','true');}
+    if(tabs){tabs.hidden=false;tabs.style.display='flex';}
+  }
+  function initPhoneShell(){
+    if(!isPhone())return;
+    syncPhoneVisibility();
+    try{showScreen('home');}catch(err){
+      console.error('Phone UI initialization failed',err);
+      const c=phone('#phone-content');
+      if(c)c.innerHTML='<section class="phone-screen"><div class="phone-empty"><b>青空文庫を準備しています…</b><br><span style="font-size:12px">少し待ってから再読み込みしてください。</span></div></section>';
+    }
+    syncPhoneVisibility();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initPhoneShell,{once:true});
+  else initPhoneShell();
 })();
