@@ -2171,17 +2171,22 @@ function renderCalendar(){
 }
 
 // 読書分数タイマー
+// PC版とスマホ版で別々のリーダーを使うため、両方を明示的に監視する。
+// 「スクロールしないで読む」だけでも読書時間が記録され、スマホ版でもカレンダーに反映される。
+const isAnyReaderOpen=()=>{
+  const desktopOpen=!!$('reader')?.classList.contains('open');
+  const phoneOpen=!!$('phone-reader')?.classList.contains('phone-open');
+  return desktopOpen||phoneOpen;
+};
 readingMinuteTimer=setInterval(()=>{
-  if(!$('reader').classList.contains('open')||document.hidden)return;
-  if(Date.now()-lastUserActivityTime<65000){
-    const todayKey=localDateKey();
-    calData[todayKey]=(calData[todayKey]||0)+1;
-    save();
-  }
+  if(!isAnyReaderOpen()||document.hidden)return;
+  const todayKey=localDateKey();
+  calData[todayKey]=Math.max(0,Number(calData[todayKey])||0)+1;
+  save();
 },60000);
 
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible'&&$('reader').classList.contains('open')){
+  if(document.visibilityState==='visible'&&isAnyReaderOpen()){
     lastUserActivityTime=Date.now();
   }
 });
@@ -3297,7 +3302,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!w)return;
     const title=wt(w),author=wa(w);
     const text=author?title+' — '+author:title;
-    const url=location.href.split('#')[0];
+    const baseUrl=location.href.split('#')[0];
+    const url=baseUrl+'#work='+encodeURIComponent(String(w.id));
     try{
       if(navigator.share){await navigator.share({title,text,url});return;}
       if(navigator.clipboard?.writeText){
@@ -4186,6 +4192,14 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!isPhone()||state.reader)return;
     state.readerFs=Number(st?.fs)||19;
     state.readerLh=Number(st?.lh)||2.05;
+    const rawHash=String(location.hash||'');
+    const match=rawHash.match(/^#work=(.+)$/);
+    if(match){
+      let id='';
+      try{id=decodeURIComponent(match[1]);}catch{}
+      const w=id?getWork(id):null;
+      if(w){openDetail(w);return;}
+    }
     showScreen(state.screen||'home');
   });
   window.addEventListener('resize',()=>{if(isPhone()&&!state.reader)syncPhoneVisibility()},{passive:true});
