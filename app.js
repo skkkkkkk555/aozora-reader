@@ -268,8 +268,11 @@ function renderInsightBar(){
   safeText('insight-shelf-sub', totalBooks ? `${totalBooks}冊を記録` : 'まだ始めていません');
 }
 
-window.addEventListener('error', (event) => {
-  console.warn('Captured app error:', event.message);
+window.addEventListener('error',(event)=>{
+  console.warn('Captured app error:',event.message);
+});
+window.addEventListener('unhandledrejection',()=>{
+  showBanner('一部の機能でエラーが発生しました。ページを再読み込みすると改善する場合があります。');
 });
 
 /* ==================== 2. レンダリング共通 ==================== */
@@ -373,19 +376,31 @@ function watchBookCovers(root){
 }
 
 function sheet(title, html){
+  restoreFocusEl=document.activeElement instanceof HTMLElement?document.activeElement:null;
   $('sheet-t').textContent=title;
   $('sheet-b').innerHTML=html;
   $('sheet').classList.add('open');
+  $('sheet').setAttribute('aria-hidden','false');
   $('scrim').classList.add('open');
   pushLayer('sheet');
+  requestAnimationFrame(()=>{
+    $('sheet').querySelector('[data-act="close-sheet"]')?.focus({preventScroll:true});
+  });
 }
 function closeSheet(){
   $('sheet').classList.remove('open');
+  $('sheet').setAttribute('aria-hidden','true');
   $('scrim').classList.remove('open');
   popLayer('sheet');
+  requestAnimationFrame(()=>{
+    if(restoreFocusEl&&document.contains(restoreFocusEl)){
+      try{restoreFocusEl.focus({preventScroll:true});}catch{}
+    }
+    restoreFocusEl=null;
+  });
 }
 
-let toastTimer=null, undoFn=null;
+let toastTimer=null, undoFn=null, restoreFocusEl=null;
 function toast(m, undo){
   $('toast-m').textContent=m; undoFn=undo;
   $('toast-u').style.display=undo?'block':'none';
@@ -1216,7 +1231,8 @@ function updateWakeButton(){
   if(!b)return;
   b.classList.toggle('is-on',!!wakeLock);
   b.setAttribute('aria-pressed',wakeLock?'true':'false');
-  b.lastChild && b.lastChild.nodeType===3 ? b.lastChild.nodeValue=wakeLock?'画面維持中':'画面維持' : null;
+  b.setAttribute('aria-label',wakeLock?'画面維持中':'画面維持');
+  if(b.lastChild&&b.lastChild.nodeType===3)b.lastChild.nodeValue=wakeLock?'画面維持中':'画面維持';
 }
 
 let lastUserActivityTime=Date.now();
@@ -1519,6 +1535,25 @@ function extractKeyphrases(txt){
 
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&wakeLockWanted&&$('reader').classList.contains('open')) requestScreenWakeLock();
+});
+document.addEventListener('keydown',e=>{
+  if(!$('reader').classList.contains('open'))return;
+  if(e.target.closest?.('input,textarea,select,[contenteditable="true"]'))return;
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='PageDown'||e.key==='PageUp'||e.key===' '){
+    e.preventDefault();
+    const b=$('body'),w=innerWidth,isV=b.classList.contains('v');
+    const step=(isV?b.clientWidth:b.clientHeight)*0.88;
+    let dir=(e.key==='ArrowLeft'||e.key==='PageUp')?'prev':'next';
+    if(e.key===' '&&e.shiftKey)dir='prev';
+    animateReaderPage(dir);
+    if(isV){
+      const delta=dir==='next'?step:-step;
+      b.scrollBy({left:delta,behavior:'smooth'});
+    }else{
+      const delta=dir==='next'?step:-step;
+      b.scrollBy({top:delta,behavior:'smooth'});
+    }
+  }
 });
 document.addEventListener('selectionchange',()=>{
   lastUserActivityTime=Date.now();
