@@ -2746,49 +2746,89 @@ function initHomeHeroMotion(){
 }
 
 window.addEventListener('DOMContentLoaded',async()=>{
-  setBootStage(12,'表示環境を確認中…');
-  applyPerformanceMode();
-  setBootStage(30,'保存データを読み込み中…');
-  await load();
-  applyPerformanceMode();
-  setBootStage(52,'読書設定を反映中…');
-  applySettings();
-  applyReaderConfig();
-  initHomeHeroMotion();
-  enhanceActionables();
-  bindPressPhysics();
-  bindUiRipple();
-  setBootStage(70,'本棚を準備中…');
-  await checkCatalog();
-  await hydrateSavedKeys();
-  renderHome();
+  const phoneMode=()=>document.documentElement.dataset.device==='smartphone';
+  const safeStage=(p,t)=>{try{setBootStage(p,t)}catch{}};
+  const safeStep=async(fn,label)=>{
+    try{return await fn()}catch(err){console.warn('init step failed:',label,err);return null;}
+  };
+
+  safeStage(12,'表示環境を確認中…');
+
+  // スマホは共通アプリの初期化完了を待たず、先に独立UIを操作可能にする。
+  if(phoneMode()){
+    requestAnimationFrame(()=>{
+      try{
+        document.getElementById('app-boot')?.classList.add('done');
+        document.body.classList.add('phone-init-fast');
+      }catch{}
+    });
+  }
+
+  await safeStep(()=>applyPerformanceMode(),'performance');
+  safeStage(30,'保存データを読み込み中…');
+  await safeStep(()=>load(),'state');
+
+  await safeStep(()=>applyPerformanceMode(),'performance-after-load');
+  safeStage(52,'読書設定を反映中…');
+  await safeStep(()=>applySettings(),'settings');
+  await safeStep(()=>applyReaderConfig(),'reader-settings');
+  await safeStep(()=>initHomeHeroMotion(),'hero-motion');
+  await safeStep(()=>enhanceActionables(),'actionables');
+  await safeStep(()=>bindPressPhysics(),'press-physics');
+  await safeStep(()=>bindUiRipple(),'ui-ripple');
+
+  safeStage(70,'本棚を準備中…');
+  await safeStep(()=>checkCatalog(),'catalog');
+  await safeStep(()=>hydrateSavedKeys(),'saved-keys');
+  await safeStep(()=>renderHome(),'home');
+
   document.body.classList.add('app-ready');
-  setBootStage(88,'仕上げています…');
-  if(!document.body.classList.contains('low-power')) startFeatTimer();
-  if(!document.body.classList.contains('low-power')) startAudit();
-  
-  // Ollama接続確認
-  pingOllama();
+  safeStage(88,'仕上げています…');
+
+  await safeStep(()=>{
+    if(!document.body.classList.contains('low-power')) startFeatTimer();
+    if(!document.body.classList.contains('low-power')) startAudit();
+  },'background-tasks');
+
+  // Ollama接続確認は起動をブロックしない。
+  safeStep(()=>pingOllama(),'ollama');
   finishBoot();
 
   // 検索入力遅延実行
+  const qInput=$('q-input');
   let searchTimer=null;
-  $('q-input').oninput=()=>{
-    clearTimeout(searchTimer);
-    searchTimer=setTimeout(()=>{
-      searchState.query=$('q-input').value;
-      applySearch(true);
-    },250);
-  };
+  if(qInput){
+    qInput.oninput=()=>{
+      clearTimeout(searchTimer);
+      searchTimer=setTimeout(()=>{
+        searchState.query=qInput.value;
+        applySearch(true);
+      },250);
+    };
+  }
 
   // 検索無限スクロール
-  new IntersectionObserver(entries=>{
-    if(entries[0].isIntersecting && searchCursor<searchPool.length){
-      const chunk=searchPool.slice(searchCursor,searchCursor+40);
-      searchCursor+=40;
-      $('search-tiles').insertAdjacentHTML('beforeend',rows(chunk,w=>tileHtml(w)));
-    }
-  }).observe($('search-sentinel'));
+  const sentinel=$('search-sentinel');
+  if(sentinel&&'IntersectionObserver' in window){
+    new IntersectionObserver(entries=>{
+      if(entries[0].isIntersecting && searchCursor<searchPool.length){
+        const chunk=searchPool.slice(searchCursor,searchCursor+40);
+        searchCursor+=40;
+        const target=$('search-tiles');
+        if(target)target.insertAdjacentHTML('beforeend',rows(chunk,w=>tileHtml(w)));
+      }
+    }).observe(sentinel);
+  }
+
+  // 共通初期化が途中で止まっても、スマホ側のブートを残さない。
+  if(phoneMode()){
+    requestAnimationFrame(()=>{
+      try{
+        document.getElementById('app-boot')?.classList.add('done');
+        window.dispatchEvent(new Event('aozora-phone-data-ready'));
+      }catch{}
+    });
+  }
 });
 
 /* ================= Mobile UX / Focus Timer v4 ================= */
@@ -3706,16 +3746,11 @@ window.addEventListener('DOMContentLoaded',()=>{
   let lastPhoneTabName='';
   let edgeSwipe=null;
 
-  const phoneEvent=e=>{
-    if(!isPhone()||e.type!=='click')return;
-    const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
-    if(!el)return;
+  let phonePointerHandledEl=null;
+  let phonePointerHandledUntil=0;
 
-    // The smartphone shell is authoritative. Desktop click routers never see this command.
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    phonePress(el);
-
+  const phoneActivateElement=(el,fromTouch=false)=>{
+    if(!el||!isPhone())return;
     if(el.matches('[data-phone-tab]')){
       const name=el.dataset.phoneTab||'home';
       if(state.screen===name&&!state.reader){
@@ -3726,22 +3761,58 @@ window.addEventListener('DOMContentLoaded',()=>{
       lastPhoneTabName=name;
       lastPhoneTabTap=Date.now();
     }
-
+    if(fromTouch)phonePress(el);
     phoneHaptic(6);
     activatePhone(el);
   };
-  document.addEventListener('click',phoneEvent,{capture:true});
 
-  const phonePressStart=e=>{
+  // タップは pointerup を主経路にする。Androidブラウザの click 合成不調の影響を受けない。
+  const phonePointerEnd=e=>{
     if(!isPhone()||e.pointerType!=='touch')return;
+    if(Math.abs((e.clientX-(e._phoneStartX??e.clientX)))>18 || Math.abs((e.clientY-(e._phoneStartY??e.clientY)))>18)return;
+    const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
+    if(!el)return;
+    e.preventDefault();
+    e.stopPropagation();
+    phonePointerHandledEl=el;
+    phonePointerHandledUntil=Date.now()+650;
+    phoneActivateElement(el,true);
+  };
+  const phonePointerStart=e=>{
+    if(!isPhone()||e.pointerType!=='touch')return;
+    e._phoneStartX=e.clientX;
+    e._phoneStartY=e.clientY;
     const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
     if(el)phonePress(el);
-
     const x=e.clientX,y=e.clientY;
     if((state.screen==='home'||state.screen==='search'||state.screen==='shelf'||state.screen==='records'||state.screen==='settings')&&x<24)edgeSwipe={x,y};
     else if(state.reader&&x<28)edgeSwipe={x,y};
     else edgeSwipe=null;
   };
+  document.addEventListener('pointerdown',phonePointerStart,{capture:true,passive:true});
+  document.addEventListener('pointerup',phonePointerEnd,{capture:true,passive:false});
+
+  const phoneEvent=e=>{
+    if(!isPhone()||e.type!=='click')return;
+    const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action]');
+    if(!el)return;
+
+    // Touch pointerup handled this command already. Keep click for keyboard/mouse accessibility.
+    if(phonePointerHandledEl===el&&Date.now()<phonePointerHandledUntil){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      phonePointerHandledEl=null;
+      phonePointerHandledUntil=0;
+      return;
+    }
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    phoneActivateElement(el,false);
+  };
+  document.addEventListener('click',phoneEvent,{capture:true});
+
+  // phonePointerStart がタップ演出とエッジスワイプを兼ねる。
   const phonePressEnd=e=>{
     if(!isPhone()||e.pointerType!=='touch'||!edgeSwipe)return;
     const dx=e.clientX-edgeSwipe.x,dy=e.clientY-edgeSwipe.y;
@@ -3783,9 +3854,21 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   function initPhone(){
     if(!isPhone())return;
-    syncPhoneVisibility();
-    bindPhoneHeaderScroll();
-    try{showScreen(state.screen||'home')}catch(err){console.error('Phone init failed',err)}
+    try{
+      syncPhoneVisibility();
+      bindPhoneHeaderScroll();
+      showScreen(state.screen||'home');
+    }catch(err){
+      console.error('Phone init failed',err);
+      try{
+        syncScreens('main');
+        $p('#phone-content')?.insertAdjacentHTML('afterbegin','<div class="phone-card phone-empty">青空文庫を準備しています…<br><span style="font-size:12px">データの読み込みを続けています。</span></div>');
+      }catch{}
+    }
+    // スマホUIは共通初期化の完了を待たない。
+    try{
+      document.getElementById('app-boot')?.classList.add('done');
+    }catch{}
   }
 
   window.addEventListener('aozora-phone-data-ready',()=>{
