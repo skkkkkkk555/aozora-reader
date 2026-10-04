@@ -4708,6 +4708,53 @@ html[data-device="desktop"] .tile[data-act]:focus-visible{
   }
 }
 
+
+/* Tablet-specific composition: use the wider canvas instead of a phone-like two-column stack. */
+@media (min-width:600px) and (max-width:899px){
+  html[data-device="desktop"] #v-home .grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:18px;
+  }
+  html[data-device="desktop"] #v-home .grid>#blk-resume{
+    grid-column:1 / span 3;
+    min-height:224px;
+  }
+  html[data-device="desktop"] #v-home .grid>#blk-feat{
+    grid-column:4 / 5;
+    min-height:224px;
+  }
+  html[data-device="desktop"] #v-home .grid>#blk-recent,
+  html[data-device="desktop"] #v-home .grid>#blk-ai,
+  html[data-device="desktop"] #v-home .grid>.search-cta{
+    grid-column:1 / -1;
+  }
+  html[data-device="desktop"] #v-home .grid>#blk-smart-rec,
+  html[data-device="desktop"] #v-home .grid>.green,
+  html[data-device="desktop"] #v-home .grid>.blue,
+  html[data-device="desktop"] #v-home .grid>.orange,
+  html[data-device="desktop"] #v-home .grid>.purple,
+  html[data-device="desktop"] #v-home .grid>[data-act="open-rand"],
+  html[data-device="desktop"] #v-home .grid>[data-act="tab-shelf-fav"],
+  html[data-device="desktop"] #v-home .grid>[data-act="open-fav-authors"],
+  html[data-device="desktop"] #v-home .grid>[data-act="tab-shelf-want"],
+  html[data-device="desktop"] #v-home .grid>[data-act="tab-shelf-notes"],
+  html[data-device="desktop"] #v-home .grid>[data-act="nav-settings"]{
+    grid-column:span 2;
+  }
+  html[data-device="desktop"] #search-tiles,
+  html[data-device="desktop"] #shelf-tiles{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:24px 16px;
+  }
+  html[data-device="desktop"] #search-tiles .tile,
+  html[data-device="desktop"] #shelf-tiles .tile{
+    border-radius:15px;
+  }
+  html[data-device="desktop"] #settings-area{
+    max-width:960px;
+  }
+}
+
 </style>
 </head>
 <body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),s=Math.min(innerWidth||0,innerHeight||0);if(m&&s<=899)document.documentElement.dataset.device="smartphone";else document.documentElement.dataset.device="desktop";}catch(e){}})();</script>
