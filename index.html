@@ -3590,6 +3590,11 @@ html.smartphone-ui[data-device="smartphone"] .rich-motion .sheet-scrim.open{
 #phone-app{display:none}
 /* hidden属性をスマホシェル内でCSSが上書きしないよう明示 */
 #phone-app [hidden]{display:none!important}
+/* 画面の表示/非表示はhidden属性だけでなく状態クラスでも固定する */
+html[data-device="smartphone"] #phone-app .phone-detail{display:none!important}
+html[data-device="smartphone"] #phone-app .phone-detail.phone-open{display:block!important}
+html[data-device="smartphone"] #phone-app .phone-reader{display:none!important}
+html[data-device="smartphone"] #phone-app .phone-reader.phone-open{display:flex!important}
 html[data-device="smartphone"] body{display:block!important;background:#f2f2f7!important;overflow:hidden!important}
 html[data-device="smartphone"] #phone-app{
   display:flex;position:fixed;inset:0;z-index:500;flex-direction:column;
@@ -4171,6 +4176,6 @@ html[data-theme="dark"][data-device="smartphone"] .phone-tabbar{background:rgba(
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=phone-fix-20261005-2"></script>
+<script src="./app.js?v=phone-fix-20261005-3"></script>
 </body>
 </html>
