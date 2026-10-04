@@ -420,8 +420,16 @@ const URLS=[
 async function checkCatalog(){
   const c=await idb.get('k','cat');
   const safeCatalog=sanitizeCatalogRecords(c);
-  if(safeCatalog.length){ allWorks=safeCatalog; if(safeCatalog.length!==c.length)await idb.set('k','cat',safeCatalog); filterWorks(); renderHome(); }
-  else openCatalogIntro();
+  if(safeCatalog.length){
+    allWorks=safeCatalog;
+    if(safeCatalog.length!==c.length)await idb.set('k','cat',safeCatalog);
+    filterWorks();
+    renderHome();
+  }else{
+    filterWorks();
+    renderHome();
+    showBanner('作品カタログがまだありません。「設定」からカタログを読み込めます。');
+  }
 }
 function filterWorks(){
   works = allWorks.filter(w => !dead.has(w.id) && isPublicWork(w));
