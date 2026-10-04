@@ -6,9 +6,13 @@
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdnjs.cloudflare.com; connect-src 'self' https: http:; worker-src 'none'; media-src 'self' blob:">
-<title>青空文庫</title>
+<title>青空文庫リーダー（非公式）</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
+.aozora-source-info{margin:48px 0 24px;padding:20px;border-top:1px solid var(--line);background:var(--card-sub);border-radius:16px;color:var(--sub);font-family:var(--font-sans);font-size:13px;line-height:1.8}
+.aozora-source-title{font-weight:700;color:var(--fg);margin-bottom:12px}
+.aozora-source-info pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}
+
 :root {
   --bg: #f6f0e7; --card: rgba(255,255,255,0.8); --card-sub: #efe7db; --fg: #201c1a; --sub: #6d625d;
   --line: rgba(58, 43, 32, 0.09); --ac: #2d4f5a; --onac: #ffffff;
@@ -6409,6 +6413,18 @@ html[data-device="smartphone"] .phone-reader-header-actions .phone-icon-button:l
         <button class="secondary sm-btn" data-act="back-home"><svg class="icon"><path d="m15 18-6-6 6-6"/></svg></button>
       </div>
       <div style="display:flex; flex-direction:column; gap:24px" id="settings-area"></div>
+    <section class="block aozora-license-block" aria-label="出典・ライセンス">
+      <div style="font-size:var(--fs-h);font-weight:700;margin-bottom:12px">出典・ライセンス</div>
+      <div style="line-height:1.8;color:var(--sub);font-size:var(--fs-s)">
+        <p>本アプリでは、青空文庫が提供する書誌情報を利用しています。</p>
+        <p>書誌情報は <strong>クリエイティブ・コモンズ 表示 4.0 国際（CC BY 4.0）</strong> に基づいて利用しています。</p>
+        <p><a href="https://www.aozora.gr.jp/" target="_blank" rel="noopener noreferrer">青空文庫</a> /
+        <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></p>
+        <p>本アプリは青空文庫の公式アプリではありません。青空文庫による推薦・認可・運営・支持を意味するものではありません。</p>
+        <p>作品本文は、青空文庫の公開データから公開対象作品について取得します。作品ごとの利用条件は青空文庫の規準に従います。</p>
+        <p>第三者ソフトウェア：JSZip 3.10.1（MIT / GPLv3）</p>
+      </div>
+    </section>
     </div>
   </main>
 
