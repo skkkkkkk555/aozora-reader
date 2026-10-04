@@ -2660,6 +2660,46 @@ button,.block[data-act],.tile[data-act],input,select,textarea,label{touch-action
 }
 .low-power #body[aria-busy="false"],.low-power #b-quote:not(.book-quote-loading){animation:none!important}
 
+
+/* ===== Mobile layout stability v4 ===== */
+html,body{width:100%;min-width:0;min-height:100%;overflow:hidden}
+body{height:100svh;height:100dvh}
+#app{height:100%;min-height:0;min-width:0}
+#main-area{height:100%;min-height:0;min-width:0}
+.view{min-height:0;min-width:0;overscroll-behavior-y:contain}
+.view>*{min-width:0;max-width:100%}
+img,video,canvas,iframe{max-width:100%;height:auto}
+#bottom-nav{padding-left:max(0px,env(safe-area-inset-left));padding-right:max(0px,env(safe-area-inset-right))}
+.sheet{max-height:min(90dvh,760px);max-height:min(90svh,760px);min-height:0}
+.sheet-body{min-height:0}
+#reader{height:100dvh;height:100svh;min-height:0}
+.r-bar,.r-bottom-bar{flex:none;min-width:0}
+#body{min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain}
+#body>*{max-width:100%}
+.r-dock{min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.r-dock::-webkit-scrollbar{display:none}
+.popover{max-width:calc(100vw - 24px);max-height:50dvh;overflow:auto}
+.toast{bottom:calc(74px + env(safe-area-inset-bottom));max-width:calc(100vw - 32px);word-break:break-word}
+@media(max-width:899px){
+  #app{display:block}
+  #main-area{position:relative}
+  .view{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+  .grid,.tile-grid{min-width:0}
+  .grid>*,.tile-grid>*{min-width:0}
+  .sheet{width:100%;left:0;right:0}
+}
+@media(max-width:520px){
+  .view{padding-left:12px;padding-right:12px}
+  .block,.tile,.insight-card,.card-tint{min-width:0}
+  .r-bar{padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right))}
+  .r-bottom-bar{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}
+  #r-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+@media(orientation:landscape) and (max-height:520px){
+  .view{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+  .sheet{max-height:94dvh;max-height:94svh}
+}
+
 </style>
 </head>
 <body>
