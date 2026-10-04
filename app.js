@@ -3210,11 +3210,13 @@ window.addEventListener('DOMContentLoaded',()=>{
     setPhoneTitle('今読む');
     const c=$p('#phone-content');if(!c)return;
     const resume=getResumeWork(),today=getTodayWork();
+    const catalog=works();
     const recent=hist.map(h=>getWork(h.id)).filter(Boolean).slice(0,6);
-    const fallback=recent.length?recent:works().slice(0,6);
-    const reading=works().filter(w=>progressOf(w)>0&&progressOf(w)<.97).length;
+    const fallback=recent.length?recent:catalog.slice(0,6);
+    const reading=catalog.filter(w=>progressOf(w)>0&&progressOf(w)<.97).length;
     const marks=Object.values(bm||{}).reduce((n,a)=>n+(Array.isArray(a)?a.length:0),0);
     const memo=Object.values(notes||{}).reduce((n,a)=>n+(Array.isArray(a)?a.length:0),0);
+    const streak=phoneReadingStreak();
 
     const hero=resume||today;
     const hp=hero?Math.round(progressOf(hero)*100):0;
@@ -3240,7 +3242,7 @@ window.addEventListener('DOMContentLoaded',()=>{
         '<button class="phone-quick" data-phone-action="today"><svg class="phone-quick-icon phone-svg" viewBox="0 0 24 24"><path d="M6 3v18M18 3v18M6 7h12M6 17h12"/></svg><span class="phone-quick-label">今日の一冊</span><span class="phone-quick-sub">'+(today?escP(wt(today)):'おすすめを選ぶ')+'</span></button>'+
       '</div></section>'+
     '<section class="phone-section"><div class="phone-section-head"><h2 class="phone-section-title">読書状況</h2><button class="phone-section-link" data-phone-action="records">詳しく見る</button></div>'+
-      '<div class="phone-stat-row"><div class="phone-stat"><strong>'+reading+'</strong><small>読書中</small></div><div class="phone-stat"><strong>'+marks+'</strong><small>栞</small></div><div class="phone-stat"><strong>'+memo+'</strong><small>メモ</small></div></div>'+
+      '<div class="phone-stat-row"><div class="phone-stat"><strong>'+reading+'</strong><small>読書中</small></div><div class="phone-stat"><strong>'+streak+'</strong><small>連続日</small></div><div class="phone-stat"><strong>'+marks+'</strong><small>栞</small></div><div class="phone-stat"><strong>'+memo+'</strong><small>メモ</small></div></div>'+
     '</section>'+
     '<section class="phone-section"><div class="phone-section-head"><h2 class="phone-section-title">'+(recent.length?'最近読んだ作品':'おすすめ')+'</h2></div>'+
       '<div class="phone-grid">'+fallback.map(bookCard).join('')+'</div>'+
@@ -3251,26 +3253,36 @@ window.addEventListener('DOMContentLoaded',()=>{
     setPhoneTitle('探す');
     const c=$p('#phone-content');if(!c)return;
     const chips=[['all','すべて'],['new','新着'],['short','10分以内'],['fav','お気に入り作家']];
+    const recent=searchHistory.slice(0,5);
     c.innerHTML='<section class="phone-section">'+
-      '<div class="phone-search-wrap"><svg class="phone-search-icon phone-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 5 5"/></svg><input id="phone-search-input" class="phone-search" value="'+escP(state.query)+'" placeholder="作品名・作家名を検索" autocomplete="off" inputmode="search"></div>'+
+      '<div class="phone-search-wrap"><svg class="phone-search-icon phone-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 5 5"/></svg><input id="phone-search-input" class="phone-search" value="'+escP(state.query)+'" placeholder="作品名・作家名を検索" autocomplete="off" inputmode="search" enterkeyhint="search"></div>'+
+      (recent.length?'<div class="phone-search-recent"><span>最近の検索</span>'+recent.map(q=>'<button class="phone-recent-chip" data-phone-action="search-history" data-query="'+escP(q)+'">'+escP(q)+'</button>').join('')+'</div>':'')+
       '<div class="phone-chip-row">'+chips.map(x=>'<button class="phone-chip '+(state.searchFilter===x[0]?'active':'')+'" data-phone-action="search-filter" data-filter="'+x[0]+'">'+x[1]+'</button>').join('')+'</div>'+
       '<div id="phone-result-count" class="phone-result-count"></div><div id="phone-search-results" class="phone-grid"></div>'+
     '</section>';
     const inp=$p('#phone-search-input');
+    let drawRaf=0;
     const draw=()=>{
-      state.query=String(inp?.value||'');
-      let list=works();
-      const q=state.query.trim().toLocaleLowerCase('ja');
-      if(state.searchFilter==='new')list=list.slice().sort((a,b)=>(b.d||'').localeCompare(a.d||''));
-      else if(state.searchFilter==='short')list=list.filter(w=>Math.max(1,Math.ceil((w.plain?.length||8000)/st.readSpeed))<=10);
-      else if(state.searchFilter==='fav')list=list.filter(w=>favAuthors.has(w.a));
-      if(q)list=list.filter(w=>(wt(w)+' '+wa(w)).toLocaleLowerCase('ja').includes(q));
-      list=list.slice(0,120);
-      const count=$p('#phone-result-count');if(count)count.textContent=list.length+'件';
-      const result=$p('#phone-search-results');
-      if(result)result.innerHTML=list.map(bookCard).join('')||'<div class="phone-empty" style="grid-column:1/-1">一致する作品がありません</div>';
+      if(drawRaf)return;
+      drawRaf=requestAnimationFrame(()=>{
+        drawRaf=0;
+        state.query=String(inp?.value||'');
+        const q=state.query.trim().toLocaleLowerCase('ja');
+        let list=phoneWorksIndex;
+        if(state.searchFilter==='new')list=list.slice().sort((a,b)=>(b.w.d||'').localeCompare(a.w.d||''));
+        else if(state.searchFilter==='short')list=list.filter(x=>Math.max(1,Math.ceil((x.w.plain?.length||8000)/st.readSpeed))<=10);
+        else if(state.searchFilter==='fav')list=list.filter(x=>favAuthors.has(x.w.a));
+        if(q)list=list.filter(x=>x.text.includes(q));
+        list=list.slice(0,80);
+        const count=$p('#phone-result-count');if(count)count.textContent=list.length+'件';
+        const result=$p('#phone-search-results');
+        if(result)result.innerHTML=list.map(x=>bookCard(x.w)).join('')||'<div class="phone-empty" style="grid-column:1/-1">一致する作品がありません</div>';
+      });
     };
-    inp?.addEventListener('input',draw);draw();
+    inp?.addEventListener('input',draw);
+    inp?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();phoneSearchSave();inp.blur();}});
+    inp?.addEventListener('blur',phoneSearchSave);
+    draw();
   }
   state.searchFilter='all';
 
@@ -3541,6 +3553,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       '<button class="phone-sheet-row" data-phone-action="reader-font"><span>Aa</span><b>文字サイズ</b><small>'+state.readerFs+'px</small></button>'+
       '<button class="phone-sheet-row" data-phone-action="reader-line"><span>↕</span><b>行間</b><small>'+Number(state.readerLh).toFixed(1)+'</small></button>'+
       '<button class="phone-sheet-row" data-phone-action="reader-theme"><span>◐</span><b>テーマ</b></button>'+
+      '<button class="phone-sheet-row" data-phone-action="reader-share"><span>↗</span><b>作品を共有</b></button>'+
       '<button class="phone-sheet-row" data-phone-action="reader-wake"><span>□</span><b>画面を消さない</b></button>'+
       (ai?'<div class="phone-sheet-divider"></div><button class="phone-sheet-row" data-phone-action="reader-ai"><span>✦</span><b>AIでこの作品を要約</b></button>':'')
     );
@@ -3564,11 +3577,13 @@ window.addEventListener('DOMContentLoaded',()=>{
   function cycleFont(){
     const seq=[17,19,21,23];let i=seq.indexOf(Number(state.readerFs));state.readerFs=seq[(i+1)%seq.length];st.fs=state.readerFs;save();
     const b=currentReaderBody();if(b)b.style.setProperty('--phone-reader-fs',state.readerFs+'px');
+    if(state.sheetOpen)readerMenu();
     toast('文字サイズ '+state.readerFs+'px');
   }
   function cycleLine(){
     const seq=[1.8,2.05,2.3,2.55];let i=seq.findIndex(x=>Math.abs(x-Number(state.readerLh))<.01);state.readerLh=seq[(i+1)%seq.length];st.lh=state.readerLh;save();
     const b=currentReaderBody();if(b)b.style.setProperty('--phone-reader-lh',state.readerLh);
+    if(state.sheetOpen)readerMenu();
     toast('行間 '+state.readerLh);
   }
   async function toggleWake(){
@@ -3590,6 +3605,17 @@ window.addEventListener('DOMContentLoaded',()=>{
         closePhoneSheet();if(h)h.scrollIntoView({block:'center',behavior:'smooth'});return;
       }
       if(act==='reader-ai'){closePhoneSheet();if(typeof openAiChat==='function')openAiChat('この作品のあらすじと読みどころを要約してください。');return}
+      if(act==='reader-share'){closePhoneSheet();sharePhoneWork();return}
+      if(act==='detail-share'){closePhoneSheet();sharePhoneWork();return}
+      if(act==='detail-fav-author'){
+        const a=wa(state.work);
+        if(a){
+          if(favAuthors.has(a))favAuthors.delete(a);else favAuthors.add(a);
+          save();
+          toast(favAuthors.has(a)?'作家をフォローしました':'作家のフォローを外しました');
+        }
+        return;
+      }
       if(act==='tts'){closePhoneSheet();speakReader();return}
       if(act==='reader-search'){closePhoneSheet();openSearchBar();return}
       if(act==='reader-toc'){readerToc();return}
@@ -3600,6 +3626,13 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
     if(act==='settings'){showScreen('settings');return}
     if(act==='search'){showScreen('search');requestAnimationFrame(()=>$p('#phone-search-input')?.focus());return}
+    if(act==='search-history'){
+      state.searchFilter='all';state.query=el.dataset.query||'';
+      renderSearch();
+      requestAnimationFrame(()=>{$p('#phone-search-input')?.focus()});
+      return;
+    }
+    if(act==='theme'){cycleTheme();return}
     if(act==='shelf'){state.shelf='reading';showScreen('shelf');return}
     if(act==='records'){showScreen('records');return}
     if(act==='random'){const ws=works();if(ws.length)openDetail(ws[Math.floor(Math.random()*ws.length)]);return}
@@ -3614,6 +3647,8 @@ window.addEventListener('DOMContentLoaded',()=>{
       const w=state.work;if(!w)return;
       openPhoneSheet('作品の操作',
         '<button class="phone-sheet-row" data-phone-action="detail-author"><span>⌕</span><b>この作家の作品を見る</b></button>'+
+        '<button class="phone-sheet-row" data-phone-action="detail-fav-author"><span>★</span><b>'+(favAuthors.has(wa(w))?'作家のフォローを外す':'この作家をフォロー')+'</b></button>'+
+        '<button class="phone-sheet-row" data-phone-action="detail-share"><span>↗</span><b>作品を共有</b></button>'+
         '<button class="phone-sheet-row" data-phone-action="detail-reader-settings"><span>Aa</span><b>読書表示を調整</b></button>');
       return;
     }
