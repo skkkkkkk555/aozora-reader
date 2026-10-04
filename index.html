@@ -5871,6 +5871,124 @@ html[data-device="desktop"] .sheet-head{
   }
 }
 
+
+/* ---- iOS 26-style compact tab bar behavior without glass material ---- */
+html[data-device="smartphone"] .phone-tabbar{
+  transition:transform .28s cubic-bezier(.2,.8,.2,1),height .28s cubic-bezier(.2,.8,.2,1),
+             opacity .20s ease,box-shadow .22s ease;
+  transform:translateY(0);
+  transform-origin:center bottom;
+}
+html[data-device="smartphone"] .phone-tabbar.ios-tabbar-collapsed{
+  transform:translateY(54px) scale(.98);
+  opacity:.10;
+  pointer-events:none;
+}
+html[data-device="smartphone"] .phone-content{
+  scroll-behavior:auto;
+}
+html[data-device="smartphone"] .phone-section{
+  content-visibility:auto;
+  contain-intrinsic-size:1px 340px;
+}
+html[data-device="smartphone"] .phone-section-head{
+  position:relative;
+}
+html[data-device="smartphone"] .phone-section-head::after{
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:-7px;
+  height:1px;
+  background:transparent;
+}
+html[data-device="smartphone"] .phone-quick-grid{
+  gap:0;
+  border-radius:13px;
+  overflow:hidden;
+  background:var(--phone-card);
+}
+html[data-device="smartphone"] .phone-quick{
+  border-radius:0!important;
+  min-height:92px;
+  padding:14px 15px!important;
+  box-shadow:none!important;
+}
+html[data-device="smartphone"] .phone-quick:nth-child(odd){
+  border-right:1px solid rgba(60,60,67,.13)!important;
+}
+html[data-device="smartphone"] .phone-quick:nth-child(-n+2){
+  border-bottom:1px solid rgba(60,60,67,.13)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-quick:nth-child(odd),
+html[data-theme="dark"][data-device="smartphone"] .phone-quick:nth-child(-n+2){
+  border-color:rgba(255,255,255,.11)!important;
+}
+html[data-device="smartphone"] .phone-stat-row{
+  grid-template-columns:repeat(4,1fr);
+}
+html[data-device="smartphone"] .phone-stat{
+  padding:13px 5px;
+}
+html[data-device="smartphone"] .phone-stat strong{
+  font-size:18px;
+  font-weight:650;
+  letter-spacing:-.02em;
+}
+html[data-device="smartphone"] .phone-stat small{
+  font-size:10px;
+  color:var(--phone-secondary);
+}
+html[data-device="smartphone"] .phone-recent-chip{
+  border:0!important;
+  background:var(--phone-card)!important;
+  color:var(--phone-blue)!important;
+  border-radius:999px!important;
+  min-height:34px!important;
+}
+html[data-device="smartphone"] .phone-chip{
+  font-weight:560!important;
+}
+html[data-device="smartphone"] .phone-book{
+  transition:transform .16s ease,opacity .16s ease;
+}
+html[data-device="smartphone"] .phone-book:active{
+  transform:scale(.975);
+  opacity:.72;
+}
+html[data-device="smartphone"] .phone-book-name{
+  font-weight:620;
+  letter-spacing:-.012em;
+}
+html[data-device="smartphone"] .phone-detail{
+  overflow-y:auto;
+  overscroll-behavior-y:contain;
+}
+html[data-device="smartphone"] .phone-detail::after{
+  content:"";
+  display:block;
+  height:env(safe-area-inset-bottom);
+}
+html[data-device="smartphone"] .phone-detail-actions button{
+  transition:background .14s ease,color .14s ease,transform .12s ease;
+}
+html[data-device="smartphone"] .phone-detail-actions button:active{
+  transform:scale(.97);
+}
+html[data-device="smartphone"] .phone-reader-header-actions .phone-icon-button:last-child{
+  font-size:20px;
+  letter-spacing:2px;
+}
+@media(prefers-reduced-motion:reduce){
+  html[data-device="smartphone"] .phone-tabbar{
+    transition:none!important;
+  }
+  html[data-device="smartphone"] .phone-tabbar.ios-tabbar-collapsed{
+    transform:none!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+  }
+}
+
 </style>
 </head>
 <body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),s=Math.min(innerWidth||0,innerHeight||0);if(m&&s<=899)document.documentElement.dataset.device="smartphone";else document.documentElement.dataset.device="desktop";}catch(e){}})();</script>
