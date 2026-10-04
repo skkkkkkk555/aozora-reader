@@ -3,8 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; connect-src 'self' https: http:; worker-src 'none'; media-src 'self' blob:">
 <title>青空文庫</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
 :root {
   --bg: #f6f0e7; --card: rgba(255,255,255,0.8); --card-sub: #efe7db; --fg: #201c1a; --sub: #6d625d;
@@ -2181,6 +2183,7 @@ input[type="range"]{accent-color:var(--apple-blue)}
   min-width:132px;
 }
 
+.aozora-page-break{border:0;border-top:1px dashed var(--line);margin:2em 0}
 </style>
 </head>
 <body>
@@ -2599,6 +2602,71 @@ input[type="range"]{accent-color:var(--apple-blue)}
 /* ==================== 1. 状態 & ユーティリティ ==================== */
 const $=i=>document.getElementById(i);
 const esc=s=>(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]||c));
+
+/* ==================== SECURITY HARDENING ==================== */
+const SEC={maxCatalogBytes:30*1024*1024,maxCatalogText:32*1024*1024,maxLocalFileBytes:30*1024*1024,maxBookBytes:16*1024*1024,maxResponseHeadBytes:4096,maxStateChars:4*1024*1024};
+const secureFetch=(input,init={})=>window.fetch(input,{...init,referrerPolicy:'no-referrer',cache:init.cache||'no-store'});
+async function readResponseBytes(res,maxBytes){
+  if(!res||!res.ok)return null;
+  const len=Number(res.headers.get('content-length')||0);
+  if(len&&len>maxBytes)throw new Error('response-too-large');
+  if(res.body&&typeof res.body.getReader==='function'){
+    const reader=res.body.getReader(),chunks=[];let total=0;
+    try{
+      while(true){
+        const p=await reader.read();
+        if(p.done)break;
+        total+=p.value.byteLength;
+        if(total>maxBytes){try{await reader.cancel();}catch{};throw new Error('response-too-large');}
+        chunks.push(p.value);
+      }
+    }finally{try{reader.releaseLock();}catch{}}
+    const out=new Uint8Array(total);let off=0;
+    for(const chunk of chunks){out.set(chunk,off);off+=chunk.byteLength;}
+    return out.buffer;
+  }
+  const buf=await res.arrayBuffer();
+  if(buf.byteLength>maxBytes)throw new Error('response-too-large');
+  return buf;
+}
+const isPrivateHost=host=>{
+  const h=String(host||'').toLowerCase().replace(/^\[|\]$/g,'');
+  if(h==='localhost'||h.endsWith('.localhost')||h.endsWith('.local')||h==='::1')return true;
+  const p=h.split('.').map(Number);
+  if(p.length===4&&p.every(Number.isInteger)){
+    if(p[0]===10||p[0]===127||p[0]===0)return true;
+    if(p[0]===172&&p[1]>=16&&p[1]<=31)return true;
+    if(p[0]===192&&p[1]===168)return true;
+    if(p[0]===169&&p[1]===254)return true;
+  }
+  return false;
+};
+const isSafeOllamaUrl=value=>{
+  const raw=String(value||'').trim().replace(/[\u0000-\u001f\u007f]/g,'');
+  const candidate=/^https?:\/\//i.test(raw)?raw:'http://'+raw;
+  try{
+    const u=new URL(candidate);
+    if(!['http:','https:'].includes(u.protocol)||u.username||u.password||u.search||u.hash)return false;
+    if(!u.hostname||u.hostname.length>253)return false;
+    return u.protocol==='https:'||isPrivateHost(u.hostname);
+  }catch{return false}
+};
+const sanitizeReaderHtml=html=>{
+  const doc=new DOMParser().parseFromString(String(html||''),'text/html');
+  const allowed=new Set(['BR','RUBY','RT','EM','U','B','SPAN','H2','H3','HR']);
+  [...doc.body.querySelectorAll('*')].forEach(el=>{
+    const tag=el.tagName;
+    if(!allowed.has(tag)){el.replaceWith(doc.createTextNode(el.textContent||''));return;}
+    [...el.attributes].forEach(a=>{
+      const ok=((tag==='SPAN'||tag==='EM')&&a.name==='class')||((tag==='H2'||tag==='H3')&&(a.name==='class'||a.name==='data-hid'));
+      if(!ok)el.removeAttribute(a.name);
+    });
+    if((tag==='H2'||tag==='H3')&&el.hasAttribute('data-hid')&&!/^h-[0-9]{1,9}$/.test(el.getAttribute('data-hid')))el.removeAttribute('data-hid');
+  });
+  doc.body.querySelectorAll('H2,H3').forEach(el=>el.removeAttribute('style'));
+  return doc.body.innerHTML;
+};
+
 const PAL=['#23445d','#2e5b70','#3b5249','#5c3d46','#6e4a2e','#4a4e69','#3d5a80','#583131'];
 const colorOf=s=>{let h=0;for(let i=0;i<s.length;i++){h=(h<<5)-h+s.charCodeAt(i);h|=0}return PAL[Math.abs(h)%PAL.length]};
 const sig=(ms)=>{const c=new AbortController();setTimeout(()=>c.abort(new DOMException('Timeout','TimeoutError')),ms);return c.signal};
@@ -2625,18 +2693,19 @@ let aiConn={ ok:false, models:[], err:'' };
 let activeBook=null;
 const isPublicWork = w => !!w && Number(w.c) === 1;
 const localDateKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
-const normalizeOllamaUrl = (value='') => {
-  const raw = String(value || '').trim();
-  if (!raw) return 'http://127.0.0.1:11434';
-  const u = raw.replace(/^\s+|\s+$/g, '');
-  // Do NOT forcibly rewrite http to https; respect the user's configured scheme
-  return /^https?:\/\//i.test(u) ? u : 'http://' + u;
+const normalizeOllamaUrl=(value='')=>{
+  const raw=String(value||'').trim().replace(/[\u0000-\u001f\u007f]/g,'');
+  if(!raw)return 'http://127.0.0.1:11434';
+  const candidate=/^https?:\/\//i.test(raw)?raw:'http://'+raw;
+  try{
+    const u=new URL(candidate);
+    if(!['http:','https:'].includes(u.protocol)||u.username||u.password||u.search||u.hash)return '';
+    if(!u.hostname||u.hostname.length>253)return '';
+    u.pathname=u.pathname.replace(/\/{2,}/g,'/').replace(/\/$/,'');
+    return u.origin+(u.pathname||'');
+  }catch{return ''}
 };
-const canUseOllama = () => {
-  if (!st.ollamaEnabled || st.offline) return false;
-  const url = normalizeOllamaUrl(st.oUrl);
-  return /^https?:\/\//i.test(url);
-};
+const canUseOllama=()=>st.ollamaEnabled&&!st.offline&&isSafeOllamaUrl(st.oUrl);
 const safeEl = id => document.getElementById(id) || null;
 const safeText = (id, value) => { const el = safeEl(id); if (el) el.textContent = String(value ?? ''); };
 const safeHTML = (id, value) => { const el = safeEl(id); if (el) el.innerHTML = String(value ?? ''); };
@@ -2664,6 +2733,7 @@ const save=()=>{
 const load=async()=>{
   try {
     const raw = localStorage.getItem('aozora_terminal_v17') || localStorage.getItem('aozora_terminal_v16') || 'null';
+    if(raw.length>SEC.maxStateChars) throw new Error('state-too-large');
     const localState=raw!=='null'?JSON.parse(raw):null;
     const d=localState || await idb.get('k','state');
     const savedSettingsRaw=localStorage.getItem('aozora_terminal_settings_v1');
@@ -2884,32 +2954,45 @@ async function fetchCatalog(){
   let buf=null;
   for(let i=0;i<URLS.length;i++){
     try {
-      const res=await fetch(URLS[i],{signal:sig(30000)});
+      const res=await secureFetch(URLS[i],{signal:sig(30000)});
       if(!res.ok) continue;
-      const b=await res.arrayBuffer();
-      if(new Uint8Array(b)[0]===0x50){ buf=b; break; }
+      const b=await readResponseBytes(res,SEC.maxCatalogBytes);
+      if(b&&new Uint8Array(b)[0]===0x50){buf=b;break;}
     }catch{}
   }
   if(!buf){ $('c-log').textContent='自動取得に失敗しました。ファイルを選択してください。'; return; }
   $('c-bar').style.width='50%'; $('c-log').textContent='解凍中…';
+  if(!buf||buf.byteLength>SEC.maxCatalogBytes)throw new Error('catalog-too-large');
   const z=await JSZip.loadAsync(buf);
-  const cf=Object.keys(z.files).find(n=>n.endsWith('.csv'));
-  parseCsv(await z.files[cf].async('string'));
+  const names=Object.keys(z.files);
+  if(names.length>60000)throw new Error('catalog-entries-too-many');
+  const cf=names.find(n=>n.toLowerCase().endsWith('.csv'));
+  if(!cf||!z.files[cf]||z.files[cf].dir)throw new Error('catalog-csv-missing');
+  const csvText=await z.files[cf].async('string');
+  if(csvText.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
+  parseCsv(csvText);
 }
 function parseFile(file){
   if(!file) return;
   const r=new FileReader();
+  if(file.size>SEC.maxLocalFileBytes){toast('ファイルが大きすぎます（最大30MB）');return;}
   r.onload=async()=>{
-    if(file.name.endsWith('.zip')){
+    if(file.name.toLowerCase().endsWith('.zip')){
       const z=await JSZip.loadAsync(r.result);
-      const cf=Object.keys(z.files).find(n=>n.endsWith('.csv'));
-      parseCsv(await z.files[cf].async('string'));
+      const names=Object.keys(z.files);
+      if(names.length>60000)throw new Error('catalog-entries-too-many');
+      const cf=names.find(n=>n.toLowerCase().endsWith('.csv'));
+      if(!cf||!z.files[cf]||z.files[cf].dir)throw new Error('catalog-csv-missing');
+      const txt=await z.files[cf].async('string');
+      if(txt.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
+      parseCsv(txt);
     } else parseCsv(r.result);
   };
   if(file.name.endsWith('.zip')) r.readAsArrayBuffer(file); else r.readAsText(file);
 }
 
 async function parseCsv(csv){
+  if(typeof csv!=='string'||csv.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
   $('c-bar').style.width='70%'; $('c-log').textContent='解析中…';
   const lines=csv.split('\n');
   const h=lines[0].split(',').map(s=>s.replace(/^["\uFEFF]|["\r]/g,'').trim());
@@ -2961,9 +3044,9 @@ function startAudit(){
     if(document.hidden||$('reader').classList.contains('open')) return;
     const w=works[auditIdx++%works.length];
     try {
-      const res=await fetch(`https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${w.x}`,{method:'HEAD',signal:sig(4000)});
+      const res=await secureFetch(`https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${w.x}`,{method:'HEAD',signal:sig(4000)});
       if(res.status===404){
-        const r2=await fetch(`https://aozorahack.org/aozorabunko_text/${w.x}`,{method:'HEAD',signal:sig(4000)}).catch(()=>null);
+        const r2=await secureFetch(`https://aozorahack.org/aozorabunko_text/${w.x}`,{method:'HEAD',signal:sig(4000)}).catch(()=>null);
         if(!r2||r2.status===404){ dead.add(w.id); filterWorks(); }
       }
     }catch{}
@@ -3453,9 +3536,10 @@ async function fetchHead(w){
   const c=await idb.get('docs',w.id); if(c?.plain) return c.plain.slice(0,90);
   const u=`https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${w.x}`;
   try {
-    const res=await fetch(u,{headers:{'Range':'bytes=0-3500'},signal:sig(5000)});
+    const res=await secureFetch(u,{headers:{'Range':'bytes=0-3500'},signal:sig(5000)});
     if(res.ok){
-      const t=new TextDecoder('shift_jis').decode(await res.arrayBuffer());
+      const b=await readResponseBytes(res,SEC.maxResponseHeadBytes);if(!b)return '本文の取得をお試しください。';
+      const t=new TextDecoder('shift_jis').decode(b);
       return toPlain(parseAozora(t)).slice(0,90);
     }
   }catch{}
@@ -3464,7 +3548,7 @@ async function fetchHead(w){
 
 let readerTok=0;
 async function fetchBody(w){
-  const c=await idb.get('docs',w.id); if(c?.html) return c;
+  const c=await idb.get('docs',w.id); if(c?.html){c.html=sanitizeReaderHtml(c.html);c.plain=toPlain(c.html);return c;}
   if(st.offline) throw new Error('オフラインです');
   const urls=[
     `https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${w.x}`,
@@ -3475,10 +3559,10 @@ async function fetchBody(w){
   let buf=null, is404=true;
   for(const u of urls){
     try {
-      const res=await fetch(u,{signal:sig(10000)});
+      const res=await secureFetch(u,{signal:sig(10000)});
       if(res.status===404) continue;
       is404=false;
-      if(res.ok){ const b=await res.arrayBuffer(); if(b.byteLength>=200){ buf=b; break; } }
+      if(res.ok){ const b=await readResponseBytes(res,SEC.maxBookBytes); if(b&&b.byteLength>=200){buf=b;break;} }
     }catch{ is404=false; }
   }
   if(!buf){
@@ -3486,7 +3570,7 @@ async function fetchBody(w){
     throw new Error('通信エラーが発生しました');
   }
   const txt=new TextDecoder('shift_jis').decode(buf);
-  const html=parseAozora(txt), plain=toPlain(html);
+  const html=sanitizeReaderHtml(parseAozora(txt)),plain=toPlain(html);
   const doc={html,plain};
   await idb.set('docs',w.id,doc);
   savedKeys.add(w.id);
@@ -3511,9 +3595,9 @@ function parseAozora(raw){
    .replace(/［＃傍点］(.*?)［＃傍点終わり］/g,'<em class="em">$1</em>')
    .replace(/［＃「([^」]+)」に傍線］/g,'<u>$1</u>')
    .replace(/［＃太字］(.*?)［＃太字終わり］/g,'<b>$1</b>')
-   .replace(/［＃大見出し］([^\n]+)/g,()=>`<h2 class="serif" style="margin:1.4em 0" data-hid="h-${midashiSeq++}">$1</h2>`)
-   .replace(/［＃中見出し］([^\n]+)/g,()=>`<h3 class="serif" style="margin:1em 0" data-hid="h-${midashiSeq++}">$1</h3>`)
-   .replace(/［＃(改ページ|改丁)］/g,'<hr style="border:none;border-top:1px dashed var(--line);margin:2em 0">')
+   .replace(/［＃大見出し］([^\n]+)/g,()=>`<h2 class="serif" data-hid="h-${midashiSeq++}">$1</h2>`)
+   .replace(/［＃中見出し］([^\n]+)/g,()=>`<h3 class="serif" data-hid="h-${midashiSeq++}">$1</h3>`)
+   .replace(/［＃(改ページ|改丁)］/g,'<hr class="aozora-page-break">')
    .replace(/［＃[^］]*］/g,'');
   return t.replace(/\n/g,'<br>');
 }
@@ -3564,7 +3648,7 @@ async function openReader(w){
 
 function renderReaderBody(){
   if(!curDoc) return;
-  $('body').innerHTML=curDoc.html;
+  $('body').innerHTML=sanitizeReaderHtml(curDoc.html);
 }
 
 function closeReader(fromPop=false){
@@ -3841,7 +3925,7 @@ async function sendAiMessage(q){
 参考本文:
 ${ctx}`;
 
-    const res=await fetch(normalizeOllamaUrl(st.oUrl)+'/api/chat',{
+    const res=await secureFetch(normalizeOllamaUrl(st.oUrl)+'/api/chat',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:st.oMod,
@@ -3886,7 +3970,7 @@ async function pingOllama(){
   }
   try {
     const url = normalizeOllamaUrl(st.oUrl);
-    const res=await fetch(url+'/api/tags',{signal:sig(4000)});
+    const res=await secureFetch(url+'/api/tags',{signal:sig(4000)});
     if(res.ok){
       const d=await res.json();
       aiConn.ok=true; aiConn.models=(d.models||[]).map(m=>m.name);
@@ -4018,6 +4102,7 @@ function renderSettingsPage(){
   $('file-restore').onchange=e=>{
     const f=e.target.files[0]; if(!f) return;
     const r=new FileReader();
+    if(f.size>8*1024*1024){toast('バックアップが大きすぎます（最大8MB）');return;}
     r.onload=async()=>{
       try {
         const d=JSON.parse(r.result);
