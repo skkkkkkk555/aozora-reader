@@ -3037,6 +3037,551 @@ img,svg,canvas,video{max-width:100%}
   .home-bookmark-main{min-height:64px!important}
 }
 
+
+/* ============================================================
+   Smartphone-only UI redesign
+   - Applies only when JS recognizes a real touchscreen phone.
+   - Desktop / non-phone layouts keep the existing UI untouched.
+   ============================================================ */
+html.smartphone-ui{
+  --phone-blue:#007aff;
+  --phone-bg:#f2f2f7;
+  --phone-card:#fff;
+  --phone-text:#1c1c1e;
+  --phone-sub:#6e6e73;
+  --phone-sep:rgba(60,60,67,.18);
+  --phone-radius:18px;
+  --phone-nav-h:calc(68px + env(safe-area-inset-bottom));
+}
+html.smartphone-ui[data-device="smartphone"] body{
+  width:100%;
+  height:100dvh;
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+  display:block;
+  background:var(--phone-bg)!important;
+  background-image:none!important;
+}
+html.smartphone-ui[data-device="smartphone"] #app{
+  display:block!important;
+  width:100%!important;
+  max-width:none!important;
+  height:100dvh!important;
+  min-width:0!important;
+  min-height:0!important;
+  padding:0!important;
+}
+html.smartphone-ui[data-device="smartphone"] #sidebar{display:none!important}
+html.smartphone-ui[data-device="smartphone"] #main-area{
+  width:100%!important;
+  height:100dvh!important;
+  min-width:0!important;
+  min-height:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  overflow:hidden!important;
+}
+html.smartphone-ui[data-device="smartphone"] .view{
+  inset:0!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:calc(14px + env(safe-area-inset-top)) 14px calc(98px + env(safe-area-inset-bottom))!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+html.smartphone-ui[data-device="smartphone"] .view::-webkit-scrollbar{display:none}
+html.smartphone-ui[data-device="smartphone"] .view > *{min-width:0!important;max-width:100%!important}
+html.smartphone-ui[data-device="smartphone"] .view > div:first-child{margin-bottom:18px!important}
+html.smartphone-ui[data-device="smartphone"] .view > div:first-child h1,
+html.smartphone-ui[data-device="smartphone"] .view > div:first-child .brand-mark{
+  font-size:34px!important;
+  line-height:1.06!important;
+  font-weight:800!important;
+  letter-spacing:-.04em!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home > div:first-child{
+  padding-top:6px!important;
+  margin-bottom:16px!important;
+  align-items:flex-end!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .brand-wrap{
+  gap:8px!important;
+  align-items:flex-end!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .brand-sub{display:none!important}
+html.smartphone-ui[data-device="smartphone"] #home-clock{
+  font-size:12px!important;
+  color:var(--phone-sub)!important;
+  font-weight:600;
+}
+html.smartphone-ui[data-device="smartphone"] #home-today-info{
+  margin-top:6px!important;
+  font-size:12px!important;
+  color:var(--phone-sub)!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .insight-bar{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:0!important;
+  margin:0 0 18px!important;
+  border-radius:16px!important;
+  overflow:hidden!important;
+  background:var(--phone-card)!important;
+  border:1px solid var(--phone-sep)!important;
+  box-shadow:0 2px 10px rgba(0,0,0,.04)!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .insight-card{
+  min-width:0!important;
+  min-height:80px!important;
+  padding:12px 7px!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .insight-card + .insight-card{border-left:1px solid var(--phone-sep)!important}
+html.smartphone-ui[data-device="smartphone"] #v-home .insight-kicker{font-size:9px!important}
+html.smartphone-ui[data-device="smartphone"] #v-home .insight-value{font-size:19px!important}
+html.smartphone-ui[data-device="smartphone"] #v-home .insight-sub{font-size:10px!important}
+
+html.smartphone-ui[data-device="smartphone"] #v-home .grid{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;
+  align-items:stretch!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .books-section-title,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > #blk-resume,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > #blk-feat,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > #blk-recent,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > #blk-ai,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > #blk-smart-rec,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .search-cta,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > #blk-onboard,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .span-4{
+  grid-column:1/-1!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="open-kana"],
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="open-genre"],
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="open-new"],
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="open-time"],
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="open-rand"],
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="tab-shelf-fav"],
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="open-fav-authors"],
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="tab-shelf-want"],
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="tab-shelf-notes"],
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="nav-settings"]{
+  grid-column:span 1!important;
+  min-height:86px!important;
+  padding:13px!important;
+  border-radius:16px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="open-kana"] svg,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="open-genre"] svg,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="open-new"] svg,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="open-time"] svg,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="open-rand"] svg,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="tab-shelf-fav"] svg,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="open-fav-authors"] svg,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="tab-shelf-want"] svg,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="tab-shelf-notes"] svg,
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act="nav-settings"] svg{
+  width:26px!important;height:26px!important;margin-bottom:3px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > #blk-resume{
+  min-height:188px!important;
+  padding:20px!important;
+  border:0!important;
+  border-radius:20px!important;
+  box-shadow:0 10px 26px rgba(0,122,255,.18)!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > #blk-feat{
+  min-height:166px!important;
+  padding:18px!important;
+  border-radius:18px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #blk-recent{
+  padding:0!important;
+}
+html.smartphone-ui[data-device="smartphone"] #recent-scroll{
+  gap:10px!important;
+  padding:2px 1px 8px!important;
+}
+html.smartphone-ui[data-device="smartphone"] .recent-book{
+  flex:0 0 122px!important;
+}
+html.smartphone-ui[data-device="smartphone"] .recent-book-cover{
+  border-radius:9px!important;
+  box-shadow:0 5px 12px rgba(0,0,0,.13)!important;
+}
+html.smartphone-ui[data-device="smartphone"] .recent-book-title{font-size:13px!important}
+html.smartphone-ui[data-device="smartphone"] .recent-book-meta>div{font-size:12px!important}
+html.smartphone-ui[data-device="smartphone"] .recent-book-meta span{font-size:10px!important}
+html.smartphone-ui[data-device="smartphone"] .books-section-title{
+  font-size:20px!important;
+  margin:2px 0 -1px!important;
+  padding:2px 1px 0!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .green{
+  min-height:112px!important;
+  padding:16px!important;
+  grid-column:1/-1!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > .green .icon{
+  width:30px!important;height:30px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > #blk-smart-rec{
+  min-height:128px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > #blk-ai{
+  min-height:140px!important;
+  border-radius:20px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-home .grid > #blk-onboard{
+  grid-column:1/-1!important;
+}
+html.smartphone-ui[data-device="smartphone"] .block,
+html.smartphone-ui[data-device="smartphone"] .tile{
+  min-width:0!important;
+  max-width:100%!important;
+}
+html.smartphone-ui[data-device="smartphone"] .block{
+  border-radius:16px!important;
+  box-shadow:0 2px 10px rgba(0,0,0,.045)!important;
+  border:1px solid rgba(60,60,67,.11)!important;
+  background:var(--phone-card)!important;
+}
+html.smartphone-ui[data-device="smartphone"] .block.hero-blue{
+  background:var(--phone-blue)!important;
+  border-color:rgba(0,122,255,.2)!important;
+}
+html.smartphone-ui[data-device="smartphone"] .block::before{display:none!important}
+
+html.smartphone-ui[data-device="smartphone"] #v-search,
+html.smartphone-ui[data-device="smartphone"] #v-shelf,
+html.smartphone-ui[data-device="smartphone"] #v-cal,
+html.smartphone-ui[data-device="smartphone"] #v-settings{
+  padding-top:calc(18px + env(safe-area-inset-top))!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-search > div:first-child,
+html.smartphone-ui[data-device="smartphone"] #v-shelf > div:first-child,
+html.smartphone-ui[data-device="smartphone"] #v-cal > div:first-child,
+html.smartphone-ui[data-device="smartphone"] #v-settings > div:first-child{
+  margin-bottom:14px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-search > div:first-child > button,
+html.smartphone-ui[data-device="smartphone"] #v-shelf > div:first-child > button,
+html.smartphone-ui[data-device="smartphone"] #v-cal > div:first-child > button,
+html.smartphone-ui[data-device="smartphone"] #v-settings > div:first-child > button{
+  min-width:44px!important;
+  width:44px!important;
+  height:44px!important;
+  min-height:44px!important;
+  padding:0!important;
+  border-radius:50%!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-search > div:first-child > div{
+  border-radius:14px!important;
+  box-shadow:0 2px 10px rgba(0,0,0,.04)!important;
+}
+html.smartphone-ui[data-device="smartphone"] #q-input{
+  height:52px!important;
+  border-radius:14px!important;
+  padding-left:16px!important;
+  padding-right:48px!important;
+  font-size:16px!important;
+  background:var(--phone-card)!important;
+  border:1px solid rgba(60,60,67,.10)!important;
+}
+html.smartphone-ui[data-device="smartphone"] #search-tiles{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:14px 10px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #search-tiles .book-cover-card{min-width:0!important}
+html.smartphone-ui[data-device="smartphone"] #search-tiles .book-cover-title{font-size:15px!important}
+html.smartphone-ui[data-device="smartphone"] #search-tiles .book-cover-author{font-size:9px!important}
+html.smartphone-ui[data-device="smartphone"] #shelf-tiles{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:18px 9px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #shelf-tiles .record-tile{
+  grid-column:1/-1!important;
+  min-height:96px!important;
+  padding:14px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #shelf-tiles .record-delete{
+  min-height:42px!important;
+  border-radius:10px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-shelf .seg{
+  position:sticky;
+  top:0;
+  z-index:5;
+  padding:3px!important;
+  gap:2px!important;
+  margin-bottom:14px!important;
+  background:rgba(242,242,247,.90)!important;
+  backdrop-filter:blur(18px)!important;
+  -webkit-backdrop-filter:blur(18px)!important;
+  overflow-x:auto!important;
+  scrollbar-width:none!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-shelf .seg button{
+  min-width:max-content!important;
+  min-height:38px!important;
+  padding:0 13px!important;
+  border-radius:9px!important;
+  white-space:nowrap!important;
+}
+html.smartphone-ui[data-device="smartphone"] #v-cal .block,
+html.smartphone-ui[data-device="smartphone"] #v-settings .block{
+  border-radius:16px!important;
+  box-shadow:0 2px 10px rgba(0,0,0,.04)!important;
+}
+html.smartphone-ui[data-device="smartphone"] #settings-area{gap:14px!important}
+html.smartphone-ui[data-device="smartphone"] #settings-area .block > div{
+  min-height:56px!important;
+  padding:14px 15px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #settings-area .block > button{
+  min-height:52px!important;
+}
+
+html.smartphone-ui[data-device="smartphone"] #bottom-nav{
+  position:fixed!important;
+  left:0!important;right:0!important;bottom:0!important;
+  width:100%!important;
+  height:var(--phone-nav-h)!important;
+  z-index:140!important;
+  display:flex!important;
+  padding:0 4px env(safe-area-inset-bottom)!important;
+  background:rgba(249,249,249,.88)!important;
+  border-top:1px solid var(--phone-sep)!important;
+  box-shadow:0 -4px 20px rgba(0,0,0,.06)!important;
+  backdrop-filter:blur(24px) saturate(180%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(180%)!important;
+}
+html.smartphone-ui[data-device="smartphone"] .b-nav-btn{
+  flex:1 1 20%!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:100%!important;
+  padding:3px 1px 0!important;
+  gap:2px!important;
+  border-radius:12px!important;
+  font-size:9px!important;
+  font-weight:700!important;
+}
+html.smartphone-ui[data-device="smartphone"] .b-nav-btn .icon{
+  width:23px!important;height:23px!important;
+}
+html.smartphone-ui[data-device="smartphone"] .b-nav-btn.active{
+  color:var(--phone-blue)!important;
+  background:rgba(0,122,255,.08)!important;
+}
+
+html.smartphone-ui[data-device="smartphone"] .sheet-scrim{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  z-index:150!important;
+  background:rgba(0,0,0,.28)!important;
+}
+html.smartphone-ui[data-device="smartphone"] .sheet{
+  position:fixed!important;
+  left:0!important;right:0!important;top:0!important;bottom:0!important;
+  width:100vw!important;height:100dvh!important;
+  max-width:none!important;max-height:none!important;
+  min-width:100vw!important;min-height:100dvh!important;
+  margin:0!important;
+  border-radius:0!important;
+  border:0!important;
+  z-index:160!important;
+  box-shadow:none!important;
+  transform:translate3d(0,100%,0)!important;
+  overflow:hidden!important;
+  display:flex!important;
+}
+html.smartphone-ui[data-device="smartphone"] .sheet.open{
+  transform:translate3d(0,0,0)!important;
+}
+html.smartphone-ui .sheet.open{
+  animation:smartphoneSheetIn 260ms cubic-bezier(.16,1,.3,1) both!important;
+}
+@keyframes smartphoneSheetIn{
+  0%{transform:translate3d(0,100%,0);opacity:.98}
+  100%{transform:translate3d(0,0,0);opacity:1}
+}
+html.smartphone-ui[data-device="smartphone"] .sheet-handle{display:none!important}
+html.smartphone-ui[data-device="smartphone"] .sheet-head{
+  flex:none!important;
+  min-height:calc(64px + env(safe-area-inset-top))!important;
+  padding:calc(10px + env(safe-area-inset-top)) 12px 10px!important;
+  border-bottom:1px solid var(--phone-sep)!important;
+  background:color-mix(in srgb,var(--card) 92%,transparent)!important;
+  backdrop-filter:blur(22px)!important;
+  -webkit-backdrop-filter:blur(22px)!important;
+}
+html.smartphone-ui[data-device="smartphone"] .sheet-head #sheet-t{
+  flex:1!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  font-size:18px!important;
+  font-weight:800!important;
+}
+html.smartphone-ui[data-device="smartphone"] .sheet-head button{
+  width:42px!important;height:42px!important;min-height:42px!important;
+  padding:0!important;border-radius:50%!important;
+  flex:none!important;
+}
+html.smartphone-ui[data-device="smartphone"] .sheet-body{
+  flex:1!important;
+  min-height:0!important;
+  width:100%!important;
+  max-width:none!important;
+  padding:14px 14px calc(22px + env(safe-area-inset-bottom))!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+html.smartphone-ui[data-device="smartphone"] .sheet-body > *{
+  min-width:0!important;
+  max-width:100%!important;
+}
+html.smartphone-ui[data-device="smartphone"] .sheet-body button{
+  min-height:50px;
+}
+html.smartphone-ui[data-device="smartphone"] #mobile-fab{
+  right:12px!important;
+  bottom:calc(80px + env(safe-area-inset-bottom))!important;
+  width:52px!important;height:52px!important;min-height:52px!important;
+  border-radius:18px!important;
+  z-index:145!important;
+}
+html.smartphone-ui[data-device="smartphone"] .toast{
+  left:12px!important;right:12px!important;
+  bottom:calc(82px + env(safe-area-inset-bottom))!important;
+  max-width:none!important;
+  border-radius:14px!important;
+  z-index:190!important;
+}
+html.smartphone-ui[data-device="smartphone"] #reader{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;height:100dvh!important;
+  z-index:120!important;
+}
+html.smartphone-ui[data-device="smartphone"] #reader .r-bar{
+  height:calc(56px + env(safe-area-inset-top))!important;
+  padding:env(safe-area-inset-top) 8px 0!important;
+}
+html.smartphone-ui[data-device="smartphone"] #reader .r-bar > button{
+  width:44px!important;min-width:44px!important;padding:0!important;border-radius:50%!important;
+}
+html.smartphone-ui[data-device="smartphone"] #reader #r-title{
+  flex:1!important;
+  min-width:0!important;
+  max-width:none!important;
+  padding:0 8px!important;
+  font-size:15px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #reader .r-bar > div:last-child{
+  flex:none!important;
+  gap:4px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #reader .r-bar > div:last-child button{
+  min-height:40px!important;
+  padding:0 10px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #reader #body,
+html.smartphone-ui[data-device="smartphone"] #reader #body.v{
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  padding:20px 22px!important;
+  font-size:var(--r-fs,18px)!important;
+}
+html.smartphone-ui[data-device="smartphone"] #reader .r-dock{
+  min-height:52px!important;
+  padding:3px 5px!important;
+  gap:1px!important;
+  overflow-x:auto!important;
+  justify-content:flex-start!important;
+}
+html.smartphone-ui[data-device="smartphone"] #reader .r-dock-btn{
+  flex:0 0 16.666%!important;
+  min-width:60px!important;
+  max-width:94px!important;
+  min-height:46px!important;
+  padding:0 5px!important;
+  border-radius:11px!important;
+  font-size:11px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #reader .r-bottom-bar{
+  height:calc(54px + env(safe-area-inset-bottom))!important;
+  padding:0 8px env(safe-area-inset-bottom)!important;
+}
+html.smartphone-ui[data-device="smartphone"] #reader #r-page-lbl{
+  font-size:10px!important;
+  flex:0 1 44%!important;
+}
+html.smartphone-ui[data-device="smartphone"] #reader #r-slider{
+  margin-right:8px!important;
+}
+html.smartphone-ui[data-device="smartphone"] #r-paper-hint{
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  max-width:calc(100vw - 32px)!important;
+  white-space:nowrap!important;
+  font-size:11px!important;
+}
+html.smartphone-ui[data-device="smartphone"] input,
+html.smartphone-ui[data-device="smartphone"] select,
+html.smartphone-ui[data-device="smartphone"] textarea{
+  max-width:100%!important;
+  min-width:0!important;
+}
+html.smartphone-ui[data-device="smartphone"] button:focus-visible{
+  outline:3px solid rgba(0,122,255,.25)!important;
+  outline-offset:2px!important;
+}
+html.smartphone-ui[data-device="smartphone"] .rich-motion .sheet.open{
+  animation:smartphoneSheetIn 260ms cubic-bezier(.16,1,.3,1) both!important;
+}
+html.smartphone-ui[data-device="smartphone"] .rich-motion .sheet-scrim.open{
+  animation:smartphoneScrimIn 180ms ease both!important;
+}
+@keyframes smartphoneScrimIn{
+  from{opacity:0}to{opacity:1}
+}
+@media (prefers-reduced-motion:reduce){
+  html.smartphone-ui[data-device="smartphone"] .sheet.open,
+  html.smartphone-ui[data-device="smartphone"] .rich-motion .sheet.open,
+  html.smartphone-ui[data-device="smartphone"] .rich-motion .sheet-scrim.open{
+    animation:none!important;
+    transition:none!important;
+  }
+}
+@media (max-width:380px){
+  html.smartphone-ui[data-device="smartphone"] .view{padding-left:10px!important;padding-right:10px!important}
+  html.smartphone-ui[data-device="smartphone"] #v-home .grid{gap:8px!important}
+  html.smartphone-ui[data-device="smartphone"] #v-home .grid > .block[data-act]{
+    padding:12px!important;
+  }
+  html.smartphone-ui[data-device="smartphone"] #shelf-tiles{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3471,6 +4016,6 @@ img,svg,canvas,video{max-width:100%}
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=records-delete-sheetfix-20261005-1"></script>
+<script src="./app.js?v=smartphone-ui-20261005-1"></script>
 </body>
 </html>
