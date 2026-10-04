@@ -3041,3 +3041,108 @@ window.addEventListener('DOMContentLoaded',()=>{
   window.addEventListener('resize',renderFocusTimerPill,{passive:true});
 });
 
+
+
+/* ============================================================
+   Smartphone iOS-like router
+   Independent from the legacy desktop UI.
+   ============================================================ */
+(function(){
+  const isPhone=()=>document.documentElement.dataset.device==='smartphone';
+  const phone=$=>document.querySelector($);
+  let phoneState={screen:'home',work:null,reader:false};
+  const escPhone=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const phoneWorks=()=>Array.from(typeof byId!=='undefined' ? byId.values() : []);
+  const cover=w=>w&&(w.cover||w.img||w.image||w.thumbnail||'');
+  const author=w=>w&&(w.a||w.author||w.authors||'');
+  const title=w=>w&&(w.t||w.title||'');
+  function setPhoneTitle(t){const e=phone('#phone-title');if(e)e.textContent=t}
+  function bookCard(w){
+    return '<button class="phone-book" data-phone-work="'+escPhone(w.id)+'">'+
+      (cover(w)?'<img src="'+escPhone(cover(w))+'" alt="">':'<div class="phone-cover phone-cover-placeholder">表紙</div>')+
+      '<div class="phone-book-name">'+escPhone(title(w))+'</div><div class="phone-book-meta">'+escPhone(author(w))+'</div></button>';
+  }
+  function renderPhoneHome(){
+    setPhoneTitle('今読む');
+    const c=phone('#phone-content'); if(!c)return;
+    const hist=typeof hist!=='undefined'?hist:[];
+    let recent=phoneWorks().slice(0,6);
+    c.innerHTML='<section class="phone-screen">'+
+      '<div class="phone-stat-row"><div class="phone-stat"><strong>'+((typeof pos!=='undefined')?Object.keys(pos).length:0)+'</strong><small>読書中</small></div><div class="phone-stat"><strong>'+((typeof bm!=='undefined')?Object.keys(bm).length:0)+'</strong><small>栞</small></div><div class="phone-stat"><strong>'+((typeof notes!=='undefined')?Object.keys(notes).length:0)+'</strong><small>メモ</small></div></div>'+
+      '<h2 class="phone-section-title">最近の作品</h2><div class="phone-grid">'+recent.map(bookCard).join('')+'</div>'+
+      '<h2 class="phone-section-title">探す</h2><div class="phone-list"><button class="phone-row" data-phone-tab="search"><span class="phone-row-icon">⌕</span><span class="phone-row-text"><b class="phone-row-title">作品・作家を検索</b><small class="phone-row-sub">青空文庫から探す</small></span><span class="phone-chevron">›</span></button><button class="phone-row" data-phone-action="random"><span class="phone-row-icon">✦</span><span class="phone-row-text"><b class="phone-row-title">ランダムに読む</b></span><span class="phone-chevron">›</span></button></div>'+
+      '</section>';
+  }
+  function renderPhoneSearch(){
+    setPhoneTitle('探す');
+    const c=phone('#phone-content');if(!c)return;
+    c.innerHTML='<section class="phone-screen"><input id="phone-search-input" class="phone-search" placeholder="作品名・作家名を検索" autocomplete="off"><div id="phone-search-results" class="phone-grid"></div></section>';
+    const inp=phone('#phone-search-input');
+    const render=()=>{const q=inp.value.trim().toLowerCase();const ws=phoneWorks().filter(w=>!q||[title(w),author(w)].join(' ').toLowerCase().includes(q)).slice(0,80);phone('#phone-search-results').innerHTML=ws.map(bookCard).join('')||'<div class="phone-empty" style="grid-column:1/-1">作品が見つかりません</div>'};
+    inp.addEventListener('input',render);render();
+  }
+  function renderPhoneShelf(){
+    setPhoneTitle('本棚');const c=phone('#phone-content');if(!c)return;
+    const ids=new Set([...(typeof bm!=='undefined'?Object.keys(bm):[]),...(typeof notes!=='undefined'?Object.keys(notes):[]),...(typeof pos!=='undefined'?Object.keys(pos):[])]);
+    const ws=phoneWorks().filter(w=>ids.has(String(w.id)));
+    c.innerHTML='<section class="phone-screen"><div class="phone-grid">'+ws.map(bookCard).join('')+'</div>'+(ws.length?'':'<div class="phone-empty" style="grid-column:1/-1">本棚はまだ空です</div>')+'</section>';
+  }
+  function renderPhoneRecords(){
+    setPhoneTitle('記録');const c=phone('#phone-content');if(!c)return;
+    const rows=[];
+    if(typeof bm!=='undefined')Object.entries(bm).forEach(([id,a])=>a.forEach(x=>rows.push({id,icon:'🔖',t:'栞',s:x.s||'この位置'})));
+    if(typeof notes!=='undefined')Object.entries(notes).forEach(([id,a])=>a.forEach(x=>rows.push({id,icon:'📝',t:'メモ',s:x.m||''})));
+    if(typeof hls!=='undefined')Object.entries(hls).forEach(([id,a])=>a.forEach(x=>rows.push({id,icon:'🖍',t:'色',s:x.t||''})));
+    c.innerHTML='<section class="phone-screen"><div class="phone-list">'+rows.slice(0,100).map(x=>'<button class="phone-row" data-phone-work="'+escPhone(x.id)+'"><span class="phone-row-icon">'+x.icon+'</span><span class="phone-row-text"><b class="phone-row-title">'+escPhone(x.t)+'</b><small class="phone-row-sub">'+escPhone(x.s)+'</small></span><span class="phone-chevron">›</span></button>').join('')+'</div>'+(rows.length?'':'<div class="phone-empty">まだ記録がありません</div>')+'</section>';
+  }
+  function renderPhoneSettings(){
+    setPhoneTitle('設定');const c=phone('#phone-content');if(!c)return;
+    c.innerHTML='<section class="phone-screen"><div class="phone-list"><button class="phone-row" data-phone-action="theme"><span class="phone-row-icon">◐</span><span class="phone-row-text"><b class="phone-row-title">テーマ</b><small class="phone-row-sub">現在のテーマを変更</small></span><span class="phone-chevron">›</span></button><button class="phone-row" data-phone-action="desktop-settings"><span class="phone-row-icon">⚙</span><span class="phone-row-text"><b class="phone-row-title">詳細設定</b><small class="phone-row-sub">既存の設定画面を開く</small></span><span class="phone-chevron">›</span></button></div></section>';
+  }
+  function showScreen(name){
+    if(!isPhone())return;
+    phoneState.screen=name;
+    phone('#phone-detail').hidden=true;phone('#phone-reader').hidden=true;
+    phone('#phone-content').hidden=false;phone('.phone-tabbar').hidden=false;
+    phone('.phone-tab').forEach?.(()=>{});
+    document.querySelectorAll('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===name));
+    ({home:renderPhoneHome,search:renderPhoneSearch,shelf:renderPhoneShelf,records:renderPhoneRecords,settings:renderPhoneSettings}[name]||renderPhoneHome)();
+  }
+  function openPhoneDetail(w){
+    if(!w)return;phoneState.work=w;phone('#phone-content').hidden=true;phone('.phone-tabbar').hidden=true;
+    const d=phone('#phone-detail');d.hidden=false;d.setAttribute('aria-hidden','false');
+    d.innerHTML='<div class="phone-detail-nav"><button class="phone-circle-btn" data-phone-action="detail-back">‹</button><span style="font-weight:700">作品詳細</span><span style="width:40px"></span></div>'+
+      (cover(w)?'<img class="phone-detail-cover" src="'+escPhone(cover(w))+'" alt="">':'<div class="phone-detail-cover phone-cover-placeholder">表紙</div>')+
+      '<div class="phone-detail-title">'+escPhone(title(w))+'</div><div class="phone-detail-author">'+escPhone(author(w))+'</div>'+
+      '<div class="phone-detail-desc">'+escPhone(w.desc||w.description||'青空文庫の作品です。')+'</div>'+
+      '<button class="phone-primary" data-phone-action="read">この作品を読む</button>';
+  }
+  async function openPhoneReader(w){
+    if(!w)return;phoneState.work=w;phoneState.reader=true;phone('#phone-content').hidden=true;phone('.phone-tabbar').hidden=true;phone('#phone-detail').hidden=true;
+    const r=phone('#phone-reader');r.hidden=false;r.setAttribute('aria-hidden','false');phone('#phone-reader-title').textContent=title(w);
+    const body=phone('#phone-reader-body');body.innerHTML='<div class="phone-empty">本文を読み込んでいます…</div>';
+    try{
+      if(typeof loadBookText==='function'){
+        const text=await loadBookText(w);body.innerHTML=text||'<div class="phone-empty">本文を取得できませんでした</div>';
+      }else if(typeof openReader==='function'){
+        body.innerHTML='<div class="phone-empty">既存の読書機能を準備しています…</div>';
+      }
+    }catch(e){body.innerHTML='<div class="phone-empty">本文を読み込めませんでした</div>'}
+  }
+  document.addEventListener('click',e=>{
+    if(!isPhone())return;
+    const tab=e.target.closest('[data-phone-tab]');if(tab){e.preventDefault();showScreen(tab.dataset.phoneTab);return}
+    const wbtn=e.target.closest('[data-phone-work]');if(wbtn){const w=typeof byId!=='undefined'?byId.get(String(wbtn.dataset.phoneWork)):null;if(w)openPhoneDetail(w);return}
+    const act=e.target.closest('[data-phone-action]')?.dataset.phoneAction;
+    if(!act)return;
+    e.preventDefault();
+    if(act==='detail-back'){showScreen(phoneState.screen);return}
+    if(act==='reader-back'){phone('#phone-reader').hidden=true;phoneState.reader=false;openPhoneDetail(phoneState.work);return}
+    if(act==='read'){openPhoneReader(phoneState.work);return}
+    if(act==='settings'){showScreen('settings');return}
+    if(act==='desktop-settings'&&typeof switchView==='function'){document.documentElement.dataset.device='desktop';switchView('settings');return}
+    if(act==='random'){const ws=phoneWorks();if(ws.length)openPhoneDetail(ws[Math.floor(Math.random()*ws.length)]);return}
+    if(act==='theme'){document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';return}
+  });
+  document.addEventListener('DOMContentLoaded',()=>{if(isPhone())showScreen('home')});
+})();
