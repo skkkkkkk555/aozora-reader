@@ -3939,7 +3939,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   'use strict';
   const root=document.documentElement;
   const isGlassDevice=()=>root.dataset.device==='desktop'&&!root.classList.contains('smartphone-ui');
-  const MAX_SHAPES=14;
+  const MAX_SHAPES=20;
   let canvas=null,gl=null,program=null,texture=null,raf=0;
   let resizeTimer=0,collectTimer=0;
   let shapes=[],shapeCount=0,lastW=0,lastH=0,lastDpr=0,lastCollect=0;
@@ -3958,8 +3958,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     uniform vec2 u_lightPos;
     uniform float u_impact;
     uniform int u_shapeCount;
-    uniform vec4 u_shapes[14];
-    uniform vec4 u_style[14];
+    uniform vec4 u_shapes[20];
+    uniform vec4 u_style[20];
     uniform sampler2D u_tex;
 
     float sdRoundedBox(vec2 p,vec2 b,float r){
@@ -3974,7 +3974,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
     float sceneSDF(vec2 p){
       float d=1e5;
-      for(int i=0;i<14;i++){
+      for(int i=0;i<20;i++){
         if(i<u_shapeCount){
           vec4 s=u_shapes[i],st=u_style[i];
           vec2 q=p-s.xy;
@@ -4018,7 +4018,14 @@ window.addEventListener('DOMContentLoaded',()=>{
       vec2 uv=p/u_res;
       vec2 texUv=vec2(uv.x,1.0-uv.y);
       if(d>0.0){
-        gl_FragColor=vec4(0.0);
+        // WebGLが背景そのものを描画するため、下層DOMの文字や記号が
+        // ガラスの外側から透けて見えることはない。
+        vec3 bg=fieldBackground(uv);
+        float vignette=1.0-smoothstep(.34,.88,length(uv-.5));
+        bg*=.84+.16*vignette;
+        float scan=sin(uv.y*120.0+u_time*.22)*.006;
+        bg+=vec3(scan,scan*.55,scan*.9);
+        gl_FragColor=vec4(bg,1.0);
         return;
       }
       float depth=-d;
@@ -4074,6 +4081,14 @@ window.addEventListener('DOMContentLoaded',()=>{
       float causticRing=exp(-pow((uRefract-.48)/.15,2.0))*.30*caustics;
       float tirShadow=smoothstep(.995,.88,uRefract);
       col*=.85+.15*tirShadow;
+
+      // 液体内部のゆっくりした光流。ガラスが静止画に見えないようにする。
+      float flowA=sin((p.x+p.y)*.012+u_time*1.35)*.5+.5;
+      float flowB=sin(length(p-u_res*.5)*.035-u_time*1.75)*.5+.5;
+      float liquidWave=pow(max(0.0,flowA*flowB),3.0)*blurProgress;
+      col+=vec3(.015,.040,.075)*liquidWave;
+      col.r+=liquidWave*.018;
+      col.b+=liquidWave*.035;
 
       vec2 light2D=normalize(u_lightPos-u_res*.5);
       vec3 lightDir=normalize(vec3(light2D*.6,.85));
@@ -4231,9 +4246,18 @@ window.addEventListener('DOMContentLoaded',()=>{
       '#v-home .insight-bar',
       '#v-search #q-input',
       '#v-search #sort-seg',
-      '#v-shelf #shelf-tiles .tile:nth-child(-n+4)',
-      '#settings-area .block:nth-child(-n+3)',
-      '#v-cal .block'
+      '#v-search .chip-btn:nth-child(-n+4)',
+      '#v-shelf #shelf-tiles .tile:nth-child(-n+6)',
+      '#settings-area .block:nth-child(-n+4)',
+      '#v-cal .block',
+      '#bottom-nav',
+      '.focus-timer-pill',
+      '#mobile-fab',
+      '#toast',
+      '#pop',
+      '#reader .r-bar',
+      '#reader .r-dock',
+      '#reader .r-bottom-bar'
     ];
     const next=[];
     const dpr=Math.min(window.devicePixelRatio||1,1.25);
@@ -4321,7 +4345,23 @@ window.addEventListener('DOMContentLoaded',()=>{
   }
 
   window.addEventListener('pointermove',onMove,{passive:true});
-  window.addEventListener('pointerdown',()=>{if(isGlassDevice())impact=Math.min(1,impact+.42)},{passive:true});
+  window.addEventListener('pointerdown',(e)=>{
+    if(!isGlassDevice())return;
+    impact=Math.min(1,impact+.42);
+    const el=e.target?.closest?.(
+      '#app button,#app input,#app select,#app textarea,.block,.tile,.recent-book,'+
+      '.popover,.sheet,.b-nav-btn,.nav-btn,#toast'
+    );
+    if(!el)return;
+    const r=el.getBoundingClientRect();
+    el.style.setProperty('--liquid-press-x',((e.clientX-r.left)/Math.max(1,r.width)*100).toFixed(1)+'%');
+    el.style.setProperty('--liquid-press-y',((e.clientY-r.top)/Math.max(1,r.height)*100).toFixed(1)+'%');
+    el.classList.remove('liquid-press');
+    void el.offsetWidth;
+    el.classList.add('liquid-press');
+    clearTimeout(el.__liquidPressTimer);
+    el.__liquidPressTimer=setTimeout(()=>el.classList.remove('liquid-press'),620);
+  },{passive:true});
   window.addEventListener('resize',()=>{
     clearTimeout(resizeTimer);
     resizeTimer=setTimeout(()=>{resize();collectShapes()},80);
