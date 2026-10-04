@@ -3203,7 +3203,11 @@ window.addEventListener('DOMContentLoaded',()=>{
   }
   function getTodayWork(){
     if(st?.todayBook?.id&&getWork(st.todayBook.id))return getWork(st.todayBook.id);
-    return featList?.[featIdx]||works()[Math.floor(Math.random()*Math.max(1,works().length))]||null;
+    if(featList?.[featIdx])return featList[featIdx];
+    const list=works();
+    if(!list.length)return null;
+    const day=Math.floor(Date.now()/86400000);
+    return list[Math.abs(day)%list.length];
   }
 
   function renderHome(){
@@ -3371,12 +3375,22 @@ window.addEventListener('DOMContentLoaded',()=>{
   function showScreen(name){
     if(!isPhone())return;
     closePhoneSheet();
+    const previous=state.screen;
     state.screen=name;
     syncScreens('main');
-    $$p('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===name));
+    $p('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===name));
     const fn={home:renderHome,search:renderSearch,shelf:renderShelf,records:renderRecords,settings:renderSettings}[name]||renderHome;
     fn();
-    const content=$p('#phone-content');if(content)content.scrollTop=0;
+    const content=$p('#phone-content');
+    if(content){
+      content.scrollTop=0;
+      content.classList.remove('phone-route-in','phone-route-forward','phone-route-back');
+      void content.offsetWidth;
+      content.classList.add('phone-route-in');
+      content.classList.add((previous==='home'||name==='home')?'phone-route-back':'phone-route-forward');
+      clearTimeout(state.routeTimer);
+      state.routeTimer=setTimeout(()=>content.classList.remove('phone-route-in','phone-route-forward','phone-route-back'),360);
+    }
   }
 
   function openDetail(w){
