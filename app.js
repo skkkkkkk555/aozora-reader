@@ -703,7 +703,7 @@ function renderHome(){
     while(calData[curKey]>0){
       streak++;
       curD.setDate(curD.getDate()-1);
-      curKey=curD.toISOString().slice(0,10);
+      curKey=dateKeyOf(curD);
     }
   }
   $('st-streak').textContent=(streak||1)+'日';
