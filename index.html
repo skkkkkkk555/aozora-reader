@@ -1521,7 +1521,7 @@ body{background:#f2f2f7!important;}
 /* 検索結果・本棚：作品を上から順番に流し込む */
 .rich-motion .book-cover-card{
   animation:iosRiseSoft 650ms cubic-bezier(.16,1,.3,1) both;
-  animation-delay:calc(min(var(--book-index,0),20) * 52ms);
+  animation-delay:var(--book-delay,0ms);
 }
 .rich-motion .book-cover-inner{
   position:relative;
@@ -1537,7 +1537,7 @@ body{background:#f2f2f7!important;}
   transform:translateX(-135%) skewX(-18deg);
   pointer-events:none;
   opacity:0;
-  animation:iosCoverShine 4.6s ease-in-out calc(900ms + min(var(--book-index,0),8) * 70ms) infinite;
+  animation:iosCoverShine 4.6s ease-in-out var(--book-shine-delay,1200ms) infinite;
 }
 .rich-motion .book-cover-card:nth-child(1) .book-cover-inner::before{animation-delay:1200ms}
 .rich-motion .book-cover-card:nth-child(2) .book-cover-inner::before{animation-delay:1350ms}
@@ -2189,7 +2189,7 @@ window.addEventListener('error', (event) => {
 /* ==================== 2. レンダリング共通 ==================== */
 const rows=(arr,fn)=>arr.map((item,i)=>fn(item,i)).join('');
 const tileHtml=(w,i=0)=>`
-  <div class="tile book-cover-card" style="--book-color:${colorOf(w.t)}; --book-index:${i}" data-act="open-book" data-id="${w.id}">
+  <div class="tile book-cover-card" style="--book-color:${colorOf(w.t)}; --book-delay:${Math.min(i,20)*52}ms; --book-shine-delay:${1200+Math.min(i,8)*70}ms" data-act="open-book" data-id="${w.id}">
     <div class="book-cover-inner">
       <div class="book-cover-top">
         ${savedKeys.has(w.id)?'<span class="book-badge">保存済</span>':'<span></span>'}
