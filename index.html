@@ -2603,8 +2603,8 @@ input[type="range"]{accent-color:var(--apple-blue)}
 /* ==================== 1. 状態 & ユーティリティ ==================== */
 if(window.top!==window.self){document.documentElement.style.display='none';throw new Error('framed-context-blocked');}
 const $=i=>document.getElementById(i);
-const escAttr=esc;
 const esc=s=>(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]||c));
+const escAttr=esc;
 
 /* ==================== SECURITY HARDENING ==================== */
 const SEC={maxCatalogBytes:30*1024*1024,maxCatalogText:32*1024*1024,maxLocalFileBytes:30*1024*1024,maxBookBytes:16*1024*1024,maxResponseHeadBytes:4096,maxStateChars:4*1024*1024};
