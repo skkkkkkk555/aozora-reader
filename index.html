@@ -5363,6 +5363,312 @@ html[data-device="desktop"]:not(.smartphone-ui).low-power #v-home .grid > #blk-s
   background:var(--card) !important;
 }
 
+
+/* ============================================================
+   Liquid Glass UI — optical glass treatment
+   Desktop / tablet only. The dedicated smartphone shell remains
+   completely isolated.
+   ============================================================ */
+html[data-device="desktop"]:not(.smartphone-ui){
+  --liquid-glass:rgba(255,255,255,.50);
+  --liquid-glass-strong:rgba(255,255,255,.66);
+  --liquid-glass-soft:rgba(255,255,255,.36);
+  --liquid-stroke:rgba(255,255,255,.52);
+  --liquid-shadow:0 22px 70px rgba(24,28,42,.11);
+  --liquid-shadow-deep:0 30px 90px rgba(24,28,42,.17);
+}
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui){
+  --liquid-glass:rgba(24,24,30,.50);
+  --liquid-glass-strong:rgba(38,38,44,.66);
+  --liquid-glass-soft:rgba(18,18,24,.40);
+  --liquid-stroke:rgba(255,255,255,.13);
+  --liquid-shadow:0 22px 70px rgba(0,0,0,.26);
+  --liquid-shadow-deep:0 30px 90px rgba(0,0,0,.38);
+}
+
+html[data-device="desktop"]:not(.smartphone-ui) body{
+  position:relative;
+  isolation:isolate;
+  background:
+    radial-gradient(900px 640px at 8% -8%,rgba(0,122,255,.11),transparent 58%),
+    radial-gradient(800px 600px at 102% 4%,rgba(175,82,222,.09),transparent 56%),
+    radial-gradient(620px 500px at 60% 112%,rgba(90,200,250,.08),transparent 55%),
+    var(--ios-bg)!important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) body::before{
+  content:"";
+  position:fixed;
+  inset:-18%;
+  z-index:-2;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 18% 28%,rgba(90,200,250,.14),transparent 24%),
+    radial-gradient(circle at 76% 24%,rgba(175,82,222,.10),transparent 22%),
+    radial-gradient(circle at 52% 78%,rgba(0,122,255,.10),transparent 25%),
+    radial-gradient(circle at 86% 84%,rgba(255,149,0,.06),transparent 18%);
+  filter:blur(68px) saturate(125%);
+  transform:translate3d(0,0,0);
+}
+html[data-device="desktop"]:not(.smartphone-ui) body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    linear-gradient(115deg,rgba(255,255,255,.18),transparent 22%,rgba(255,255,255,.05) 44%,transparent 68%),
+    radial-gradient(circle at 50% 0%,rgba(255,255,255,.12),transparent 34%);
+  mix-blend-mode:screen;
+  opacity:.75;
+}
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) body::after{
+  mix-blend-mode:screen;
+  opacity:.28;
+}
+
+/* Main frame / sidebar = one large glass object */
+html[data-device="desktop"]:not(.smartphone-ui) #sidebar,
+html[data-device="desktop"]:not(.smartphone-ui) #main-area{
+  backdrop-filter:blur(36px) saturate(175%) contrast(104%);
+  -webkit-backdrop-filter:blur(36px) saturate(175%) contrast(104%);
+}
+html[data-device="desktop"]:not(.smartphone-ui) #sidebar{
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.38));
+  border-color:rgba(255,255,255,.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.75),
+    inset -1px 0 rgba(255,255,255,.24),
+    0 24px 72px rgba(24,28,42,.08);
+}
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #sidebar{
+  background:linear-gradient(180deg,rgba(34,34,40,.60),rgba(18,18,24,.44));
+  border-color:rgba(255,255,255,.10);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 24px 72px rgba(0,0,0,.24);
+}
+html[data-device="desktop"]:not(.smartphone-ui) #main-area{
+  background:linear-gradient(145deg,rgba(255,255,255,.42),rgba(255,255,255,.20));
+  border-color:rgba(255,255,255,.40);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.58),
+    inset 0 -1px 0 rgba(255,255,255,.10),
+    var(--liquid-shadow);
+}
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #main-area{
+  background:linear-gradient(145deg,rgba(40,40,48,.40),rgba(18,18,24,.22));
+  border-color:rgba(255,255,255,.09);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),var(--liquid-shadow);
+}
+
+/* Home: liquid glass cards with optical rim + soft highlight */
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .grid>.block{
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 12% 4%,rgba(255,255,255,.34),transparent 28%),
+    radial-gradient(circle at 88% 92%,rgba(0,122,255,.08),transparent 28%),
+    linear-gradient(145deg,rgba(255,255,255,.60),rgba(255,255,255,.34)) !important;
+  border:1px solid var(--liquid-stroke) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.75),
+    inset 1px 0 rgba(255,255,255,.18),
+    0 16px 48px rgba(24,28,42,.10) !important;
+  backdrop-filter:blur(34px) saturate(180%) contrast(104%) !important;
+  -webkit-backdrop-filter:blur(34px) saturate(180%) contrast(104%) !important;
+}
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #v-home .grid>.block{
+  background:
+    radial-gradient(circle at 12% 4%,rgba(255,255,255,.08),transparent 28%),
+    radial-gradient(circle at 88% 92%,rgba(10,132,255,.10),transparent 30%),
+    linear-gradient(145deg,rgba(38,38,44,.64),rgba(22,22,28,.44)) !important;
+  border-color:rgba(255,255,255,.12)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 18px 52px rgba(0,0,0,.26) !important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .grid>.block:not(#blk-resume):not(#blk-feat)::before,
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .grid>#blk-feat::before{
+  content:"";
+  position:absolute;
+  inset:-40% -20%;
+  pointer-events:none;
+  background:
+    linear-gradient(105deg,transparent 38%,rgba(255,255,255,.22) 49%,transparent 61%),
+    radial-gradient(circle at 26% 20%,rgba(255,255,255,.22),transparent 25%);
+  filter:blur(12px);
+  opacity:.72;
+  animation:liquidGlassSweep 8s ease-in-out infinite;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .grid>#blk-resume{
+  border:1px solid rgba(255,255,255,.30)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 -1px 0 rgba(0,0,0,.06),
+    0 22px 64px rgba(0,122,255,.22) !important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .insight-bar{
+  position:relative;
+  overflow:hidden;
+  background:rgba(255,255,255,.34)!important;
+  border:1px solid rgba(255,255,255,.42)!important;
+  box-shadow:0 14px 42px rgba(24,28,42,.08),inset 0 1px rgba(255,255,255,.62)!important;
+  backdrop-filter:blur(28px) saturate(175%) !important;
+  -webkit-backdrop-filter:blur(28px) saturate(175%) !important;
+}
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .insight-card{
+  background:rgba(255,255,255,.22)!important;
+}
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #v-home .insight-bar{
+  background:rgba(24,24,30,.34)!important;
+  border-color:rgba(255,255,255,.10)!important;
+}
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #v-home .insight-card{
+  background:rgba(255,255,255,.035)!important;
+}
+
+/* Search / shelf / controls */
+html[data-device="desktop"]:not(.smartphone-ui) #q-input,
+html[data-device="desktop"]:not(.smartphone-ui) .seg,
+html[data-device="desktop"]:not(.smartphone-ui) #v-search .chip-btn,
+html[data-device="desktop"]:not(.smartphone-ui) button.secondary{
+  background:rgba(255,255,255,.34)!important;
+  border:1px solid rgba(255,255,255,.40)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.56),
+    0 8px 24px rgba(24,28,42,.055);
+  backdrop-filter:blur(24px) saturate(170%);
+  -webkit-backdrop-filter:blur(24px) saturate(170%);
+}
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #q-input,
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) .seg,
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #v-search .chip-btn,
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) button.secondary{
+  background:rgba(38,38,44,.40)!important;
+  border-color:rgba(255,255,255,.10)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.06),0 8px 24px rgba(0,0,0,.20);
+}
+html[data-device="desktop"]:not(.smartphone-ui) .seg button.active,
+html[data-device="desktop"]:not(.smartphone-ui) #v-search #sort-seg button.active,
+html[data-device="desktop"]:not(.smartphone-ui) #v-shelf .seg button.active{
+  background:rgba(255,255,255,.60)!important;
+  border:1px solid rgba(255,255,255,.56)!important;
+  box-shadow:
+    0 4px 16px rgba(24,28,42,.08),
+    inset 0 1px 0 rgba(255,255,255,.70);
+  backdrop-filter:blur(18px) saturate(180%);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);
+}
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) .seg button.active,
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #v-search #sort-seg button.active,
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #v-shelf .seg button.active{
+  background:rgba(72,72,80,.64)!important;
+  border-color:rgba(255,255,255,.12)!important;
+}
+
+/* Glass book cards */
+html[data-device="desktop"]:not(.smartphone-ui) #search-tiles .tile,
+html[data-device="desktop"]:not(.smartphone-ui) #shelf-tiles .tile{
+  position:relative;
+  overflow:hidden;
+  background:rgba(255,255,255,.20)!important;
+  border:1px solid rgba(255,255,255,.30)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.40),
+    0 14px 34px rgba(24,28,42,.07) !important;
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+}
+html[data-device="desktop"]:not(.smartphone-ui) #search-tiles .tile:hover,
+html[data-device="desktop"]:not(.smartphone-ui) #shelf-tiles .tile:hover{
+  background:rgba(255,255,255,.34)!important;
+  border-color:rgba(255,255,255,.50)!important;
+}
+
+/* Settings / calendar / sheets */
+html[data-device="desktop"]:not(.smartphone-ui) #settings-area .block,
+html[data-device="desktop"]:not(.smartphone-ui) #v-cal .block{
+  background:rgba(255,255,255,.42)!important;
+  border:1px solid rgba(255,255,255,.44)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.62),
+    0 16px 44px rgba(24,28,42,.07);
+  backdrop-filter:blur(30px) saturate(170%);
+  -webkit-backdrop-filter:blur(30px) saturate(170%);
+}
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #settings-area .block,
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #v-cal .block{
+  background:rgba(30,30,36,.48)!important;
+  border-color:rgba(255,255,255,.10)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.06),0 16px 44px rgba(0,0,0,.24);
+}
+@media (min-width:900px){
+  html[data-device="desktop"]:not(.smartphone-ui) .sheet{
+    background:rgba(248,248,250,.58)!important;
+    border:1px solid rgba(255,255,255,.54)!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.72),
+      0 32px 110px rgba(0,0,0,.20)!important;
+    backdrop-filter:blur(42px) saturate(185%) contrast(104%)!important;
+    -webkit-backdrop-filter:blur(42px) saturate(185%) contrast(104%)!important;
+  }
+  html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) .sheet{
+    background:rgba(28,28,34,.60)!important;
+    border-color:rgba(255,255,255,.12)!important;
+  }
+}
+
+/* Reader glass chrome */
+html[data-device="desktop"]:not(.smartphone-ui) #reader .r-bar,
+html[data-device="desktop"]:not(.smartphone-ui) #reader .r-bottom-bar,
+html[data-device="desktop"]:not(.smartphone-ui) #reader .r-dock{
+  background:rgba(248,248,250,.44)!important;
+  border-color:rgba(255,255,255,.40)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.58),
+    0 12px 34px rgba(24,28,42,.08);
+  backdrop-filter:blur(30px) saturate(175%);
+  -webkit-backdrop-filter:blur(30px) saturate(175%);
+}
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #reader .r-bar,
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #reader .r-bottom-bar,
+html[data-device="desktop"][data-theme="dark"]:not(.smartphone-ui) #reader .r-dock{
+  background:rgba(28,28,34,.50)!important;
+  border-color:rgba(255,255,255,.10)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.05),0 12px 34px rgba(0,0,0,.24);
+}
+html[data-device="desktop"]:not(.smartphone-ui) #reader .r-dock{
+  border:1px solid rgba(255,255,255,.40);
+}
+
+/* Liquid glass motion: slow optical highlight, never changes layout */
+@keyframes liquidGlassSweep{
+  0%,100%{transform:translate3d(-8%,0,0) rotate(0deg);opacity:.28}
+  48%{transform:translate3d(8%,2%,0) rotate(1deg);opacity:.72}
+}
+html[data-device="desktop"]:not(.smartphone-ui) #v-home .grid>.block,
+html[data-device="desktop"]:not(.smartphone-ui) #search-tiles .tile,
+html[data-device="desktop"]:not(.smartphone-ui) #shelf-tiles .tile,
+html[data-device="desktop"]:not(.smartphone-ui) #settings-area .block,
+html[data-device="desktop"]:not(.smartphone-ui) #v-cal .block{
+  will-change:transform;
+}
+html[data-device="desktop"]:not(.smartphone-ui).low-power #v-home .grid>.block,
+html[data-device="desktop"]:not(.smartphone-ui).low-power #search-tiles .tile,
+html[data-device="desktop"]:not(.smartphone-ui).low-power #shelf-tiles .tile,
+html[data-device="desktop"]:not(.smartphone-ui).low-power #settings-area .block,
+html[data-device="desktop"]:not(.smartphone-ui).low-power #v-cal .block{
+  will-change:auto;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  background:var(--card)!important;
+  box-shadow:none!important;
+}
+@media (prefers-reduced-motion:reduce){
+  html[data-device="desktop"]:not(.smartphone-ui) #v-home .grid>.block::before,
+  html[data-device="desktop"]:not(.smartphone-ui) #v-home .grid>#blk-feat::before{
+    animation:none!important;
+  }
+}
+
 </style>
 </head>
 <body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),s=Math.min(innerWidth||0,innerHeight||0);if(m&&s<=899)document.documentElement.dataset.device="smartphone";else document.documentElement.dataset.device="desktop";}catch(e){}})();</script>
