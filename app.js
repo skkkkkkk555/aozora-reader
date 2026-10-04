@@ -2044,6 +2044,10 @@ function openAiChat(initQ=''){
 }
 
 async function sendAiMessage(q){
+  if(!curWork||!isPublicWork(curWork)){
+    toast('この作品ではAI機能を利用できません');
+    return;
+  }
   q=String(q||'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g,'').trim();
   if(q.length>4000){toast('質問が長すぎます（最大4000文字）');return;}
   if(!/^[A-Za-z0-9._:/-]{1,128}$/.test(String(st.oMod||''))){toast('AIモデル名が不正です');return;}
