@@ -3625,6 +3625,12 @@ window.addEventListener('DOMContentLoaded',()=>{
   function showScreen(name,direction='forward'){
     if(!isPhone())return;
     closePhoneSheet();
+    state.work=null;
+    state.readerFromDetail=false;
+    const baseState={...(history.state||{})};
+    delete baseState.phoneLayer;
+    delete baseState.phoneParent;
+    history.replaceState(baseState,'',location.href);
     const previous=state.screen;
     const tabNames=['home','search','shelf','records','settings'];
     const fromIndex=tabNames.indexOf(previous),toIndex=tabNames.indexOf(name);
@@ -3896,12 +3902,14 @@ window.addEventListener('DOMContentLoaded',()=>{
     const seq=[17,19,21,23];let i=seq.indexOf(Number(state.readerFs));state.readerFs=seq[(i+1)%seq.length];st.fs=state.readerFs;save();
     const b=currentReaderBody();if(b)b.style.setProperty('--phone-reader-fs',state.readerFs+'px');
     if(state.sheetOpen)readerMenu();
+    else if(!state.reader)renderSettings();
     toast('文字サイズ '+state.readerFs+'px');
   }
   function cycleLine(){
     const seq=[1.8,2.05,2.3,2.55];let i=seq.findIndex(x=>Math.abs(x-Number(state.readerLh))<.01);state.readerLh=seq[(i+1)%seq.length];st.lh=state.readerLh;save();
     const b=currentReaderBody();if(b)b.style.setProperty('--phone-reader-lh',state.readerLh);
     if(state.sheetOpen)readerMenu();
+    else if(!state.reader)renderSettings();
     toast('行間 '+state.readerLh);
   }
   async function toggleWake(){
