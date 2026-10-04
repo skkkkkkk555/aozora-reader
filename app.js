@@ -3605,6 +3605,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     const content=$p('#phone-content');
     if(content){
       content.scrollTop=0;
+      state.headerCompact=false;
+      $p('.phone-header')?.classList.remove('compact');
       bindPhoneHeaderScroll();
     }
   }
@@ -3956,8 +3958,10 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(el)phonePress(el);
 
     const x=e.clientX,y=e.clientY;
-    if((state.screen==='home'||state.screen==='search'||state.screen==='shelf'||state.screen==='records'||state.screen==='settings')&&x<24)edgeSwipe={x,y};
-    else if(state.reader&&x<28)edgeSwipe={x,y};
+    if(state.sheetOpen&&x<32)edgeSwipe=null;
+    else if((state.reader||state.work)&&x<28)edgeSwipe={x,y};
+    else if(!state.reader&&!state.work&&
+      (state.screen==='home'||state.screen==='search'||state.screen==='shelf'||state.screen==='records'||state.screen==='settings')&&x<24)edgeSwipe={x,y};
     else edgeSwipe=null;
   };
 
@@ -3973,8 +3977,10 @@ window.addEventListener('DOMContentLoaded',()=>{
       e.preventDefault();
       e.stopPropagation();
       phoneHaptic(10);
+      if(state.sheetOpen){closePhoneSheet();return;}
       if(state.reader)closeReader();
-      else if(state.screen!=='home')showScreen('home');
+      else if(state.work)showScreen(state.screen,'back');
+      else if(state.screen!=='home')showScreen('home','back');
       return;
     }
 
