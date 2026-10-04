@@ -22,7 +22,10 @@ const secureUrl=input=>{
     if(!['http:','https:'].includes(u.protocol))return null;
     if(u.origin===location.origin)return u;
     if(NETWORK_HOSTS.has(u.hostname))return u;
-    if(u.protocol==='https:'&&isSafeOllamaUrl(u.href))return u;
+    if(typeof st!=='undefined'&&isSafeOllamaUrl(st.oUrl)){
+      const configured=new URL(normalizeOllamaUrl(st.oUrl));
+      if(u.origin===configured.origin)return u;
+    }
   }catch{}
   return null;
 };
@@ -1139,7 +1142,7 @@ async function openReader(w){
   if(progressRaf!==null){cancelAnimationFrame(progressRaf);progressRaf=null;}
   const tId=++readerTok;
   $('r-title').textContent=w.t;
-  $('body').innerHTML='<div style="padding:60px 0; text-align:center; color:var(--sub)">読み込んでいます…</div>';
+  setReaderLoading(true);
   $('reader').classList.add('open');
   pushLayer('reader');
 
@@ -1148,6 +1151,7 @@ async function openReader(w){
     if(tId!==readerTok) return;
     curDoc=doc;
     renderReaderBody();
+    setReaderLoading(false);
     applyReaderConfig();
 
     // 位置復元
@@ -1163,9 +1167,26 @@ async function openReader(w){
 
     if(st.kp && !document.body.classList.contains('low-power')) extractKeyphrases(doc.plain);
 } catch(e){
+    setReaderLoading(false);
     if(e.dead) toast('取得できない作品のため除外しました');
-    else $('body').innerHTML='<div style="padding:60px 0; text-align:center">取得に失敗しました<br><button class="primary" data-act="r-retry" style="margin-top:16px">再試行</button></div>';
+    else $('body').innerHTML='<div class="reader-error-state"><div class="reader-error-icon">!</div><div class="reader-error-title">本文を読み込めませんでした</div><div class="reader-error-text">通信状態を確認して、もう一度お試しください。</div><button class="primary" data-act="r-retry" style="margin-top:16px">再試行</button></div>';
   }
+}
+
+function setReaderLoading(show){
+  const body=$('body');
+  if(!body)return;
+  body.setAttribute('aria-busy',show?'true':'false');
+  if(show){
+    body.innerHTML='<div class="reader-loading" role="status" aria-live="polite"><div class="reader-loading-orb"></div><div class="reader-loading-title">本文を読み込んでいます</div><div class="reader-loading-sub">青空文庫から本文を準備中…</div><div class="reader-loading-bar"><span></span></div></div>';
+  }
+}
+function pulseState(el){
+  if(!el||document.body.classList.contains('low-power'))return;
+  el.classList.remove('state-bump');
+  void el.offsetWidth;
+  el.classList.add('state-bump');
+  window.setTimeout(()=>el.classList.remove('state-bump'),360);
 }
 
 function renderReaderBody(){
@@ -1679,15 +1700,17 @@ function switchView(vid){
   document.querySelectorAll('.view').forEach(v=>{
     v.classList.remove('view-slide-forward','view-slide-backward','view-exit-forward','view-exit-backward');
   });
+  if(!next)return;
   if(!low && current){
     current.classList.add('active','view-exit-'+direction);
     setTimeout(()=>current.classList.remove('active','view-exit-'+direction),320);
   }else if(current){
-    current.classList.remove('active');
+    current.classList.remove('active','view-exit-forward','view-exit-backward');
   }
   next.classList.add('active',direction==='forward'?'view-slide-forward':'view-slide-backward');
   currentView=vid;
-  setTimeout(()=>next.classList.remove('view-slide-forward','view-slide-backward'),620);
+  window.clearTimeout(window.__viewInTimer);
+  window.__viewInTimer=window.setTimeout(()=>next.classList.remove('view-slide-forward','view-slide-backward'),480);
   document.querySelectorAll('.nav-btn, .b-nav-btn').forEach(b=>{
     const active=b.dataset.v===vid;
     b.classList.toggle('active',active);
@@ -1875,12 +1898,15 @@ document.addEventListener('click',async(e)=>{
     if(w) openBookDetail(w);
   }
   else if(act==='read-now'){ closeSheet(); openReader(activeBook, false); }
-  else if(act==='toggle-want'){ want.has(activeBook.id)?want.delete(activeBook.id):want.add(activeBook.id); save(); openBookDetail(activeBook); }
+  else if(act==='toggle-want'){
+    want.has(activeBook.id)?want.delete(activeBook.id):want.add(activeBook.id);
+    save(); pulseState(b); openBookDetail(activeBook);
+  }
   else if(act==='toggle-fav'){
     const isF=fav.has(activeBook.id);
     if(isF){ fav.delete(activeBook.id); toast('お気に入りを解除しました',()=>{fav.add(activeBook.id);save();}); }
     else fav.add(activeBook.id);
-    save(); openBookDetail(activeBook);
+    save(); pulseState(b); openBookDetail(activeBook);
   }
   else if(act==='toggle-fav-author'){
     const a=b.dataset.author;
