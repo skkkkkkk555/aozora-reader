@@ -459,31 +459,51 @@ function openCatalogIntro(){
 }
 
 async function fetchCatalog(){
-  $('c-bar').classList.add('loading-bar-live');
-  $('c-log').textContent='配信元へ接続中…'; $('c-bar').style.width='20%';
-  let buf=null;
-  for(let i=0;i<URLS.length;i++){
-    try {
-      const res=await secureFetch(URLS[i],{signal:sig(30000)});
-      if(!res.ok) continue;
-      const b=await readResponseBytes(res,SEC.maxCatalogBytes);
-      const u8=b&&new Uint8Array(b);
-      if(u8&&u8.length>=4&&u8[0]===0x50&&u8[1]===0x4b&&[0x03,0x05,0x07].includes(u8[2])){buf=b;break;}
-    }catch{}
+  if(catalogBusy)return;
+  catalogBusy=true;
+  const trigger=document.querySelector('[data-act="cat-auto"]');
+  trigger?.setAttribute('disabled','true');
+  const bar=$('c-bar'), log=$('c-log');
+  bar?.classList.add('loading-bar-live');
+  if(log)log.textContent='配信元へ接続中…';
+  if(bar)bar.style.width='20%';
+  try{
+    let buf=null;
+    for(let i=0;i<URLS.length;i++){
+      if(log)log.textContent=`配信元へ接続中… (${i+1}/${URLS.length})`;
+      try{
+        const res=await secureFetch(URLS[i],{signal:sig(30000)});
+        if(!res.ok)continue;
+        const b=await readResponseBytes(res,SEC.maxCatalogBytes);
+        const u8=b&&new Uint8Array(b);
+        if(u8&&u8.length>=4&&u8[0]===0x50&&u8[1]===0x4b&&[0x03,0x05,0x07].includes(u8[2])){buf=b;break;}
+      }catch{}
+    }
+    if(!buf){
+      if(log)log.textContent='自動取得に失敗しました。ファイルを選択してください。';
+      return;
+    }
+    if(bar)bar.style.width='50%';
+    if(log)log.textContent='解凍中…';
+    const z=await JSZip.loadAsync(buf,{checkCRC32:true});
+    const names=Object.keys(z.files);
+    const totalUncompressed=names.reduce((sum,n)=>sum+Number(z.files[n]?._data?.uncompressedSize||0),0);
+    if(totalUncompressed>SEC.maxCatalogText*2)throw new Error('catalog-uncompressed-too-large');
+    if(names.length>60000)throw new Error('catalog-entries-too-many');
+    const cf=names.find(n=>n.toLowerCase().endsWith('.csv'));
+    if(!cf||!z.files[cf]||z.files[cf].dir)throw new Error('catalog-csv-missing');
+    const csvText=await z.files[cf].async('string');
+    if(csvText.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
+    await parseCsv(csvText);
+  }catch(e){
+    console.warn('catalog fetch rejected:',e);
+    if(log)log.textContent='カタログの読み込みに失敗しました。';
+    toast('カタログを読み込めませんでした。時間を置いて再試行してください');
+  }finally{
+    bar?.classList.remove('loading-bar-live');
+    catalogBusy=false;
+    trigger?.removeAttribute('disabled');
   }
-  if(!buf){ $('c-bar').classList.remove('loading-bar-live'); $('c-log').textContent='自動取得に失敗しました。ファイルを選択してください。'; return; }
-  $('c-bar').style.width='50%'; $('c-log').textContent='解凍中…';
-  if(!buf||buf.byteLength>SEC.maxCatalogBytes)throw new Error('catalog-too-large');
-  const z=await JSZip.loadAsync(buf,{checkCRC32:true});
-  const names=Object.keys(z.files);
-  const totalUncompressed=names.reduce((sum,n)=>sum+Number(z.files[n]?._data?.uncompressedSize||0),0);
-  if(totalUncompressed>SEC.maxCatalogText*2)throw new Error('catalog-uncompressed-too-large');
-  if(names.length>60000)throw new Error('catalog-entries-too-many');
-  const cf=names.find(n=>n.toLowerCase().endsWith('.csv'));
-  if(!cf||!z.files[cf]||z.files[cf].dir)throw new Error('catalog-csv-missing');
-  const csvText=await z.files[cf].async('string');
-  if(csvText.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
-  parseCsv(csvText);
 }
 function parseFile(file){
   if(!file) return;
@@ -501,10 +521,10 @@ function parseFile(file){
         if(!cf||!z.files[cf]||z.files[cf].dir)throw new Error('catalog-csv-missing');
         const txt=await z.files[cf].async('string');
         if(txt.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
-        parseCsv(txt);
+        await parseCsv(txt);
       }else{
         if(typeof r.result!=='string'||r.result.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
-        parseCsv(r.result);
+        await parseCsv(r.result);
       }
     }catch(e){
       console.warn('catalog file rejected:',e);
