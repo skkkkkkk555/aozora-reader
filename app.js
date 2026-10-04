@@ -3169,7 +3169,7 @@ document.addEventListener('click',e=>{
 
 function bindMobilePageSwipe(){
   const page=$('body');
-  if(document.documentElement.dataset.device!=='smartphone')return;
+  if(document.documentElement.dataset.device==='smartphone')return;
   if(!page||page.dataset.swipeUxBound)return;
   page.dataset.swipeUxBound='1';
   let sx=0,sy=0,active=false;
@@ -3716,6 +3716,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       const doc=await fetchBody(w);
       if(!state.reader||String(state.work?.id)!==String(w.id))return;
       state.readerDoc=doc;
+      curDoc=doc;
       body.innerHTML=sanitizeReaderHtml(doc.html);
       body.scrollTop=0;
       body.onscroll=saveReaderProgress;
@@ -3737,6 +3738,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(b)b.onscroll=null;
     const w=state.work;
     state.reader=false;state.readerDoc=null;
+    releaseScreenWakeLock();
     if(w&&state.readerFromDetail){openDetail(w,'back',true);}
     else{state.work=null;state.readerFromDetail=false;showScreen(state.screen,'back');}
   }
