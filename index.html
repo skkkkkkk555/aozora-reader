@@ -3825,41 +3825,72 @@ html[data-device="smartphone"] #toast{z-index:3050!important}
 </style>
 </head>
 <body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),s=Math.min(innerWidth||0,innerHeight||0);if(m&&s<=899)document.documentElement.dataset.device="smartphone";else document.documentElement.dataset.device="desktop";}catch(e){}})();</script>
-<!-- iOS-inspired smartphone shell. Desktop DOM remains untouched. -->
+<!-- Dedicated smartphone application shell -->
 <div id="phone-app" aria-hidden="true">
-  <header class="phone-topbar">
-    <div class="phone-greeting">
-      <span class="phone-eyebrow">青空文庫</span>
-      <h1 id="phone-title">今読む</h1>
+  <header class="phone-header">
+    <div class="phone-header-copy">
+      <div class="phone-kicker">青空文庫</div>
+      <h1 id="phone-title" class="phone-header-title">今読む</h1>
     </div>
-    <button class="phone-circle-btn" data-phone-action="settings" aria-label="設定">⚙</button>
+    <div class="phone-header-actions">
+      <button class="phone-icon-button" data-phone-action="search" aria-label="検索">
+        <svg class="phone-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 5 5"/></svg>
+      </button>
+      <button class="phone-icon-button" data-phone-action="settings" aria-label="設定">
+        <svg class="phone-svg" viewBox="0 0 24 24"><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.64 5.64l1.42 1.42M16.94 16.94l1.42 1.42M18.36 5.64l-1.42 1.42M7.06 16.94l-1.42 1.42"/><circle cx="12" cy="12" r="3.2"/></svg>
+      </button>
+    </div>
   </header>
 
   <main id="phone-content" class="phone-content"></main>
 
   <nav class="phone-tabbar" aria-label="メインナビゲーション">
-    <button class="phone-tab active" data-phone-tab="home"><span>⌂</span><small>今読む</small></button>
-    <button class="phone-tab" data-phone-tab="search"><span>⌕</span><small>探す</small></button>
-    <button class="phone-tab" data-phone-tab="shelf"><span>▣</span><small>本棚</small></button>
-    <button class="phone-tab" data-phone-tab="records"><span>◷</span><small>記録</small></button>
-    <button class="phone-tab" data-phone-tab="settings"><span>⚙</span><small>設定</small></button>
+    <button class="phone-tab active" data-phone-tab="home"><span class="phone-tab-icon"><svg class="phone-svg" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/></svg></span><small>今読む</small></button>
+    <button class="phone-tab" data-phone-tab="search"><span class="phone-tab-icon"><svg class="phone-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 5 5"/></svg></span><small>探す</small></button>
+    <button class="phone-tab" data-phone-tab="shelf"><span class="phone-tab-icon"><svg class="phone-svg" viewBox="0 0 24 24"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v18H7.5A2.5 2.5 0 0 1 5 17.5z"/><path d="M5 4.5V18a2 2 0 0 0 2 2h.5"/></svg></span><small>本棚</small></button>
+    <button class="phone-tab" data-phone-tab="records"><span class="phone-tab-icon"><svg class="phone-svg" viewBox="0 0 24 24"><path d="M6 20V9M12 20V4M18 20v-7"/><path d="M4 20h16"/></svg></span><small>記録</small></button>
+    <button class="phone-tab" data-phone-tab="settings"><span class="phone-tab-icon"><svg class="phone-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 13.5 21 15l-2 3-2.4-.9a7.2 7.2 0 0 1-2.1 1.2L14 21h-4l-.5-2.7a7.2 7.2 0 0 1-2.1-1.2L5 18l-2-3 2-1.5A7.3 7.3 0 0 1 5 12c0-.5.1-1 .2-1.5L3 9l2-3 2.4.9A7.2 7.2 0 0 1 9.5 5L10 2h4l.5 3a7.2 7.2 0 0 1 2.1 1.2L19 6l2 3-2.2 1.5c.1.5.2 1 .2 1.5s-.1 1-.2 1.5Z"/></svg></span><small>設定</small></button>
   </nav>
 
-  <section id="phone-detail" class="phone-page" hidden aria-hidden="true"></section>
+  <section id="phone-detail" class="phone-detail" hidden aria-hidden="true"></section>
+
   <section id="phone-reader" class="phone-reader" hidden aria-hidden="true">
-    <header class="phone-reader-bar">
-      <button class="phone-circle-btn" data-phone-action="reader-back" aria-label="戻る">‹</button>
-      <div id="phone-reader-title"></div>
-      <button class="phone-circle-btn" data-phone-action="reader-more" aria-label="その他">•••</button>
+    <header class="phone-reader-header">
+      <button class="phone-icon-button" data-phone-action="reader-back" aria-label="戻る">
+        <svg class="phone-svg" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>
+      </button>
+      <div id="phone-reader-title" class="phone-reader-header-title"></div>
+      <div class="phone-reader-header-actions">
+        <button class="phone-icon-button" data-phone-action="reader-search" aria-label="本文検索">
+          <svg class="phone-svg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 5 5"/></svg>
+        </button>
+        <button class="phone-icon-button" data-phone-action="reader-more" aria-label="その他">•••</button>
+      </div>
     </header>
+    <div id="phone-reader-search" class="phone-search-bar" hidden>
+      <input id="phone-reader-search-input" class="phone-reader-search-input" type="search" placeholder="本文を検索">
+      <button class="phone-icon-button" data-phone-action="reader-search-prev" aria-label="前の一致">‹</button>
+      <button class="phone-icon-button" data-phone-action="reader-search-next" aria-label="次の一致">›</button>
+      <button class="phone-icon-button" data-phone-action="reader-search-close" aria-label="閉じる">×</button>
+    </div>
     <article id="phone-reader-body" class="phone-reader-body"></article>
-    <div class="phone-reader-tools">
-      <button data-phone-action="bookmark">🔖</button>
-      <button data-phone-action="note">📝</button>
-      <button data-phone-action="highlight">🖍</button>
-      <button data-phone-action="reader-settings">Aa</button>
+    <div class="phone-reader-toolbar">
+      <button class="phone-reader-tool" data-phone-action="bookmark"><span class="phone-tool-icon">▱</span><small>栞</small></button>
+      <button class="phone-reader-tool" data-phone-action="note"><span class="phone-tool-icon">✎</span><small>メモ</small></button>
+      <button class="phone-reader-tool" data-phone-action="highlight"><span class="phone-tool-icon">▰</span><small>蛍光</small></button>
+      <button class="phone-reader-tool" data-phone-action="tts"><span class="phone-tool-icon">▷</span><small>朗読</small></button>
+      <button class="phone-reader-tool" data-phone-action="reader-more"><span class="phone-tool-icon">•••</span><small>その他</small></button>
     </div>
     <div class="phone-reader-progress"><span id="phone-reader-progress"></span></div>
+  </section>
+
+  <div id="phone-sheet-scrim" class="phone-sheet-scrim" hidden data-phone-action="sheet-close"></div>
+  <section id="phone-sheet" class="phone-sheet" hidden aria-hidden="true">
+    <header class="phone-sheet-head">
+      <b id="phone-sheet-title" class="phone-sheet-title"></b>
+      <button class="phone-icon-button" data-phone-action="sheet-close" aria-label="閉じる">×</button>
+    </header>
+    <div id="phone-sheet-body" class="phone-sheet-body"></div>
   </section>
 </div>
 
