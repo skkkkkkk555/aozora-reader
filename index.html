@@ -19,13 +19,77 @@
   --fs-xl: 32px; --fs-h: 22px; --fs-t: 18px; --fs-b: 16px; --fs-s: 14px;
 }
 :root[data-theme="sepia"] { --bg: #f5f0e8; --card: #faf6f0; --card-sub: #efe3d0; --fg: #2d241f; --sub: #726959; --line: rgba(53, 39, 29, 0.1); --ac: #4a5f4a; }
-:root[data-theme="dark"] { --bg: #120f12; --card: #1a1a1d; --card-sub: #25242a; --fg: #f1efe9; --sub: #a7a4a0; --line: rgba(255,255,255,0.07); --ac: #9abccf; --c-blue: rgba(154,188,207,0.12); --c-green: rgba(115,180,130,0.12); --c-orange: rgba(203,126,73,0.12); --c-purple: rgba(164,134,197,0.12); }
+:root[data-theme="dark"] {
+  --bg: #141416; --card: #1e1e24; --card-sub: #272732; --fg: #f5f5f7; --sub: #b8b6b0;
+  --line: rgba(255,255,255,0.13); --ac: #7bb5d4; --onac: #0d1b22;
+  --c-blue: rgba(123,181,212,0.16); --c-green: rgba(120,195,135,0.16);
+  --c-orange: rgba(230,145,95,0.16); --c-purple: rgba(185,150,225,0.16);
+  --hl-y: rgba(255, 235, 59, 0.45); --hl-p: rgba(255, 64, 129, 0.4); --hl-b: rgba(33, 150, 243, 0.4);
+  --shadow: 0 14px 40px rgba(0,0,0,0.45);
+}
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; font-family: var(--font-sans); }
-body { height: 100vh; height: 100dvh; background:
+body {
+  height: 100vh; height: 100dvh;
+  background: var(--bg);
+  background-image:
     radial-gradient(circle at top left, rgba(177, 152, 119, 0.14), transparent 26%),
-    linear-gradient(145deg, #f9f5f0 0%, var(--bg) 42%, #efe9e0 100%);
-  color: var(--fg); font-size: var(--fs-b); overflow: hidden; display: flex; justify-content: center; }
+    linear-gradient(145deg, rgba(255,255,255,0.4) 0%, var(--bg) 42%, rgba(0,0,0,0.03) 100%);
+  color: var(--fg); font-size: var(--fs-b); overflow: hidden; display: flex; justify-content: center;
+}
+:root[data-theme="dark"] body {
+  background: #141416;
+  background-image: radial-gradient(circle at top left, rgba(123, 181, 212, 0.08), transparent 32%);
+}
+:root[data-theme="dark"] #sidebar {
+  background: rgba(24, 24, 30, 0.96);
+  border-color: var(--line);
+}
+:root[data-theme="dark"] #bottom-nav {
+  background: rgba(20, 20, 26, 0.96);
+  border-color: var(--line);
+}
+:root[data-theme="dark"] #main-area {
+  background: rgba(18, 18, 22, 0.7);
+  border-color: var(--line);
+}
+:root[data-theme="dark"] .block {
+  background: linear-gradient(180deg, rgba(34, 34, 44, 0.95), rgba(26, 26, 34, 0.95));
+  border-color: var(--line);
+  color: var(--fg);
+}
+:root[data-theme="dark"] .block.hero-blue {
+  background: linear-gradient(145deg, #183340 0%, #10212a 100%);
+  border-color: rgba(123, 181, 212, 0.35);
+  color: #fff;
+}
+:root[data-theme="dark"] .block.blue { background: linear-gradient(180deg, #1f2a35, #17212a); }
+:root[data-theme="dark"] .block.green { background: linear-gradient(180deg, #1c2b20, #142017); }
+:root[data-theme="dark"] .block.orange { background: linear-gradient(180deg, #2d241c, #221b14); }
+:root[data-theme="dark"] .block.purple { background: linear-gradient(180deg, #261f30, #1c1624); }
+:root[data-theme="dark"] .insight-card {
+  background: linear-gradient(180deg, rgba(36, 36, 46, 0.92), rgba(26, 26, 34, 0.92));
+  border-color: var(--line);
+}
+:root[data-theme="dark"] .search-cta {
+  background: linear-gradient(135deg, rgba(123,181,212,0.12), rgba(123,181,212,0.04));
+  border-color: var(--line);
+}
+:root[data-theme="dark"] .sheet {
+  background: #1b1b23;
+  color: var(--fg);
+  border-top: 1px solid var(--line);
+}
+:root[data-theme="dark"] .sheet-head { border-color: var(--line); }
+:root[data-theme="dark"] .seg { background: #262632; }
+:root[data-theme="dark"] .seg button.active {
+  background: #14141a;
+  color: var(--ac);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+:root[data-theme="dark"] input, :root[data-theme="dark"] select, :root[data-theme="dark"] textarea {
+  color: var(--fg);
+}
 .serif { font-family: var(--font-serif); }
 .brand-wrap { display: flex; align-items: center; gap: 14px; }
 .brand-mark {
@@ -127,7 +191,7 @@ body { height: 100vh; height: 100dvh; background:
   margin-top: 6px; font-size: 12px; color: var(--sub);
 }
 .low-power {
-  --shadow: 0 12px 30px rgba(54,39,28,0.06);
+  --shadow: 0 8px 20px rgba(0,0,0,0.08);
 }
 .low-power *, .low-power *::before, .low-power *::after {
   animation-duration: 0.001ms !important;
@@ -141,6 +205,9 @@ body { height: 100vh; height: 100dvh; background:
 .low-power .block::before, .low-power .block::after { display: none !important; }
 .low-power .block:hover, .low-power button:hover {
   transform: none !important;
+}
+.low-power #bottom-nav, .low-power #sidebar {
+  backdrop-filter: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -157,49 +224,44 @@ button.sm-btn { min-height: 44px; padding: 0 14px; font-size: var(--fs-s); borde
 .icon { width: 26px; height: 26px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
 #app { width: 100%; max-width: 1280px; height: 100%; display: flex; position: relative; overflow: hidden; padding: 10px; }
+@media (max-width: 899px) { #app { padding: 0; } }
 #sidebar { display: none; width: 250px; border: 1px solid var(--line); border-radius: 28px 0 0 28px; background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.9)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.7); flex-direction: column; padding: 28px 18px; gap: 10px; flex: none; }
 @media (min-width: 900px) { #sidebar { display: flex; } #bottom-nav { display: none !important; } }
 .nav-btn { width: 100%; min-height: 54px; justify-content: flex-start; padding: 0 16px; border-radius: var(--radius-sm); color: var(--sub); font-size: var(--fs-t); background: transparent; }
 .nav-btn.active { background: linear-gradient(135deg, var(--ac), rgba(45,79,90,0.88)); color: var(--onac); box-shadow: 0 12px 24px rgba(45, 79, 90, 0.2); }
-#bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 64px; background: rgba(255,255,255,0.9); backdrop-filter: blur(14px); border-top: 1px solid var(--line); display: flex; z-index: 40; padding-bottom: env(safe-area-inset-bottom); }
+#bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: calc(58px + env(safe-area-inset-bottom)); background: rgba(255,255,255,0.92); backdrop-filter: blur(14px); border-top: 1px solid var(--line); display: flex; z-index: 40; padding-bottom: env(safe-area-inset-bottom); }
 .b-nav-btn { flex: 1; height: 100%; flex-direction: column; gap: 2px; color: var(--sub); font-size: var(--fs-s); border-radius: 0; min-height: unset; }
 .b-nav-btn.active { color: var(--ac); }
 
 #main-area { flex: 1; height: 100%; position: relative; overflow: hidden; border-radius: 0 28px 28px 0; background: rgba(255,255,255,0.28); border: 1px solid var(--line); }
-.view { position: absolute; inset: 0; overflow-y: auto; padding: 24px 20px 84px; display: none; }
-.view.active { display: block; animation: fadeIn 260ms var(--ease); }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(12px) scale(0.985); } to { opacity: 1; transform: none; } }
-@keyframes floatCard { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-5px); } }
-@keyframes sheen { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
-@keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 rgba(45,79,90,0.0); } 50% { box-shadow: 0 12px 30px rgba(45,79,90,0.18); } }
+@media (max-width: 899px) { #main-area { border-radius: 0; border: none; } }
+.view { position: absolute; inset: 0; overflow-y: auto; padding: 20px 18px calc(76px + env(safe-area-inset-bottom)); display: none; -webkit-overflow-scrolling: touch; }
+.view.active { display: block; animation: fadeIn 220ms var(--ease); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 .grid { display: grid; gap: 16px; grid-template-columns: repeat(2, 1fr); }
 @media (min-width: 700px) { .grid { grid-template-columns: repeat(4, 1fr); } }
 @media (min-width: 1100px) { .grid { grid-template-columns: repeat(6, 1fr); } }
 
-.block { background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.72)); border: 1px solid rgba(58, 43, 32, 0.06); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); min-height: 120px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; position: relative; overflow: hidden; transition: transform 220ms var(--ease), box-shadow 220ms var(--ease), border-color 220ms; animation: floatCard 6s ease-in-out infinite; }
-.block:hover { transform: translateY(-4px); box-shadow: 0 24px 48px rgba(54,39,28,0.12); border-color: rgba(45,79,90,0.18); }
+/* 軽量化: 古いiPadでもGPU負荷がかからないよう無限アニメーションを廃止し、滑らかなホバーのみに最適化 */
+.block { background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.72)); border: 1px solid rgba(58, 43, 32, 0.06); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); min-height: 120px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; position: relative; overflow: hidden; transition: transform 180ms var(--ease), box-shadow 180ms var(--ease), border-color 180ms; }
+@media (hover: hover) {
+  .block:hover { transform: translateY(-3px); box-shadow: 0 20px 36px rgba(54,39,28,0.12); border-color: rgba(45,79,90,0.18); }
+}
 .block::before {
-  content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.35), transparent 45%);
+  content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.25), transparent 45%);
   pointer-events: none;
 }
-.block::after {
-  content: ""; position: absolute; inset: -30% auto auto -30%; width: 60%; height: 180%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.34), transparent);
-  transform: translateX(-120%);
-  animation: sheen 8s linear infinite;
-  pointer-events: none;
-}
-.card-tint { animation: pulseGlow 4.5s ease-in-out infinite; }
-.block.span-2 { grid-column: span 2; grid-row: span 2; min-height: 260px; }
-.block.span-4 { grid-column: 1 / -1; min-height: 72px; flex-direction: row; align-items: center; padding: 0 24px; }
-.block.blue { background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(45,79,90,0.05)); }
-.block.green { background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(82,120,90,0.05)); }
-.block.orange { background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(170,97,52,0.05)); }
-.block.purple { background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(102,74,132,0.05)); }
-.block.hero-blue { background: linear-gradient(145deg, #2d4f5a 0%, #1f3743 100%); color: var(--onac); box-shadow: 0 18px 40px rgba(26, 48, 57, 0.26); }
+.block.span-2 { grid-column: span 2; grid-row: span 2; min-height: 250px; }
+.block.span-4 { grid-column: 1 / -1; min-height: 68px; flex-direction: row; align-items: center; padding: 0 22px; }
+.block.blue { background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(45,79,90,0.08)); }
+.block.green { background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(82,120,90,0.08)); }
+.block.orange { background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(170,97,52,0.08)); }
+.block.purple { background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(102,74,132,0.08)); }
+.block.hero-blue { background: linear-gradient(145deg, #2d4f5a 0%, #1f3743 100%); color: var(--onac); box-shadow: 0 16px 36px rgba(26, 48, 57, 0.22); }
 
-.tile-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
-.tile { border-radius: var(--radius); padding: 18px; min-height: 220px; display: flex; flex-direction: column; justify-content: space-between; color: #fff; cursor: pointer; box-shadow: var(--shadow); user-select: none; }
+.tile-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.tile { border-radius: var(--radius); padding: 18px; min-height: 210px; display: flex; flex-direction: column; justify-content: space-between; color: #fff; cursor: pointer; box-shadow: var(--shadow); user-select: none; }
 .tile-t { font-size: var(--fs-h); line-height: 1.3; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .badge { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 8px; font-size: var(--fs-s); font-weight: 600; background: rgba(0,0,0,0.12); width: fit-content; }
 .chip-btn.active { background: var(--ac); color: var(--onac); }
@@ -210,29 +272,76 @@ button.sm-btn { min-height: 44px; padding: 0 14px; font-size: var(--fs-s); borde
 
 .sheet-scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 60; opacity: 0; pointer-events: none; transition: opacity 260ms var(--ease); }
 .sheet-scrim.open { opacity: 1; pointer-events: auto; }
-.sheet { position: fixed; left: 0; right: 0; bottom: 0; max-height: 92vh; background: var(--card); border-radius: 32px 32px 0 0; z-index: 70; display: flex; flex-direction: column; transform: translateY(105%); transition: transform 340ms var(--spring); }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; max-height: 92vh; background: var(--card); border-radius: 28px 28px 0 0; z-index: 70; display: flex; flex-direction: column; transform: translateY(105%); transition: transform 300ms var(--spring); }
 .sheet.open { transform: none; }
 .sheet-handle { width: 44px; height: 5px; background: var(--line); border-radius: 3px; margin: 12px auto 6px; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid var(--line); }
-.sheet-body { overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.sheet-body { overflow-y: auto; padding: 20px 24px calc(24px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 16px; -webkit-overflow-scrolling: touch; }
 
-/* 読書専用画面 & モード */
+/* 読書専用画面 & モード (スクロールとUIの重なりを完全防止) */
 #reader { position: fixed; inset: 0; background: var(--bg); z-index: 50; display: none; flex-direction: column; overflow: hidden; }
-#reader.open { display: flex; animation: rIn 260ms var(--ease); }
+#reader.open { display: flex; animation: rIn 220ms var(--ease); }
 @keyframes rIn { from { opacity: 0; } to { opacity: 1; } }
 
 #reader.reader-night {
-  --bg: #121314; --card: #1c1d1f; --card-sub: #282a2e; --fg: #e4e6eb; --sub: #8a8f98; --line: #2d3035; --ac: #6ba0c7;
+  --bg: #141416; --card: #1e1e24; --card-sub: #272732; --fg: #f5f5f7; --sub: #b8b6b0; --line: rgba(255,255,255,0.13); --ac: #7bb5d4;
 }
 
-.r-bar { height: 56px; padding: 0 16px; background: var(--card); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); z-index: 2; transition: transform 260ms; }
+.r-bar { height: calc(54px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 16px 0; background: var(--card); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); z-index: 10; transition: transform 260ms; }
 .r-bar.hide { transform: translateY(-100%); }
-.r-dock { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--card); border-radius: 40px; padding: 6px 14px; display: flex; gap: 6px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); z-index: 2; border: 1px solid var(--line); transition: transform 260ms, opacity 260ms; max-width: calc(100% - 24px); overflow-x: auto; }
-.r-dock.hide { transform: translate(-50%, 80px); opacity: 0; pointer-events: none; }
-.r-dock-btn { flex-direction: column; min-height: 52px; padding: 0 8px; gap: 2px; font-size: var(--fs-s); white-space: nowrap; }
 
-#body { flex: 1; overflow: auto; padding: 40px 32px 100px; font-size: var(--r-fs, 18px); line-height: var(--r-lh, 2.1); line-break: strict; }
-#body.v { writing-mode: vertical-rl; width: 100%; height: 100%; padding: 40px 32px; }
+.r-bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(52px + env(safe-area-inset-bottom));
+  padding: 0 16px env(safe-area-inset-bottom);
+  background: var(--card);
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--line);
+  z-index: 10;
+  transition: transform 260ms;
+}
+.r-bottom-bar.hide { transform: translateY(100%); }
+
+.r-dock {
+  position: fixed;
+  bottom: calc(58px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--card);
+  border-radius: 40px;
+  padding: 4px 12px;
+  display: flex;
+  gap: 4px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+  z-index: 12;
+  border: 1px solid var(--line);
+  transition: transform 260ms, opacity 260ms;
+  max-width: calc(100% - 20px);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.r-dock.hide { transform: translate(-50%, calc(130px + env(safe-area-inset-bottom))); opacity: 0; pointer-events: none; }
+.r-dock-btn { flex-direction: column; min-height: 48px; padding: 0 8px; gap: 2px; font-size: var(--fs-s); white-space: nowrap; }
+
+/* 読書本文: 上下バー・フローティングドックと絶対に重ならないパディング設計 */
+#body {
+  flex: 1;
+  overflow: auto;
+  padding: calc(64px + env(safe-area-inset-top)) 28px calc(140px + env(safe-area-inset-bottom));
+  font-size: var(--r-fs, 18px);
+  line-height: var(--r-lh, 2.1);
+  line-break: strict;
+  -webkit-overflow-scrolling: touch;
+}
+#body.v {
+  writing-mode: vertical-rl;
+  width: 100%;
+  height: 100%;
+  padding-top: calc(64px + env(safe-area-inset-top));
+  padding-bottom: calc(140px + env(safe-area-inset-bottom));
+  padding-left: 28px;
+  padding-right: 28px;
+}
 #body rt { font-size: 0.55em; }
 .em { text-emphasis: filled circle; -webkit-text-emphasis: filled circle; }
 .keyphrase { font-weight: 700; border-bottom: 2px solid var(--ac); }
@@ -652,9 +761,9 @@ button.sm-btn { min-height: 44px; padding: 0 14px; font-size: var(--fs-s); borde
     </div>
 
     <!-- リアルタイム詳細進捗ステータス -->
-    <div id="r-bottom-info" class="r-bar" style="position:fixed; bottom:0; left:0; right:0; border-top:1px solid var(--line); border-bottom:none">
-      <input type="range" id="r-slider" min="0" max="100" value="0" style="flex:1; margin-right:16px; height:44px">
-      <span id="r-page-lbl" style="font-size:var(--fs-s); color:var(--sub)">0% · 0/0ページ · 残り約--分 · 0字読了</span>
+    <div id="r-bottom-info" class="r-bottom-bar">
+      <input type="range" id="r-slider" min="0" max="100" value="0" style="flex:1; margin-right:14px; height:44px">
+      <span id="r-page-lbl" style="font-size:var(--fs-s); color:var(--sub); white-space:nowrap">0% · 0/0ページ · 残り約--分 · 0字読了</span>
     </div>
     
     <div id="r-warm" style="position:fixed; inset:0; background:rgba(255,160,50,0.14); pointer-events:none; display:none"></div>
@@ -693,8 +802,6 @@ const PAL=['#23445d','#2e5b70','#3b5249','#5c3d46','#6e4a2e','#4a4e69','#3d5a80'
 const colorOf=s=>{let h=0;for(let i=0;i<s.length;i++){h=(h<<5)-h+s.charCodeAt(i);h|=0}return PAL[Math.abs(h)%PAL.length]};
 const sig=(ms)=>{const c=new AbortController();setTimeout(()=>c.abort(new DOMException('Timeout','TimeoutError')),ms);return c.signal};
 
-const localDateKey=()=>{const d=new Date();const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;};
-
 function decodeHtmlEntities(str){
   const txt = document.createElement('textarea');
   txt.innerHTML = str;
@@ -702,7 +809,7 @@ function decodeHtmlEntities(str){
 }
 
 const idb={
-  d:new Promise(r=>{try{const o=indexedDB.open('aozora_terminal_v17',1);o.onupgradeneeded=()=>{const db=o.result;if(!db.objectStoreNames.contains('k'))db.createObjectStore('k');if(!db.objectStoreNames.contains('docs'))db.createObjectStore('docs');};o.onsuccess=()=>r(o.result);o.onerror=()=>r(null);o.onblocked=()=>r(null)}catch{r(null)}}),
+  d:new Promise(r=>{const o=indexedDB.open('aozora_terminal_v17',1);o.onupgradeneeded=()=>{const db=o.result;db.createObjectStore('k');db.createObjectStore('docs');};o.onsuccess=()=>r(o.result)}),
   async get(s,k){try{const db=await this.d;return new Promise(r=>{const q=db.transaction(s,'readonly').objectStore(s).get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)})}catch{return null}},
   async set(s,k,v){try{const db=await this.d;db.transaction(s,'readwrite').objectStore(s).put(v,k)}catch{}},
   async del(s,k){try{const db=await this.d;db.transaction(s,'readwrite').objectStore(s).delete(k)}catch{}}
@@ -712,7 +819,7 @@ let allWorks=[], works=[], byId=new Map(), dead=new Set();
 let fav=new Set(), want=new Set(), done=new Set(), favAuthors=new Set();
 let pos={}, bm={}, notes={}, hls={}, hist=[], savedKeys=new Set(), searchHistory=[];
 let calData={}, goalMin=30;
-let st={ fs:18, lh:2.1, theme:'auto', font:'mincho', warm:true, kp:true, offline:false, oUrl:'http://127.0.0.1:11434', oHist:[], oMod:'', v:true, rMode:'normal', readSpeed:500, todayBook:null };
+let st={ fs:18, lh:2.1, theme:'auto', font:'mincho', warm:true, kp:true, offline:false, ollamaEnabled:false, oUrl:'http://127.0.0.1:11434', oHist:[], oMod:'', v:true, rMode:'normal', readSpeed:500, todayBook:null };
 let aiConn={ ok:false, models:[], err:'' };
 let activeBook=null;
 const isPublicWork = w => !!w && Number(w.c) === 1;
@@ -724,7 +831,7 @@ const normalizeOllamaUrl = (value='') => {
   return /^https?:\/\//i.test(u) ? u : 'http://' + u;
 };
 const canUseOllama = () => {
-  if (st.offline) return false;
+  if (!st.ollamaEnabled || st.offline) return false;
   const url = normalizeOllamaUrl(st.oUrl);
   return /^https?:\/\//i.test(url);
 };
@@ -766,6 +873,7 @@ const load=async()=>{
       hist=d.hist||[]; calData=d.calData||{}; goalMin=d.goalMin||30; searchHistory=d.searchHistory||[];
       st=Object.assign(st,d.st||{});
       if(d.st?.off!==undefined) st.offline = !!d.st.off;
+      if(d.st?.ollamaEnabled!==undefined) st.ollamaEnabled = !!d.st.ollamaEnabled;
     }
   } catch (err) {
     console.warn('load failed; resetting state', err);
@@ -774,7 +882,7 @@ const load=async()=>{
 };
 
 function renderInsightBar(){
-  const todayKey = localDateKey();
+  const todayKey = new Date().toISOString().slice(0,10);
   const todayMin = Number(calData[todayKey] || 0);
   const totalBooks = new Set(hist.map(item => item.id)).size;
   const progress = Math.min(100, Math.round((todayMin / Math.max(1, goalMin)) * 100));
@@ -913,7 +1021,7 @@ async function fetchTranslateStep(text, fromLang, toLang, timeoutMs = 8000) {
       const prompt = fromLang === 'ja'
         ? `Translate the following Japanese text to English. Output only the translated English text:\n\n${text}`
         : `Translate the following English text to natural modern Japanese. Output only the translated Japanese text:\n\n${text}`;
-      const res3 = await fetch(normalizeOllamaUrl(st.oUrl) + '/api/chat', {
+      const res3 = await fetch(st.oUrl + '/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1072,7 +1180,6 @@ async function fetchCatalog(){
   $('c-bar').style.width='50%'; $('c-log').textContent='解凍中…';
   const z=await JSZip.loadAsync(buf);
   const cf=Object.keys(z.files).find(n=>n.endsWith('.csv'));
-  if(!cf){ $('c-log').textContent='ZIP内にCSVが見つかりません。'; return; }
   parseCsv(await z.files[cf].async('string'));
 }
 function parseFile(file){
@@ -1082,7 +1189,6 @@ function parseFile(file){
     if(file.name.endsWith('.zip')){
       const z=await JSZip.loadAsync(r.result);
       const cf=Object.keys(z.files).find(n=>n.endsWith('.csv'));
-      if(!cf){ toast('ZIP内にCSVが見つかりません'); return; }
       parseCsv(await z.files[cf].async('string'));
     } else parseCsv(r.result);
   };
@@ -1147,7 +1253,7 @@ function startAudit(){
         if(!r2||r2.status===404){ dead.add(w.id); filterWorks(); }
       }
     }catch{}
-  },60000);
+  },2000);
 }
 
 /* ==================== 6. ホーム・おすすめ・新機能 ==================== */
@@ -1158,13 +1264,13 @@ function renderHome(){
   $('home-clock').textContent=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
 
   if(!allWorks.length) showBanner('作品カタログが未登録です');
-  else if(!st.offline && !aiConn.ok && canUseOllama()) showBanner('Ollamaが未接続です');
+  else if(st.ollamaEnabled && !st.offline && !aiConn.ok && canUseOllama()) showBanner('Ollamaが未接続です');
   else $('banner').style.display='none';
 
   // オンボーディング
   const ob=[];
   if(!allWorks.length) ob.push('① カタログの導入');
-  if(!st.offline && !aiConn.ok && canUseOllama()) ob.push('② AI設定 (任意)');
+  if(st.ollamaEnabled && !st.offline && !aiConn.ok && canUseOllama()) ob.push('② AI設定 (任意)');
   if(!done.size) ob.push('③ はじめての1冊を読む');
   if(ob.length){ $('blk-onboard').style.display='flex'; $('onboard-items').innerHTML=ob.map(s=>`<div>○ ${s}</div>`).join(''); }
   else $('blk-onboard').style.display='none';
@@ -1199,7 +1305,7 @@ function renderHome(){
   }
 
   // 読書チャレンジ計算
-  const todayKey=localDateKey();
+  const todayKey=new Date().toISOString().slice(0,10);
   const todayMin=calData[todayKey]||0;
   const chalPct=Math.min(100, Math.round((todayMin / goalMin)*100));
   $('chal-pct-txt').textContent=chalPct+'%';
@@ -1238,7 +1344,7 @@ function renderHome(){
   initSmartRec();
 
   // 今日の一冊固定 または 12選巡回
-  const todayStr=localDateKey();
+  const todayStr=new Date().toISOString().slice(0,10);
   if(st.todayBook && st.todayBook.date === todayStr && byId.has(st.todayBook.id)){
     const w = byId.get(st.todayBook.id);
     featList = [w];
@@ -1266,9 +1372,15 @@ function renderHome(){
   let nCnt=0; Object.values(notes).forEach(arr=>nCnt+=arr.length); Object.values(hls).forEach(arr=>nCnt+=arr.length);
   $('blk-note-cnt').textContent=`${nCnt} 件`;
   
-  const aiAvailable = aiConn.ok && canUseOllama();
-  $('set-dot').style.background=aiAvailable ? '#28a745' : '#d9534f';
-  $('set-st-txt').textContent=aiAvailable ? '接続中' : '未接続';
+  const aiAvailable = st.ollamaEnabled && aiConn.ok && canUseOllama();
+  if(!st.ollamaEnabled){
+    $('set-dot').style.display='none';
+    $('set-st-txt').textContent='準備完了';
+  } else {
+    $('set-dot').style.display='block';
+    $('set-dot').style.background=aiAvailable ? '#28a745' : '#d9534f';
+    $('set-st-txt').textContent=aiAvailable ? '接続中' : '未接続';
+  }
   
   // AIボタン・関連UIの自動表示制御
   document.querySelectorAll('.ai-feature').forEach(el=>{
@@ -1605,7 +1717,7 @@ function openBookDetail(w){
       <div id="b-quote" style="padding:16px; background:var(--card-sub); border-radius:var(--radius-sm); font-size:var(--fs-b); line-height:1.6; color:var(--sub)">冒頭を読み込んでいます…</div>
     </div>`;
   sheet(w.t, html);
-  fetchHead(w).then(q=>{const el=$('b-quote');if(el) el.textContent=q;});
+  fetchHead(w).then(q=>{$('b-quote').textContent=q;});
 }
 
 /* ==================== 8. 本文取得 & パース ==================== */
@@ -1829,7 +1941,7 @@ function execInBookSearch(){
     const idx=txt.indexOf(q);
     if(idx!==-1){
       const span=document.createElement('span');
-      const safePattern = new RegExp(escRe(q), 'g');
+      const safePattern = new RegExp(escRe(esc(q)), 'g');
       span.innerHTML=esc(txt).replace(safePattern, m=>`<mark class="search-hl">${m}</mark>`);
       node.parentNode.replaceChild(span, node);
     }
@@ -1908,13 +2020,12 @@ function extractKeyphrases(txt){
   }
   const top=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).slice(0,7).map(x=>x[0]);
   if(!top.length) return;
-  const re=new RegExp(top.map(escRe).join('|'),'g');
+  const re=new RegExp(top.join('|'),'g');
   const w=document.createTreeWalker($('body'),NodeFilter.SHOW_TEXT);
   const nds=[]; let n; while((n=w.nextNode())) nds.push(n);
   nds.forEach(node=>{
     if(node.parentElement.closest('rt,rp,ruby,.keyphrase,.search-hl')) return;
     if(re.test(node.nodeValue)){
-      re.lastIndex=0;
       const s=document.createElement('span');
       s.innerHTML=node.nodeValue.replace(re,m=>`<span class="keyphrase">${m}</span>`);
       node.parentNode.replaceChild(s,node);
@@ -2042,7 +2153,7 @@ async function sendAiMessage(q){
   if(aiAbort) aiAbort.abort();
   aiAbort=new AbortController();
 
-  let firstWordTimer=setTimeout(()=>{ const el=$('ai-cur'); if(el) el.textContent='モデルを読み込み中… (約150秒お待ちください)'; }, 15000);
+  let firstWordTimer=setTimeout(()=>{ $('ai-cur').innerHTML='モデルを読み込み中… (約150秒お待ちください)'; }, 15000);
 
   try {
     const ctx=curDoc?curDoc.plain.slice(0,3000):'';
@@ -2053,7 +2164,7 @@ async function sendAiMessage(q){
 参考本文:
 ${ctx}`;
 
-    const res=await fetch(normalizeOllamaUrl(st.oUrl)+'/api/chat',{
+    const res=await fetch(st.oUrl+'/api/chat',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:st.oMod,
@@ -2076,24 +2187,23 @@ ${ctx}`;
         const j=JSON.parse(l);
         if(j.message?.content){
           full+=j.message.content;
-          const aiCur=$('ai-cur'); if(aiCur) aiCur.textContent=full.replace(/<think>[\s\S]*?<\/think>/g,'').trim();
+          $('ai-cur').textContent=full.replace(/<think>[\s\S]*?<\/think>/g,'').trim();
           box.scrollTop=box.scrollHeight;
         }
       }
     }
   }catch(e){
     clearTimeout(firstWordTimer);
-    const aiCur=$('ai-cur'); if(aiCur) aiCur.textContent=e.name==='AbortError'?'回答を停止しました。':'接続失敗: '+e.message;
+    $('ai-cur').textContent=e.name==='AbortError'?'回答を停止しました。':'接続失敗: '+e.message;
   }finally{
-    const aiCur=$('ai-cur'); if(aiCur) aiCur.removeAttribute('id');
+    $('ai-cur').removeAttribute('id');
     btn.textContent='送信'; btn.dataset.act='ai-send';
   }
 }
 
 async function pingOllama(){
   aiConn.ok=false; aiConn.models=[]; aiConn.err='';
-  if (!canUseOllama()) {
-    aiConn.err='この環境ではOllamaの利用が制限されています';
+  if (!st.ollamaEnabled || !canUseOllama()) {
     renderHome();
     return;
   }
@@ -2135,7 +2245,7 @@ function renderCalendar(){
 setInterval(()=>{
   if($('reader').classList.contains('open') && !document.hidden){
     if(Date.now() - lastUserActivityTime < 65000){
-      const todayKey=localDateKey();
+      const todayKey=new Date().toISOString().slice(0,10);
       calData[todayKey]=(calData[todayKey]||0)+1;
       save();
       renderHome();
@@ -2174,25 +2284,37 @@ function renderSettingsPage(){
       </div>
       <div style="display:flex; justify-content:space-between; align-items:center">
         <span>文字サイズ (${st.fs}px)</span>
-        <input type="range" min="14" max="32" value="${st.fs}" oninput="st.fs=this.value;applyReaderConfig();save();" style="width:160px; height:44px">
+        <input type="range" min="14" max="32" value="${st.fs}" oninput="st.fs=this.value;applyReaderConfig();save();renderSettingsPage();" style="width:160px; height:44px">
       </div>
     </div>
 
     <div class="block" style="min-height:auto">
-      <div style="font-weight:700; margin-bottom:14px; font-size:var(--fs-t)">翻訳・AI設定</div>
-      <div style="margin-bottom:14px">
-        <div style="font-size:var(--fs-s); color:var(--sub); margin-bottom:6px">Ollama URL（HTTPS/HTTP を安全に扱う）</div>
-        <div style="display:flex; gap:8px">
-          <input id="set-ourl" value="${esc(normalizeOllamaUrl(st.oUrl))}" style="flex:1; background:var(--card-sub); padding:12px; border-radius:10px; font-size:var(--fs-b)">
-          <button class="primary sm-btn" data-act="set-save-url">保存</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+        <div style="font-weight:700; font-size:var(--fs-t)">Ollama AI連携</div>
+        <div class="seg" style="width:140px">
+          <button data-act="set-ollama-toggle" data-v="1" class="${st.ollamaEnabled?'active':''}">ON</button>
+          <button data-act="set-ollama-toggle" data-v="0" class="${!st.ollamaEnabled?'active':''}">OFF</button>
         </div>
       </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
-        <span>AIモデル選択</span>
-        <button class="secondary sm-btn" data-act="set-pick-mod">${esc(st.oMod||'未選択')} ›</button>
-      </div>
-      <button class="secondary" data-act="set-ping" style="width:100%">Ollama 接続を確認</button>
-      ${aiConn.err ? `<div style="margin-top:12px; font-size:var(--fs-s); color:var(--sub)">${esc(aiConn.err)}</div>` : ''}
+      ${!st.ollamaEnabled ? `
+        <div style="font-size:var(--fs-s); color:var(--sub); padding:4px 0 8px">
+          Ollama連携はオフです（未設定・未接続などの表示は行われません）。
+        </div>
+      ` : `
+        <div style="margin-bottom:14px">
+          <div style="font-size:var(--fs-s); color:var(--sub); margin-bottom:6px">Ollama URL（HTTPS/HTTP を安全に扱う）</div>
+          <div style="display:flex; gap:8px">
+            <input id="set-ourl" value="${esc(normalizeOllamaUrl(st.oUrl))}" style="flex:1; background:var(--card-sub); padding:12px; border-radius:10px; font-size:var(--fs-b)">
+            <button class="primary sm-btn" data-act="set-save-url">保存</button>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+          <span>AIモデル選択</span>
+          <button class="secondary sm-btn" data-act="set-pick-mod">${esc(st.oMod||'未選択')} ›</button>
+        </div>
+        <button class="secondary" data-act="set-ping" style="width:100%">Ollama 接続を確認</button>
+        ${aiConn.err ? `<div style="margin-top:12px; font-size:var(--fs-s); color:var(--sub)">${esc(aiConn.err)}</div>` : ''}
+      `}
     </div>
 
     <div class="block" style="min-height:auto">
@@ -2234,15 +2356,6 @@ function switchView(vid){
   else if(vid==='v-cal') renderCalendar();
   else if(vid==='v-settings') renderSettingsPage();
 }
-
-document.addEventListener('change',e=>{
-  const b=e.target.closest('[data-act="sel-speed-change"]');
-  if(!b) return;
-  st.readSpeed=parseInt(b.value,10)||500;
-  save();
-  renderHome();
-  toast('読書速度を設定しました');
-});
 
 document.addEventListener('click',async(e)=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
@@ -2380,7 +2493,7 @@ document.addEventListener('click',async(e)=>{
     e.stopPropagation();
     const w=featList[featIdx];
     if(w){
-      const todayStr=localDateKey();
+      const todayStr=new Date().toISOString().slice(0,10);
       if(st.todayBook && st.todayBook.id === w.id){
         st.todayBook = null;
         toast('固定を解除しました');
@@ -2496,7 +2609,7 @@ document.addEventListener('click',async(e)=>{
       </div>`);
   }
   else if(act==='r-menu'){
-    const isAi=aiConn.ok && canUseOllama();
+    const isAi=aiConn.ok;
     sheet('目次・栞',`
       <div style="display:flex; flex-direction:column; gap:16px">
         <div style="display:flex; gap:8px">
@@ -2591,12 +2704,25 @@ document.addEventListener('click',async(e)=>{
   else if(act==='ai-chip') sendAiMessage(b.dataset.q);
 
   // 設定
+  else if(act==='set-ollama-toggle'){
+    st.ollamaEnabled = b.dataset.v === '1';
+    save();
+    if(st.ollamaEnabled) pingOllama();
+    else { aiConn.ok = false; aiConn.err = ''; }
+    renderSettingsPage();
+    renderHome();
+    toast(st.ollamaEnabled ? 'Ollama連携を有効にしました' : 'Ollama連携を無効にしました');
+  }
   else if(act==='set-th'){
     st.theme=b.dataset.v;
     applySettings();
     renderSettingsPage();
   }
   else if(act==='set-ft'){ st.font=b.dataset.v; applyReaderConfig(); save(); renderSettingsPage(); }
+  else if(act==='sel-speed-change'){
+    st.readSpeed=parseInt(b.value, 10)||500;
+    save(); toast('読書速度を設定しました');
+  }
   else if(act==='set-save-url'){ st.oUrl = normalizeOllamaUrl($('set-ourl').value.trim()); save(); pingOllama(); toast('URLを保存しました'); }
   else if(act==='set-pick-mod'){
     sheet('モデル選択',aiConn.models.map(m=>`<div class="block" data-act="set-mod-val" data-m="${m}" style="min-height:56px; padding:16px; margin-bottom:8px; font-weight:700">${m}</div>`).join('')||'<div>利用可能なモデルがありません</div>');
@@ -2627,11 +2753,12 @@ function applySettings(){
 }
 
 function detectLowPowerMode(){
-  if(!('matchMedia' in window)) return false;
+  if(!('matchMedia' in window)) return true;
   const motionReduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const cores = navigator.hardwareConcurrency || 4;
-  const mem = navigator.deviceMemory || 4;
-  return motionReduced || cores <= 4 || mem <= 4;
+  const isTouchTablet = (navigator.maxTouchPoints && navigator.maxTouchPoints > 1) || /iPad|iPhone|Android|Tablet|Macintosh/i.test(navigator.userAgent);
+  const cores = navigator.hardwareConcurrency || 2;
+  const mem = navigator.deviceMemory || 2;
+  return motionReduced || isTouchTablet || cores <= 4 || mem <= 4;
 }
 
 function applyPerformanceMode(){
@@ -2645,10 +2772,7 @@ if(window.matchMedia){
   else if(motionQuery.addListener) motionQuery.addListener(motionListener);
 }
 
-const colorSchemeQuery=matchMedia('(prefers-color-scheme:dark)');
-const colorSchemeListener=()=>{ if(st.theme==='auto') applySettings(); };
-if(colorSchemeQuery.addEventListener) colorSchemeQuery.addEventListener('change',colorSchemeListener);
-else if(colorSchemeQuery.addListener) colorSchemeQuery.addListener(colorSchemeListener);
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{ if(st.theme==='auto') applySettings(); });
 
 $('r-slider').oninput=e=>{
   lastUserActivityTime=Date.now();
