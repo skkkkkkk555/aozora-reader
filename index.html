@@ -4120,6 +4120,22 @@ html[data-device="smartphone"] .phone-tab:active{
   .phone-stat small{font-size:9px}
 }
 
+
+.phone-route-in.phone-route-forward{
+  animation:phoneRouteForward .32s cubic-bezier(.2,.8,.2,1);
+}
+.phone-route-in.phone-route-back{
+  animation:phoneRouteBack .32s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes phoneRouteForward{
+  from{opacity:.45;transform:translateX(10px)}
+  to{opacity:1;transform:none}
+}
+@keyframes phoneRouteBack{
+  from{opacity:.45;transform:translateX(-8px)}
+  to{opacity:1;transform:none}
+}
+
 </style>
 </head>
 <body><script>(function(){try{var u=navigator.userAgent||"",m=(navigator.userAgentData&&navigator.userAgentData.mobile===true)||/Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(u),s=Math.min(innerWidth||0,innerHeight||0);if(m&&s<=899)document.documentElement.dataset.device="smartphone";else document.documentElement.dataset.device="desktop";}catch(e){}})();</script>
