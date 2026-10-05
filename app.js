@@ -2959,6 +2959,9 @@ window.addEventListener('DOMContentLoaded',async()=>{
   };
 
   safeStage(12,'表示環境を確認中…');
+  // IndexedDB上のカタログ・権利確認データをブラウザの永続ストレージとして保持するよう要求。
+  // 拒否されてもアプリは通常動作し、保存データ自体はIndexedDBへ残す。
+  void safeStep(()=>requestPersistentStorage(),'persistent-storage');
 
   // スマホは共通アプリの初期化完了を待たず、先に独立UIを操作可能にする。
   if(phoneMode()){
