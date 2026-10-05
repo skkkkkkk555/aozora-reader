@@ -262,13 +262,14 @@ const idb={
 };
 
 let allWorks=[], works=[], byId=new Map(), dead=new Set();
+let rightsAllowlist=new Set(), rightsReady=false;
 let fav=new Set(), want=new Set(), done=new Set(), favAuthors=new Set();
 let pos={}, bm={}, notes={}, hls={}, hist=[], savedKeys=new Set(), searchHistory=[];
 let calData={}, goalMin=30;
 let st={ fs:18, lh:2.1, theme:'auto', font:'mincho', warm:true, kp:true, offline:false, lowSpec:false, ollamaEnabled:false, oUrl:'http://127.0.0.1:11434', oMod:'', v:true, rMode:'normal', readSpeed:500, todayBook:null };
 let aiConn={ ok:false, models:[], err:'' };
 let activeBook=null;
-const isPublicWork = w => !!w && Number(w.c) === 1 && Number(w.r) === 1;
+const isPublicWork = w => !!w && Number(w.c) === 1 && rightsReady && rightsAllowlist.has(String(w.id).padStart(6,'0'));
 const dateKeyOf=(d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const localDateKey=()=>dateKeyOf(new Date());
 const normalizeOllamaUrl=(value='')=>{
@@ -609,7 +610,8 @@ window.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openSearchPage(); }
 });
 
-const CATALOG_CACHE_KEY='cat-rights-v3';
+const CATALOG_CACHE_KEY='cat-rights-v4';
+const RIGHTS_MANIFEST='./rights-allowlist.json';
 const CATALOG_TARGET='https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip';
 const URLS=[
   CATALOG_TARGET,
@@ -619,7 +621,31 @@ const URLS=[
   'https://api.allorigins.win/raw?url='+encodeURIComponent(CATALOG_TARGET)
 ];
 
+async function loadRightsAllowlist(){
+  if(BROWSER_SMOKE){ rightsAllowlist=new Set(['000789']); rightsReady=true; return true; }
+  try{
+    const res=await secureFetch(RIGHTS_MANIFEST+'?'+Date.now(),{signal:sig(8000),cache:'no-store'});
+    if(!res.ok)throw new Error('rights-manifest-http-'+res.status);
+    const data=await res.json();
+    if(!Array.isArray(data)||data.length<1000||data.length>30000)throw new Error('rights-manifest-invalid');
+    const set=new Set();
+    for(const id of data){ const v=String(id||''); if(/^\d{6}$/.test(v))set.add(v); }
+    if(set.size<1000)throw new Error('rights-manifest-too-small');
+    rightsAllowlist=set; rightsReady=true; return true;
+  }catch(err){
+    rightsAllowlist=new Set(); rightsReady=false;
+    console.warn('rights allowlist unavailable; refusing all works',err);
+    return false;
+  }
+}
+
 async function checkCatalog(){
+  const rightsOk=await loadRightsAllowlist();
+  if(!rightsOk){
+    allWorks=[]; filterWorks(); renderHome();
+    showBanner('著作権確認データを取得できないため、作品を表示できません。時間を置いて再試行してください。');
+    return;
+  }
   if(BROWSER_SMOKE){
     // 実在する青空文庫の公開作品レコードを固定し、カタログ通信の揺らぎとUIテストを分離する。
     allWorks=[{"id":"000789","t":"吾輩は猫である","a":"夏目 漱石","tk":"わがはいはねこである","ak":"なつめ","d":"1999-09-21","k":1,"c":1,r:1,"ndc":"NDC 913","norm":"吾輩は猫であるわがはいはねこである夏目漱石なつめ","x":"cards/000148/files/789_ruby_5639/789_ruby_5639.txt"}];
