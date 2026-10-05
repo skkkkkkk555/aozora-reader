@@ -378,6 +378,9 @@ function assertDesktopReaderChrome(d,label){
     assertNoRuntimeErrors(d,'desktop after reader render');
     clearRuntimeErrors(d);
     const desktopBody=d.querySelector('#body');
+    const initialPct=textOf(d.querySelector('#r-prog'));
+    if(initialPct!=='0%')fail('desktop fresh reader progress is '+initialPct+' instead of 0%');
+    if((desktopBody?.scrollTop||0)!==0)fail('desktop fresh reader did not start at scrollTop 0');
     desktopBody.scrollTop=Math.min(700,Math.max(0,desktopBody.scrollTop)+700);
     await sleep(250);
     assertDesktopReaderChrome(d,'desktop reader chrome after scrolling');
