@@ -652,6 +652,12 @@ function filterWorks(){
   byId = new Map(works.map(w => [w.id, w]));
   try{window.dispatchEvent(new Event('aozora-phone-data-ready'));}catch{}
   try{window.__aozoraPhoneRefresh?.();}catch{}
+  // カタログ到着前にPC版で検索を開始していても、到着後に同じ条件を自動再実行する。
+  try{
+    if(document.documentElement.dataset.device!=='smartphone'&&typeof currentView!=='undefined'&&currentView==='v-search'&&(searchState.query||searchState.scope||searchState.filter?.time)){
+      applySearch(true);
+    }
+  }catch{}
 }
 function openCatalogIntro(){
   const html=`
