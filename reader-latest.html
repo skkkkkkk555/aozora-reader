@@ -445,6 +445,20 @@ button.sm-btn { min-height: 44px; padding: 0 14px; font-size: var(--fs-s); borde
   transition:transform 180ms,opacity 180ms;
 }
 .r-dock.hide { transform:translateY(110%); opacity:0; pointer-events:none; }
+
+/* PC版の読書画面は操作UIを常時表示。古い状態や非表示トグルが残っても絶対に消さない。 */
+html[data-device="desktop"] #reader .r-bar.hide,
+html[data-device="desktop"] #reader .r-dock.hide,
+html[data-device="desktop"] #reader .r-bottom-bar.hide{
+  transform:none!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+html[data-device="desktop"] #reader .r-bar,
+html[data-device="desktop"] #reader .r-dock,
+html[data-device="desktop"] #reader .r-bottom-bar{
+  visibility:visible!important;
+}
 .r-dock-btn { flex-direction: column; min-height: 48px; padding: 0 8px; gap: 2px; font-size: var(--fs-s); white-space: nowrap; }
 
 /* 読書本文: 上下バー・フローティングドックと絶対に重ならないパディング設計 */
@@ -8518,6 +8532,6 @@ html[data-device="smartphone"] .phone-sheet-row{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-promise-fix-v20261005-09"></script>
+<script src="./app.js?v=reader-hardening-v20261005-10"></script>
 </body>
 </html>
