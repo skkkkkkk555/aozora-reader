@@ -1856,30 +1856,28 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
   }
 }
 
+function readerLoaderMarkup(){
+  return '<div class="reader-loading aozora-loader" role="status" aria-live="polite">'+
+    '<div class="abl-rig">'+
+      '<div class="abl-base l"></div><div class="abl-base r"></div><div class="abl-spine-crease"></div>'+
+      '<div class="abl-leaf"><div class="abl-typeset-front">私はその人を常に先生と呼んでいた。だからここでもただ先生と書くだけで本名は打ち明けない。</div><div class="abl-typeset-back">私はその人を常に先生と呼んでいた。だからここでもただ先生と書くだけで本名は打ち明けない。</div></div>'+
+      '<div class="abl-leaf"><div class="abl-typeset-front">これは世間を憚かる遠慮というよりも、その方が私にとって自然だからである。</div><div class="abl-typeset-back">これは世間を憚かる遠慮というよりも、その方が私にとって自然だからである。</div></div>'+
+      '<div class="abl-leaf"><div class="abl-typeset-front">私はその人の記憶を呼び起すごとに、すぐ「先生」といいたくなる。</div><div class="abl-typeset-back">私はその人の記憶を呼び起すごとに、すぐ「先生」といいたくなる。</div></div>'+
+      '<div class="abl-leaf"><div class="abl-typeset-front">筆を執っても心持は同じ事である。余所余所しい頭文字などはとても使う気にならない。</div><div class="abl-typeset-back">筆を執っても心持は同じ事である。余所余所しい頭文字などはとても使う気にならない。</div></div>'+
+      '<div class="abl-leaf"><div class="abl-typeset-front">私が先生と知り合いになったのは鎌倉である。その時私はまだ若々しい書生であった。</div><div class="abl-typeset-back">私が先生と知り合いになったのは鎌倉である。その時私はまだ若々しい書生であった。</div></div>'+
+      '<div class="abl-leaf"><div class="abl-typeset-front">暑中休暇を利用して海へ泳ぎに行った友達からぜひ来いという端書を受け取ったので、</div><div class="abl-typeset-back">暑中休暇を利用して海へ泳ぎに行った友達からぜひ来いという端書を受け取ったので、</div></div>'+
+      '<div class="abl-leaf"><div class="abl-typeset-front">私は多少の金を工面して出掛ける事にした。私は金の工面に二三日を費やした。</div><div class="abl-typeset-back">私は多少の金を工面して出掛ける事にした。私は金の工面に二三日を費やした。</div></div>'+
+    '</div>'+
+    '<div class="reader-loading-title">本文を読み込んでいます</div>'+
+    '<div class="reader-loading-sub">青空文庫から本文を準備中…</div>'+
+  '</div>';
+}
 function setReaderLoading(show){
   const body=$('body');
   if(!body)return;
   body.setAttribute('aria-busy',show?'true':'false');
-  if(show){
-    body.innerHTML='<div class="reader-loading aozora-loader" role="status" aria-live="polite">'+
-      '<div class="abl-rig">'+
-        '<div class="abl-base l"></div>'+
-        '<div class="abl-base r"></div>'+
-        '<div class="abl-spine-crease"></div>'+
-        '<div class="abl-leaf"><div class="abl-typeset-front">私はその人を常に先生と呼んでいた。だからここでもただ先生と書くだけで本名は打ち明けない。</div><div class="abl-typeset-back">私はその人を常に先生と呼んでいた。だからここでもただ先生と書くだけで本名は打ち明けない。</div></div>'+
-        '<div class="abl-leaf"><div class="abl-typeset-front">これは世間を憚かる遠慮というよりも、その方が私にとって自然だからである。</div><div class="abl-typeset-back">これは世間を憚かる遠慮というよりも、その方が私にとって自然だからである。</div></div>'+
-        '<div class="abl-leaf"><div class="abl-typeset-front">私はその人の記憶を呼び起すごとに、すぐ「先生」といいたくなる。</div><div class="abl-typeset-back">私はその人の記憶を呼び起すごとに、すぐ「先生」といいたくなる。</div></div>'+
-        '<div class="abl-leaf"><div class="abl-typeset-front">筆を執っても心持は同じ事である。余所余所しい頭文字などはとても使う気にならない。</div><div class="abl-typeset-back">筆を執っても心持は同じ事である。余所余所しい頭文字などはとても使う気にならない。</div></div>'+
-        '<div class="abl-leaf"><div class="abl-typeset-front">私が先生と知り合いになったのは鎌倉である。その時私はまだ若々しい書生であった。</div><div class="abl-typeset-back">私が先生と知り合いになったのは鎌倉である。その時私はまだ若々しい書生であった。</div></div>'+
-        '<div class="abl-leaf"><div class="abl-typeset-front">暑中休暇を利用して海へ泳ぎに行った友達からぜひ来いという端書を受け取ったので、</div><div class="abl-typeset-back">暑中休暇を利用して海へ泳ぎに行った友達からぜひ来いという端書を受け取ったので、</div></div>'+
-        '<div class="abl-leaf"><div class="abl-typeset-front">私は多少の金を工面して出掛ける事にした。私は金の工面に二三日を費やした。</div><div class="abl-typeset-back">私は多少の金を工面して出掛ける事にした。私は金の工面に二三日を費やした。</div></div>'+
-      '</div>'+
-      '<div class="reader-loading-title">本文を読み込んでいます</div>'+
-      '<div class="reader-loading-sub">青空文庫から本文を準備中…</div>'+
-    '</div>';
-  }
+  if(show)body.innerHTML=readerLoaderMarkup();
 }
-
 function pulseState(el){
   if(!el||document.body.classList.contains('low-power'))return;
   el.classList.remove('state-bump');
@@ -4094,7 +4092,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     const reader=$p('#phone-reader');reader?.classList.remove('reader-chrome-hidden');
     body.style.setProperty('--phone-reader-fs',state.readerFs+'px');
     body.style.setProperty('--phone-reader-lh',state.readerLh);
-    body.innerHTML='<div class="phone-empty">本文を読み込んでいます…</div>';
+    body.innerHTML=readerLoaderMarkup();
     const prog=$p('#phone-reader-progress span');if(prog)prog.style.width=Math.round(progressOf(w)*100)+'%';
     try{
       const doc=await fetchBody(w);
