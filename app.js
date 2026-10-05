@@ -391,7 +391,10 @@ const load=async()=>{
     if(d){
       fav=new Set(safeStateArray(d.fav)); want=new Set(safeStateArray(d.want)); done=new Set(safeStateArray(d.done));
       favAuthors=new Set(safeStateArray(d.favAuthors,SEC_STATE.maxAuthors));
-      dead=new Set(safeStateArray(d.dead)); pos=d.pos||{}; bm=d.bm||{}; notes=d.notes||{}; hls=d.hls||{};
+      dead=new Set(safeStateArray(d.dead));
+      // 旧版で保存された進捗は、縦書きの開始座標バグを含む可能性があるため一度だけ無効化する。
+      pos=Number(d.readerProgressVersion)===READER_PROGRESS_VERSION?(d.pos||{}):{};
+      bm=d.bm||{}; notes=d.notes||{}; hls=d.hls||{};
       hist=Array.isArray(d.hist)?d.hist:[]; calData=d.calData||{}; goalMin=Math.max(10,Math.min(180,Number(d.goalMin)||30)); searchHistory=safeStateArray(d.searchHistory,100);
       st=Object.assign(st,d.st||{});
       if(d.st?.off!==undefined) st.offline=!!d.st.off;
