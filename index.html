@@ -8252,6 +8252,270 @@ html[data-device="desktop"][data-reader-open="1"] #r-ui-toggle:active{
   transform:scale(.96)!important;
 }
 </style>
+
+<style id="aozora-final-device-ui-hardening">
+/* ===== Final device/UI hardening 2026-10-05 ===== */
+
+/* PC: reader chrome has one authoritative visible layout. */
+@media (min-width:900px){
+  html[data-device="desktop"] #reader.open{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    flex-direction:column!important;
+    overflow:hidden!important;
+  }
+  html[data-device="desktop"] #reader.open .r-bar,
+  html[data-device="desktop"] #reader.open .r-dock,
+  html[data-device="desktop"] #reader.open #r-bottom-info,
+  html[data-device="desktop"] #reader.open .r-bar.hide,
+  html[data-device="desktop"] #reader.open .r-dock.hide,
+  html[data-device="desktop"] #reader.open #r-bottom-info.hide,
+  html[data-device="desktop"] #reader.open.mode-focus .r-bar,
+  html[data-device="desktop"] #reader.open.mode-focus .r-dock,
+  html[data-device="desktop"] #reader.open.mode-focus #r-bottom-info{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    transform:none!important;
+    pointer-events:auto!important;
+  }
+  html[data-device="desktop"] #reader.open .r-dock{display:grid!important}
+  html[data-device="desktop"] #reader.open .r-bar{
+    position:relative!important;
+    z-index:500!important;
+    flex:none!important;
+  }
+  html[data-device="desktop"] #reader.open #body{
+    position:relative!important;
+    z-index:1!important;
+    flex:1 1 auto!important;
+    min-width:0!important;
+    min-height:0!important;
+    width:auto!important;
+    max-width:none!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow:auto!important;
+  }
+  html[data-device="desktop"] #reader.open #body.v{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:auto!important;
+    min-height:0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+  }
+  html[data-device="desktop"] #reader.open .r-dock,
+  html[data-device="desktop"] #reader.open #r-bottom-info{
+    position:relative!important;
+    z-index:500!important;
+    flex:none!important;
+  }
+  html[data-device="desktop"] #reader.open #r-slider{accent-color:var(--ac)!important}
+}
+
+/* Phone/tablet: vertical reading is a real second axis, not an overflow accident. */
+html[data-device="smartphone"] .phone-reader-body.phone-reader-vertical{
+  writing-mode:vertical-rl!important;
+  text-orientation:mixed!important;
+  width:max-content!important;
+  min-width:100%!important;
+  max-width:none!important;
+  height:100%!important;
+  min-height:0!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+  padding:28px 23px 118px!important;
+  scroll-snap-type:none!important;
+  overscroll-behavior-x:contain!important;
+  overscroll-behavior-y:none!important;
+}
+html[data-device="smartphone"] .phone-reader-body.phone-reader-vertical > *{
+  max-width:none!important;
+}
+html[data-device="smartphone"] .phone-reader.reader-direction-vertical .phone-reader-header-title:after{
+  content:" · 縦読み";
+  color:var(--phone-sub);
+  font-size:.8em;
+}
+html[data-device="smartphone"] #phone-global-back{
+  pointer-events:auto!important;
+}
+
+/* One dark palette: bright enough text, stronger separators, and clearly separated controls. */
+:root[data-theme="dark"]{
+  --bg:#0f1115!important;
+  --card:#181c22!important;
+  --card-sub:#242a33!important;
+  --fg:#f6f8fb!important;
+  --sub:#d2d8e1!important;
+  --line:rgba(255,255,255,.19)!important;
+  --ac:#8fd4f5!important;
+  --onac:#071018!important;
+  --shadow:0 12px 32px rgba(0,0,0,.42)!important;
+}
+:root[data-theme="dark"] body{
+  color:var(--fg)!important;
+  background:var(--bg)!important;
+  background-image:radial-gradient(circle at top left,rgba(143,212,245,.08),transparent 34%)!important;
+}
+:root[data-theme="dark"] button,
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea{
+  color:var(--fg)!important;
+}
+:root[data-theme="dark"] button.secondary{
+  background:#2a313b!important;
+  color:#f7f9fc!important;
+  border-color:rgba(255,255,255,.2)!important;
+}
+:root[data-theme="dark"] button.subtle{color:#e0e5eb!important}
+:root[data-theme="dark"] .r-bar,
+:root[data-theme="dark"] .r-dock,
+:root[data-theme="dark"] .r-bottom-bar,
+:root[data-theme="dark"] .sheet,
+:root[data-theme="dark"] .sheet-head,
+:root[data-theme="dark"] .sheet-body{
+  background:var(--card)!important;
+  color:var(--fg)!important;
+  border-color:var(--line)!important;
+}
+:root[data-theme="dark"] .r-dock-btn{
+  color:#e4e9ef!important;
+  background:#20262e!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+}
+:root[data-theme="dark"] #r-page-lbl,
+:root[data-theme="dark"] #r-prog,
+:root[data-theme="dark"] #r-title{color:var(--fg)!important}
+:root[data-theme="dark"] #r-slider{accent-color:var(--ac)!important}
+:root[data-theme="dark"] .block,
+:root[data-theme="dark"] .insight-card,
+:root[data-theme="dark"] .search-cta{
+  color:var(--fg)!important;
+  border-color:var(--line)!important;
+}
+:root[data-theme="dark"] .block.blue{background:#1b2933!important}
+:root[data-theme="dark"] .block.green{background:#1c2a20!important}
+:root[data-theme="dark"] .block.orange{background:#30261c!important}
+:root[data-theme="dark"] .block.purple{background:#292036!important}
+:root[data-theme="dark"] .card-micro,
+:root[data-theme="dark"] .feature-teaser,
+:root[data-theme="dark"] .brand-sub,
+:root[data-theme="dark"] .insight-kicker,
+:root[data-theme="dark"] .insight-sub{color:#d8dee6!important}
+
+/* Phone/tablet dark UI: use the same contrast target instead of near-black + gray text. */
+html[data-theme="dark"][data-device="smartphone"] #phone-app{
+  --phone-card:#1a1f26!important;
+  --phone-text:#f6f8fb!important;
+  --phone-sub:#d0d6de!important;
+  --phone-line:rgba(255,255,255,.19)!important;
+  --phone-fill:#101318!important;
+  --phone-bg:#101318!important;
+  background:#101318!important;
+  color:var(--phone-text)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-header{
+  background:rgba(16,19,24,.94)!important;
+  border-bottom-color:var(--phone-line)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-content,
+html[data-theme="dark"][data-device="smartphone"] .phone-detail{
+  color:var(--phone-text)!important;
+  background:var(--phone-fill)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-card,
+html[data-theme="dark"][data-device="smartphone"] .phone-quick,
+html[data-theme="dark"][data-device="smartphone"] .phone-list,
+html[data-theme="dark"][data-device="smartphone"] .phone-detail-actions button,
+html[data-theme="dark"][data-device="smartphone"] .phone-secondary{
+  background:var(--phone-card)!important;
+  color:var(--phone-text)!important;
+  border-color:var(--phone-line)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-row-title,
+html[data-theme="dark"][data-device="smartphone"] .phone-book-name,
+html[data-theme="dark"][data-device="smartphone"] .phone-section-title,
+html[data-theme="dark"][data-device="smartphone"] .phone-detail-title{
+  color:#f7f9fc!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-kicker,
+html[data-theme="dark"][data-device="smartphone"] .phone-book-meta,
+html[data-theme="dark"][data-device="smartphone"] .phone-row-sub,
+html[data-theme="dark"][data-device="smartphone"] .phone-stat small,
+html[data-theme="dark"][data-device="smartphone"] .phone-result-count,
+html[data-theme="dark"][data-device="smartphone"] .phone-detail-author,
+html[data-theme="dark"][data-device="smartphone"] .phone-detail-progress-top,
+html[data-theme="dark"][data-device="smartphone"] .phone-reader-tool small{
+  color:var(--phone-sub)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-icon-button{
+  background:#252b33!important;
+  color:#f5f7fa!important;
+  border-color:rgba(255,255,255,.2)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-tab,
+html[data-theme="dark"][data-device="smartphone"] .phone-tab small{
+  color:#cbd2da!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-tab.active,
+html[data-theme="dark"][data-device="smartphone"] .phone-tab.active small,
+html[data-theme="dark"][data-device="smartphone"] .phone-section-link{
+  color:#72c8f2!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-chip{
+  color:#d9dee5!important;
+  background:#20262e!important;
+  border-color:rgba(255,255,255,.2)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-reader{
+  background:#101318!important;
+  color:#f6f8fb!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-reader-header,
+html[data-theme="dark"][data-device="smartphone"] .phone-reader-toolbar{
+  background:rgba(27,31,38,.96)!important;
+  border-color:var(--phone-line)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-reader-body{
+  color:#f3f5f7!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-reader-ui-toggle{
+  background:#2b333d!important;
+  color:#fff!important;
+  border-color:rgba(255,255,255,.24)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-sheet{
+  background:#1a1f26!important;
+  color:#f6f8fb!important;
+  border:1px solid var(--phone-line)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-sheet-row{
+  color:#f3f5f7!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-sheet-row small,
+html[data-theme="dark"][data-device="smartphone"] .phone-license-copy{
+  color:var(--phone-sub)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-search,
+html[data-theme="dark"][data-device="smartphone"] .phone-reader-search-input{
+  background:#252b33!important;
+  color:#f7f9fc!important;
+  border-color:var(--phone-line)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] #phone-global-back{
+  background:#252b33!important;
+  color:#72c8f2!important;
+  border-color:rgba(255,255,255,.24)!important;
+}
+</style>
 </head>
 <body>
 <!-- Dedicated smartphone application shell -->
@@ -8949,6 +9213,6 @@ html[data-device="desktop"][data-reader-open="1"] #r-ui-toggle:active{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-display-vertical-stable-v20261005-30"></script>
+<script src="./app.js?v=reader-handheld-ui-v20261005-31"></script>
 </body>
 </html>
