@@ -154,6 +154,11 @@ ok(html.includes('background:var(--bg)!important;'),'reader loading layer is not
 ok(app.includes("body.classList.add('reader-building')"),'reader build isolation missing');
 ok(app.includes('readerTok++;'),'reader close does not invalidate pending work');
 ok(!app.includes("body.innerHTML=readerLoaderMarkup()"),'reader loader must not be injected into article body');
+ok(app.includes("body.scrollTop=0;")&&app.includes("body.scrollLeft=0;"),'reader opening does not reset both scroll axes');
+ok(app.includes("d.scrollTop=0;"),'smartphone detail does not reset its scroll position');
+ok(html.includes('id="aozora-splash"'),'book-theater splash is missing');
+ok(html.includes('splash.js?v=20261005-01'),'splash startup script is not CSP-safe external JS');
+
 ok(/app\.js\?v=[^"]+/.test(html),'reader stability cache-bust version missing');
 ok(smoke.includes('loader did not hide after render'),'browser smoke does not verify loader lifecycle');
 ok(app.includes('const count=2200'),'browser smoke is not exercising long reader content');
