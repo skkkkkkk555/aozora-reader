@@ -131,7 +131,7 @@ ok(/const catalogDeadline=Date\.now\(\)\+\d+/.test(app),'catalog fetch has no to
 ok(/const bodyDeadline=Date\.now\(\)\+\d+/.test(app),'book fetch has no total wait deadline');
 ok(smoke.includes('function readerScrollable'),'browser smoke does not verify actual reader scrollability');
 ok(smoke.includes("readerRendered(d,'#phone-reader-body')"),'smartphone smoke does not verify visible reader geometry');
-ok(smoke.includes("phone-global-back"),'smartphone smoke does not account for global back compatibility control');
+ok(smoke.includes('data-phone-action="reader-back"'),'smartphone smoke does not exercise the visible reader back control');
 ok(smoke.includes("rect.width>0&&rect.height>0"),'reader smoke lacks usable geometry checks');
 ok(smoke.includes("readerRendered(d,'#body')"),'desktop smoke does not verify visible reader geometry');
 ok(workflow.includes('timeout 120s'),'browser process timeout is missing');
