@@ -212,6 +212,7 @@ function sanitizePersistedState(d){
   let size=0;try{size=JSON.stringify(d).length;}catch{return null;}
   if(size>SEC.maxStateChars)return null;
   const out={};
+  out.readerProgressVersion=Number(d.readerProgressVersion)||0;
   out.goalMin=Number.isFinite(Number(d.goalMin))?Math.max(10,Math.min(180,Math.round(Number(d.goalMin)))):30;
   out.fav=safeStateArray(d.fav);out.want=safeStateArray(d.want);out.done=safeStateArray(d.done);
   out.favAuthors=safeStateArray(d.favAuthors,SEC_STATE.maxAuthors);
