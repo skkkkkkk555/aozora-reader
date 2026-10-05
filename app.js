@@ -64,10 +64,11 @@ const $=i=>document.getElementById(i);
 const refreshSmartphoneUI = ()=>{
   const ua = String(navigator.userAgent || '');
   const mobileUA = navigator.userAgentData?.mobile === true ||
-    /Android.*Mobile|iPhone|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini|Mobile Safari/i.test(ua);
+    /Android|iPhone|iPad|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini|Mobile Safari/i.test(ua);
   const shortestSide = Math.min(window.innerWidth || 0, window.innerHeight || 0);
-  // タッチ対応判定はAndroid WebView等で0になることがあるため、端末判定には使用しない。
-  const isSmartphone = !!mobileUA && shortestSide <= 899;
+  const androidOrAppleHandheld = /Android|iPhone|iPad|iPod/i.test(ua);
+  const touchWindows = /Windows/i.test(ua) && Number(navigator.maxTouchPoints||0)>0 && shortestSide<=1200;
+  const isSmartphone = !!mobileUA && (androidOrAppleHandheld || shortestSide<=899 || touchWindows);
   document.documentElement.classList.toggle('smartphone-ui', isSmartphone);
   // Reader UI復帰ボタンは読書レイヤーの外側に常駐させる。
   document.documentElement.dataset.device = isSmartphone ? 'smartphone' : 'desktop';
@@ -1725,7 +1726,19 @@ async function fetchBody(w){
 
   const fetchFromOneSource=async(u)=>{
     const host=(()=>{try{return new URL(u).hostname}catch{return u}})();
+    const handheld=document.documentElement.dataset.device==='smartphone';
     const chunkSize=4*1024*1024;
+    // ハンドヘルドでは Range を使わない。クロスオリジンRangeは古いWebViewで
+    // CORSプリフライトになり、本文取得だけ失敗するケースを避ける。
+    if(handheld){
+      const remain=Math.max(8000,Math.min(30000,bodyDeadline-Date.now()));
+      const res=await secureFetch(u,{headers:{'Accept':'text/plain,*/*'},signal:sig(remain)});
+      if(res.status===404)return {status:404,host};
+      if(!res.ok)throw new Error('HTTP-'+res.status);
+      const b=await readResponseBytes(res,SEC.maxBookBytes);
+      if(!b||b.byteLength<200)throw new Error('empty-response');
+      return {buffer:b,host};
+    }
     const firstRemain=Math.max(5000,Math.min(20000,bodyDeadline-Date.now()));
     // Range取得を最初から使う。全文を一度にarrayBufferへ載せる方式は古い端末で失敗しやすい。
     const first=await secureFetch(u,{headers:{'Range':`bytes=0-${chunkSize-1}`},signal:sig(firstRemain)});
@@ -4328,7 +4341,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     readerDoc:null,
     sheetOpen:false,
     headerCompact:false,
-    readerFromDetail:false
+    readerFromDetail:false,
+    readerVertical:false
   };
 
   const escP=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -4796,8 +4810,13 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   function currentReaderBody(){return $p('#phone-reader-body')}
   function fraction(){
-    const b=currentReaderBody();if(!b||b.scrollHeight<=b.clientHeight)return 0;
-    return Math.max(0,Math.min(1,b.scrollTop/(b.scrollHeight-b.clientHeight)));
+    const b=currentReaderBody();if(!b)return 0;
+    if(state.readerVertical){
+      const max=Math.max(0,b.scrollWidth-b.clientWidth);
+      return max>0?Math.max(0,Math.min(1,(max-Math.max(0,b.scrollLeft))/max)):0;
+    }
+    const max=Math.max(0,b.scrollHeight-b.clientHeight);
+    return max>0?Math.max(0,Math.min(1,b.scrollTop/max)):0;
   }
   function snippet(){
     const w=state.work,b=currentReaderBody();if(!w)return '';
@@ -4829,6 +4848,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     const reader=$p('#phone-reader');reader?.classList.remove('reader-chrome-hidden');
     body.style.setProperty('--phone-reader-fs',state.readerFs+'px');
     body.style.setProperty('--phone-reader-lh',state.readerLh);
+    applyPhoneReaderDirection();
     setPhoneReaderLoading(true);
     const prog=$p('#phone-reader-progress');if(prog)prog.style.width=Math.round(progressOf(w)*100)+'%';
     try{
@@ -4878,7 +4898,16 @@ window.addEventListener('DOMContentLoaded',()=>{
         });
       };
       $p('#phone-reader')?.classList.remove('reader-chrome-hidden');
-      requestAnimationFrame(()=>{const f=progressOf(w);body.scrollTop=f*Math.max(0,body.scrollHeight-body.clientHeight);saveReaderProgress();});
+      requestAnimationFrame(()=>{
+        const f=progressOf(w);
+        if(state.readerVertical){
+          const max=Math.max(0,body.scrollWidth-body.clientWidth);
+          body.scrollLeft=max-f*max;body.scrollTop=0;
+        }else{
+          body.scrollTop=f*Math.max(0,body.scrollHeight-body.clientHeight);body.scrollLeft=0;
+        }
+        saveReaderProgress();
+      });
       hist=hist.filter(x=>String(x.id)!==String(w.id));hist.unshift({id:w.id,t:Date.now()});hist=hist.slice(0,200);save();
     }catch(err){
       phoneReaderContentReady=false;
@@ -5039,6 +5068,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       '<button class="phone-sheet-row" data-phone-action="reader-toc"><span>≡</span><b>目次を開く</b></button>'+
       '<div class="phone-reader-setting"><div><b>文字サイズ</b><strong id="phone-reader-font-value">'+state.readerFs+'px</strong></div><input id="phone-reader-font-range" type="range" min="14" max="32" step="1" value="'+state.readerFs+'" aria-label="文字サイズ"></div>'+
       '<div class="phone-reader-setting"><div><b>行間</b><strong id="phone-reader-line-value">'+Number(state.readerLh).toFixed(1)+'</strong></div><input id="phone-reader-line-range" type="range" min="1.6" max="2.8" step="0.1" value="'+state.readerLh+'" aria-label="行間"></div>'+
+      '<button class="phone-sheet-row" data-phone-action="reader-vertical"><span>縦</span><span class="phone-row-copy"><b class="phone-row-title">縦読み / 横読み</b><small class="phone-row-sub">'+(state.readerVertical?'現在：縦読み':'現在：横読み')+'</small></span><span class="phone-chevron">›</span></button>'+
       '<button class="phone-sheet-row" data-phone-action="reader-theme"><span>◐</span><b>テーマ</b></button>'+
       '<button class="phone-sheet-row" data-phone-action="reader-share"><span>↗</span><b>作品を共有</b></button>'+
       '<button class="phone-sheet-row" data-phone-action="reader-wake"><span>□</span><b>画面を消さない</b></button>'+
@@ -5060,6 +5090,24 @@ window.addEventListener('DOMContentLoaded',()=>{
     const cur=st.theme||'auto';
     const next=cur==='auto'?'sepia':cur==='sepia'?'dark':'auto';
     st.theme=next;applySettings();save();renderSettings();toast('テーマを変更しました');
+  }
+  function applyPhoneReaderDirection(){
+    const b=currentReaderBody(),r=$p('#phone-reader');
+    if(!b||!r)return;
+    b.classList.toggle('phone-reader-vertical',!!state.readerVertical);
+    b.setAttribute('data-writing-mode',state.readerVertical?'vertical':'horizontal');
+    r.classList.toggle('reader-direction-vertical',!!state.readerVertical);
+  }
+  function togglePhoneReaderDirection(){
+    state.readerVertical=!state.readerVertical;
+    applyPhoneReaderDirection();
+    const b=currentReaderBody();
+    if(b){
+      b.scrollTop=0;
+      b.scrollLeft=state.readerVertical?Math.max(0,b.scrollWidth-b.clientWidth):0;
+      requestAnimationFrame(()=>saveReaderProgress());
+    }
+    toast(state.readerVertical?'縦読み':'横読み');
   }
   function applyPhoneReaderTypography(kind,value){
     const b=currentReaderBody();
@@ -5139,6 +5187,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(act==='reader-toc'){readerToc();return}
       if(act==='reader-font'){cycleFont();return}
       if(act==='reader-line'){cycleLine();return}
+      if(act==='reader-vertical'){togglePhoneReaderDirection();closePhoneSheet();return}
       if(act==='reader-theme'){closePhoneSheet();cycleTheme();return}
       if(act==='reader-wake'){closePhoneSheet();void toggleWake().catch(err=>recordRuntimeError('phone-toggle-wake',err));return}
     }
@@ -5160,18 +5209,9 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='shelf-filter'){state.shelf=el.dataset.filter||'reading';if(state.shelf==='records'){showScreen('records')}else renderShelf();return}
     if(act==='record-filter'){state.record=el.dataset.filter||'all';renderRecords();return}
     if(act==='detail-back'){
-      if(history.state?.phoneLayer==='phone-detail'){
-        const base={...(history.state||{})};
-        delete base.phoneLayer;
-        delete base.phoneParent;
-        history.replaceState(base,'',location.href);
-      }
       state.work=null;
       state.readerFromDetail=false;
-      syncScreens('main','back');
-      $p('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===state.screen));
-      const fn={home:renderHome,search:renderSearch,shelf:renderShelf,records:renderRecords,settings:renderSettings}[state.screen]||renderHome;
-      fn();
+      showScreen(state.screen||'home','back');
       return;
     }
     if(act==='detail-read'){
@@ -5226,6 +5266,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       return;
     }
     if(act==='reader-more'){readerMenu();return}
+    if(act==='reader-vertical'){togglePhoneReaderDirection();return}
     if(act==='reader-font'){cycleFont();return}
     if(act==='reader-line'){cycleLine();return}
     if(act==='reader-theme'){cycleTheme();return}
@@ -5298,12 +5339,9 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(state.sheetOpen){closePhoneSheet();return;}
       if(state.reader){closeReader();return;}
       if(state.work&&history.state?.phoneLayer==='phone-detail'){
-        const w=state.work;
         state.work=null;
         state.readerFromDetail=false;
-        const base={...(history.state||{})};delete base.phoneLayer;delete base.phoneParent;
-        history.replaceState(base,'',location.href);
-        openDetail(w,'back',true);
+        showScreen(state.screen||'home','back');
         return;
       }
       if(state.work){state.work=null;showScreen(state.screen,'back');return;}
@@ -5397,12 +5435,9 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(state.sheetOpen){closePhoneSheet();return;}
     if(state.reader){closeReader();return;}
     if(state.work&&history.state?.phoneLayer==='phone-detail'){
-      const w=state.work;
       state.work=null;
       state.readerFromDetail=false;
-      const base={...(history.state||{})};delete base.phoneLayer;delete base.phoneParent;
-      history.replaceState(base,'',location.href);
-      openDetail(w,'back',true);
+      showScreen(state.screen||'home','back');
       return;
     }
     if(state.work){state.work=null;showScreen(state.screen,'back');return;}
@@ -5468,10 +5503,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(state.work&&!state.reader&&layer!=='phone-detail'){
       state.work=null;
       state.readerFromDetail=false;
-      syncScreens('main','back');
-      $p('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===state.screen));
-      const fn={home:renderHome,search:renderSearch,shelf:renderShelf,records:renderRecords,settings:renderSettings}[state.screen]||renderHome;
-      fn();
+      showScreen(state.screen||'home','back');
     }
   });
   window.addEventListener('resize',()=>{if(isPhone()&&!state.reader)syncPhoneVisibility()},{passive:true});
