@@ -75,6 +75,38 @@ const refreshSmartphoneUI = ()=>{
 refreshSmartphoneUI();
 window.addEventListener('resize', refreshSmartphoneUI, {passive:true});
 
+/* PC読書UIの単一ガード。読書画面のUIを本文タップや古い状態クラスで隠せないようにする。 */
+function enforceDesktopReaderChrome(){
+  if(document.documentElement.dataset.device!=='desktop')return;
+  const reader=document.getElementById('reader');
+  if(!reader?.classList.contains('open'))return;
+  reader.classList.remove('chrome-hidden','mode-focus');
+  const items=[
+    [document.getElementById('r-top'),'flex'],
+    [document.getElementById('r-dock'),'grid'],
+    [document.getElementById('r-bottom-info'),'flex']
+  ];
+  for(const [el,display] of items){
+    if(!el)continue;
+    el.classList.remove('hide');
+    el.classList.add('show-temp');
+    el.style.setProperty('display',display,'important');
+    el.style.setProperty('visibility','visible','important');
+    el.style.setProperty('opacity','1','important');
+    el.style.setProperty('pointer-events','auto','important');
+    el.style.setProperty('transform','none','important');
+  }
+  const toggle=document.getElementById('r-ui-toggle');
+  if(toggle){
+    toggle.style.setProperty('display','flex','important');
+    toggle.style.setProperty('visibility','visible','important');
+    toggle.style.setProperty('opacity','1','important');
+    toggle.style.setProperty('pointer-events','auto','important');
+    toggle.style.setProperty('z-index','2147483647','important');
+  }
+}
+
+
 const esc=s=>(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]||c));
 const escAttr=esc;
 
@@ -2062,6 +2094,7 @@ async function openReaderInternal(w, fromDetail=false, bookmarkF=null){
   $('reader').classList.remove('chrome-hidden','mode-focus');
   $('reader').dataset.readerUiMode='pc-stable';
   setReaderChromeVisible(true);
+  enforceDesktopReaderChrome();
   $('reader').classList.add('paper-first-open');
   pushLayer('reader');
 
@@ -2075,6 +2108,7 @@ async function openReaderInternal(w, fromDetail=false, bookmarkF=null){
     desktopReaderContentReady=true;
     setReaderLoading(false);
     applyReaderConfig(null);
+    enforceDesktopReaderChrome();
     ensureReaderBodyText();
     ensureReaderBodyVisible();
 
@@ -2647,7 +2681,9 @@ $('body').onclick=(e)=>{
   if(!b.classList.contains('paper-paged')) return;
   const w=innerWidth,x=e.clientX;
 
-  if(x>w*0.35 && x<w*0.65 && !$('reader').classList.contains('mode-focus')){
+  // PCでは本文中央タップでUIを隠さない。ページ送りだけを担当する。
+  if(document.documentElement.dataset.device!=='desktop' &&
+     x>w*0.35 && x<w*0.65 && !$('reader').classList.contains('mode-focus')){
     toggleReaderChrome();
     return;
   }
@@ -2742,13 +2778,13 @@ function applyReaderMode(){
   const readerEl=$('reader');
   const isDesktop=document.documentElement.dataset.device==='desktop';
 
-  // PC版は読書UIを常時表示する。集中モード由来の非表示状態もPCでは成立させない。
   if(isDesktop){
+    // PCでは「集中＝UI非表示」という状態自体を使わない。
     readerEl.classList.remove('mode-focus','chrome-hidden');
     $('btn-read-mode').textContent=m==='night'?'夜間':'通常';
+    if(readerEl.classList.contains('open'))enforceDesktopReaderChrome();
   }else{
     readerEl.classList.toggle('mode-focus',m==='focus');
-    readerEl.classList.toggle('chrome-hidden',m==='focus' && readerEl.classList.contains('chrome-hidden'));
     $('btn-read-mode').textContent=m==='normal'?'通常':m==='focus'?'集中':'夜間';
   }
 
