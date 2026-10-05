@@ -300,7 +300,7 @@ const escRe = s => (s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 let searchState={
   query: '',
   scope: null,
-  filter: { k: true, c: true, saved: false, time: null },
+  filter: { saved: false, time: null },
   sort: 'new'
 };
 
@@ -1176,8 +1176,21 @@ function startFeatTimer(){
 }
 
 function showBanner(msg){
-  $('ban-txt').textContent=msg;
-  $('banner').style.display='flex';
+  const banner=$('banner');
+  const text=$('ban-txt');
+  if(text)text.textContent=msg;
+  if(banner){
+    banner.dataset.reason='';
+    banner.style.display='flex';
+  }
+}
+function showCatalogManualNotice(){
+  const banner=$('banner');
+  const text=$('ban-txt');
+  const btn=banner?.querySelector('[data-act="ban-btn"]');
+  if(text)text.textContent='カタログの自動読み込みに失敗しました。設定からファイルを手動で読み込めます。';
+  if(banner){banner.dataset.reason='catalog-manual';banner.style.display='flex';}
+  if(btn)btn.textContent='手動で読み込む';
 }
 
 /* ==================== 7. 探す (分離・完全検索パイプライン) ==================== */
@@ -1224,7 +1237,7 @@ function applySearch(reset=true){
   const hasQuery=!!q;
   const hasTimeFilter=!!searchState.filter.time;
 
-  if(!hasScope && !hasQuery && !hasTimeFilter && searchState.filter.k && searchState.filter.c && !searchState.filter.saved){
+  if(!hasScope && !hasQuery && !hasTimeFilter && !searchState.filter.saved){
     $('search-init-box').style.display='block';
     $('search-results-area').style.display='none';
     $('search-scope-bar').style.display='none';
@@ -1285,8 +1298,6 @@ function applySearch(reset=true){
     }
   }
 
-  if(searchState.filter.k) list=list.filter(w=>w.k===1);
-  if(searchState.filter.c) list=list.filter(w=>w.c===1);
   if(searchState.filter.saved) list=list.filter(w=>savedKeys.has(w.id));
 
   if(searchState.filter.time){
@@ -1601,8 +1612,10 @@ let curDoc=null, curWork=null;
 let wakeLock=null, wakeLockWanted=false, catalogBusy=false, ollamaPingController=null, readingMinuteTimer=null;
 
 function setBootStage(percent,text){
-  const fill=$('boot-fill'), stage=$('boot-stage');
-  if(fill)fill.style.width=Math.max(0,Math.min(100,percent))+'%';
+  const p=Math.max(0,Math.min(100,percent));
+  const fill=$('boot-fill'), stage=$('boot-stage'), pct=$('boot-percent');
+  if(fill)fill.style.width=p+'%';
+  if(pct)pct.textContent=Math.round(p)+'%';
   if(stage)stage.textContent=text;
 }
 function bindMobileUx(){
@@ -2490,12 +2503,6 @@ document.addEventListener('click',async(e)=>{
   else if(act==='q-clear') { $('q-input').value=''; searchState.query=''; applySearch(true); }
   else if(act==='scroll-top') $('v-search').scrollTo({top:0,behavior:'smooth'});
   else if(act==='clear-scope') { searchState.scope=null; searchState.query=''; $('q-input').value=''; applySearch(true); }
-  else if(act==='chip-toggle') {
-    const k=b.dataset.k;
-    searchState.filter[k]=!searchState.filter[k];
-    b.classList.toggle('active',searchState.filter[k]);
-    applySearch(true);
-  }
   else if(act==='chip-time') {
     const t=b.dataset.t;
     if(searchState.filter.time===t){
