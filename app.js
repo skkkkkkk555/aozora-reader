@@ -1827,7 +1827,16 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
 
     if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
 
-    if(st.kp && !document.body.classList.contains('low-power')) extractKeyphrases(doc.plain);
+    if(st.kp && !document.body.classList.contains('low-power')){
+      const schedule=fn=>{
+        if(typeof window.requestIdleCallback==='function') window.requestIdleCallback(fn,{timeout:1200});
+        else window.setTimeout(fn,450);
+      };
+      schedule(()=>{
+        if(tId!==readerTok||curWork?.id!==w.id||!$('reader')?.classList.contains('open'))return;
+        try{extractKeyphrases(doc.plain)}catch(err){console.debug('reader keyphrase enhancement skipped',err);}
+      });
+    }
   } catch(e){
     setReaderLoading(false);
     if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
