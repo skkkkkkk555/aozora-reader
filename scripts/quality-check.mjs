@@ -86,10 +86,14 @@ ok(html.includes('aozora-mobile-final-stability'),'mobile final stability CSS is
 ok(html.includes('max-width:300px!important'),'mobile toast is not compact');
 ok(html.includes('width:min(320px,calc(100vw - 28px))!important'),'mobile banner is not compact');
 ok(app.includes('const handlePhoneBack='),'direct mobile back handler is missing');
+ok(html.includes('http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"'),'index cache policy hardening missing');
+ok(smoke.includes('history.back()'),'mobile smoke does not simulate Android/browser back');
+ok(smoke.includes('readerHeaderBack.click()'),'mobile smoke does not click visible reader back');
+ok(smoke.includes('toastRect.width>320'),'mobile smoke does not verify compact toast size');
 ok(app.includes("const left=b.classList.contains('v')?Math.max(0,m.max-target):target"),'desktop vertical page position does not use stable LTR coordinates');
 ok(app.includes("b.scrollLeft=Math.max(0,Math.min(m.max,b.scrollLeft-d))"),'desktop vertical wheel direction is unstable');
 ok(app.includes("body.classList.remove('paper-turning-next','paper-turning-prev')"),'page turn still transforms article body');
-ok(html.includes('app.js?v=reader-mobile-zero-bug-v20261005-38'),'mobile zero-bug cache bust missing');
+ok(html.includes('app.js?v=reader-mobile-zero-bug-v20261005-39'),'mobile zero-bug cache bust missing');
 ok(html.includes('id="phone-global-back"'),'smartphone global back control missing');
 ok(html.includes('aozora-actual-device-fix'),'actual-device control hardening missing');
 ok(html.includes('.phone-icon-button .phone-svg'),'smartphone icon size hardening missing');
