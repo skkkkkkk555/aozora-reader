@@ -1975,6 +1975,19 @@ function setReaderChromeVisible(show){
   const reader=$('reader'),top=$('r-top'),dock=$('r-dock'),bottom=$('r-bottom-info');
   if(!reader||!top||!dock||!bottom)return;
   if(document.documentElement.dataset.device==='desktop')show=true;
+  if(document.documentElement.dataset.device==='desktop'){
+    // PCでは読書中に操作UIを消さない。古いhideクラスもここで確実に解除する。
+    [top,dock,bottom].forEach(el=>{
+      el.classList.remove('hide');
+      el.classList.add('show-temp');
+      el.style.removeProperty('transform');
+      el.style.removeProperty('opacity');
+      el.style.removeProperty('visibility');
+      el.style.removeProperty('pointer-events');
+    });
+    reader.classList.remove('chrome-hidden');
+    return;
+  }
   if(reader.classList.contains('mode-focus')){
     [top,dock,bottom].forEach(el=>el.classList.toggle('show-temp',!!show));
     reader.classList.toggle('chrome-hidden',!show);
@@ -4587,9 +4600,22 @@ window.addEventListener('DOMContentLoaded',()=>{
       curDoc=doc;
       const rendered=await renderPhoneReaderBody(body,doc.html,()=>state.reader&&String(state.work?.id)===String(w.id)&&$p('#phone-reader')?.classList.contains('phone-open'));
       if(!rendered)return;
+
+      // HTML描画が完了扱いでも、WebViewによってはDOMが空/不可視になることがある。
+      // その場合は即座にプレーン本文へ退避し、「読めない」状態を残さない。
+      const renderedText=String(body.textContent||'').replace(/\\s+/g,'').trim();
+      const plainText=String(doc.plain||'').replace(/\\s+/g,'').trim();
+      if(renderedText.length<20 && plainText.length>0){
+        body.innerHTML='';
+        body.classList.remove('reader-building');
+        body.classList.add('reader-plain-fallback');
+        body.style.whiteSpace='pre-wrap';
+        body.textContent=String(doc.plain||'');
+      }
       if(!ensureReaderBodyText(body,doc)){
         const e=new Error('本文を画面へ表示できませんでした');e.code='reader-display-empty';e.stage='render';throw e;
       }
+      body.style.display='block';
       body.style.visibility='visible';
       body.style.opacity='1';
       body.style.pointerEvents='auto';
@@ -4924,7 +4950,12 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='reader-retry'){void openReader(state.work,state.readerFromDetail).catch(err=>recordRuntimeError('phone-reader-open',err));return}
     if(act==='reader-ui-toggle'){
       const reader=$p('#phone-reader');
-      if(reader)reader.classList.remove('reader-chrome-hidden');
+      if(reader){
+        reader.classList.remove('reader-chrome-hidden');
+        // UI表示ボタン自身は常に操作可能なままにする。
+        reader.querySelector('.phone-reader-header')?.style.removeProperty('pointer-events');
+        reader.querySelector('.phone-reader-toolbar')?.style.removeProperty('pointer-events');
+      }
       return;
     }
     if(act==='bookmark'){addBookmark();return}
