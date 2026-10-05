@@ -4552,7 +4552,7 @@ window.addEventListener('DOMContentLoaded',()=>{
         '<button class="'+(done.has(w.id)?'active':'')+'" data-phone-action="detail-done">読了</button>'+
       '</div>'+
       '<div class="phone-detail-description">'+escP(w.desc||w.description||'青空文庫の公開作品です。本文を読みながら、栞・メモ・蛍光ペン・朗読などを利用できます。')+'</div>'+
-      '<button class="phone-primary" data-phone-action="detail-read" data-act="read-now">'+(p>0&&p<97?'続きから読む':'この作品を読む')+'</button>'+
+      '<button class="phone-primary" data-phone-action="detail-read">'+(p>0&&p<97?'続きから読む':'この作品を読む')+'</button>'+
       '<button class="phone-secondary" data-phone-action="detail-author">この作家の作品を見る</button>';
   }
 
