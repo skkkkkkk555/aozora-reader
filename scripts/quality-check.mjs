@@ -72,7 +72,7 @@ ok(app.includes("new Worker('./reader-worker.js')"),'reader parser worker missin
 ok(html.includes("worker-src 'self'"),'CSP does not permit the reader parser worker');
 ok(html.includes("app.js?v=reader-worker-scroll-paging-v20261005"),'reader worker cache-bust missing');
 ok(app.includes("function getReaderAxis"),'reader paging axis helper missing');
-ok(app.includes("columns:auto!important"),'reader column layout was not disabled');
+ok(html.includes("columns:auto!important"),'reader column layout was not disabled');
 
 ok(app.includes("classList.add('loading-bar-live')"),'loading feedback missing');
 ok(app.includes("hydrateSavedKeys"),'cached-book hydration missing');
