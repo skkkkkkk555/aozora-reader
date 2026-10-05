@@ -7972,6 +7972,136 @@ html[data-device="desktop"] #r-ui-toggle{
   }
 }
 </style>
+<style id="aozora-final-stability">
+/* ===== Final responsive hardening 2026-10-05 ===== */
+
+/* Smartphone shell: every generated card/control uses the viewport as a hard boundary. */
+html[data-device="smartphone"] #phone-app,
+html[data-device="smartphone"] #phone-app *{
+  box-sizing:border-box;
+}
+html[data-device="smartphone"] #phone-app{
+  width:100vw!important;
+  max-width:100vw!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  contain:none!important;
+}
+html[data-device="smartphone"] #phone-app > *{
+  max-width:100%!important;
+  min-width:0!important;
+}
+html[data-device="smartphone"] #phone-content,
+html[data-device="smartphone"] #phone-detail,
+html[data-device="smartphone"] #phone-reader{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+html[data-device="smartphone"] .phone-reader{
+  contain:none!important;
+}
+html[data-device="smartphone"] .phone-reader-body{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  overscroll-behavior-x:none!important;
+  contain:none!important;
+}
+html[data-device="smartphone"] .phone-reader-body img,
+html[data-device="smartphone"] .phone-reader-body video,
+html[data-device="smartphone"] .phone-reader-body iframe,
+html[data-device="smartphone"] .phone-reader-body canvas{
+  display:block;
+  max-width:100%!important;
+  width:auto;
+  height:auto;
+}
+html[data-device="smartphone"] .phone-reader-body pre,
+html[data-device="smartphone"] .phone-reader-body section,
+html[data-device="smartphone"] .phone-reader-body a{
+  max-width:100%!important;
+  min-width:0!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+html[data-device="smartphone"] .phone-reader-body.reader-plain-fallback{
+  white-space:pre-wrap!important;
+}
+
+/* Notifications: never let long diagnostic text/URLs determine the viewport width. */
+html[data-device="smartphone"] #banner,
+html[data-device="smartphone"] .toast,
+html.smartphone-ui[data-device="smartphone"] #banner,
+html.smartphone-ui[data-device="smartphone"] .toast{
+  box-sizing:border-box!important;
+  max-width:calc(100vw - 16px)!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+html[data-device="smartphone"] #banner span,
+html[data-device="smartphone"] .toast span{
+  min-width:0!important;
+  max-width:100%!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+html[data-device="smartphone"] #toast{
+  left:12px!important;
+  right:12px!important;
+  width:auto!important;
+}
+html[data-device="smartphone"] #toast,
+html[data-device="smartphone"] #toast.open,
+html.smartphone-ui[data-device="smartphone"] #toast,
+html.smartphone-ui[data-device="smartphone"] #toast.open{
+  transform:none!important;
+}
+html[data-device="smartphone"] #toast.open,
+html.smartphone-ui[data-device="smartphone"] #toast.open{
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+
+/* Sheet/detail controls cannot create an implicit form navigation. */
+html[data-device="smartphone"] #phone-app button,
+html[data-device="smartphone"] #phone-sheet button{
+  -webkit-appearance:none;
+  appearance:none;
+}
+
+/* Reader UI restore control must sit above every reader surface on PC. */
+html[data-device="desktop"] #reader{
+  isolation:isolate;
+}
+html[data-device="desktop"] #reader #r-ui-toggle{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  z-index:2147483000!important;
+}
+html[data-device="desktop"] #reader .r-bar,
+html[data-device="desktop"] #reader .r-dock,
+html[data-device="desktop"] #reader .r-bottom-bar{
+  position:relative;
+  z-index:200!important;
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  transform:none!important;
+}
+html[data-device="desktop"] #reader .r-dock{
+  display:grid!important;
+}
+</style>
 </head>
 <body>
 <!-- Dedicated smartphone application shell -->
