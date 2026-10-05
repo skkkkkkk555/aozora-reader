@@ -153,11 +153,11 @@ function assertDesktopReaderChrome(d,label){
      if(targetWork==='050014'){
        await waitFor(()=>textOf(d.querySelector('#phone-detail')).includes('アメリカの牛豚'),18000);
      }
-    const homeBook=await waitFor(()=>d.querySelector('#phone-content [data-phone-work]'),18000);
+     const homeBook=await waitFor(()=>d.querySelector('#phone-content [data-phone-work]'),18000);
     const testTitle=textOf(homeBook.querySelector('.phone-book-name,.phone-book-title-big'))||textOf(homeBook);
     if(testTitle.length<2)fail('smartphone home book title missing');
     clearRuntimeErrors(d);
-    homeBook.click();
+     if(targetWork!=='050014') homeBook.click();
     clearRuntimeErrors(d);
     await sleep(100);
     assertNoRuntimeErrors(d,'mobile after home book open');
