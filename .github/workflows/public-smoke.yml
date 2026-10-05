@@ -1,16 +1,14 @@
 name: Public Pages smoke
 
 on:
-  workflow_run:
-    workflows: ["pages build and deployment"]
-    types: [completed]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
   public-mobile-smoke:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Wait for Pages to serve the deployed asset
