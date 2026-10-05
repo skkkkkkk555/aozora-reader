@@ -5807,9 +5807,10 @@ html[data-theme="dark"][data-device="smartphone"] .phone-reader-header{
   background:rgba(16,16,16,.94);
 }
 html[data-device="smartphone"] .phone-reader.reader-chrome-hidden .phone-reader-header{
-  transform:translateY(-100%);
-  opacity:0;
-  pointer-events:none;
+  /* 戻るボタンだけは読書UIを隠していても常時使用可能にする。 */
+  transform:none!important;
+  opacity:1!important;
+  pointer-events:auto!important;
 }
 html[data-device="smartphone"] .phone-reader.reader-chrome-hidden .phone-reader-toolbar{
   transform:translateY(calc(100% + 18px));
@@ -8795,6 +8796,6 @@ html[data-device="desktop"] #reader .r-dock{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-display-fix-v20261005-18"></script>
+<script src="./app.js?v=reader-display-fix-v20261005-19"></script>
 </body>
 </html>
