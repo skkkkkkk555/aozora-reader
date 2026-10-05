@@ -1005,30 +1005,22 @@ function bookmarkEntriesForHome(){
   return groups;
 }
 function renderHomeBookmarks(){
-  const box=$('home-bookmarks'), section=$('home-bookmarks-section');
+  const box=$('home-bookmarks'),section=$('home-bookmarks-section');
   if(!box||!section)return;
   const groups=bookmarkEntriesForHome();
   section.style.display=groups.length?'block':'none';
   box.style.display=groups.length?'flex':'none';
   if(!groups.length){box.innerHTML='';return;}
   box.innerHTML=groups.slice(0,8).map(g=>{
-    const marks=g.items.slice(0,6);
-    return `<div class="home-bookmark-card">
-      <button class="home-bookmark-main" data-act="open-bookmark" data-id="${escAttr(g.w.id)}" data-f="${marks[0].f}">
-        <span class="home-bookmark-icon">🔖</span>
-        <span class="home-bookmark-text">
-          <strong>${esc(g.w.t)}</strong>
-          <small>${esc(g.w.a)} · ${marks.length}個のしおり</small>
-        </span>
-      </button>
-      <div class="home-bookmark-points">
-        ${marks.map((m,i)=>`<button class="home-bookmark-point ${i===0?'active':''}" title="${Math.round(m.f*100)}%" data-act="open-bookmark" data-id="${escAttr(g.w.id)}" data-f="${m.f}">
-          <span>${i+1}</span><em>${Math.round(m.f*100)}%</em>
-        </button>`).join('')}
-      </div>
-    </div>`;
+    const latest=g.items[0],pct=Math.round(latest.f*100);
+    return `<button class="home-bookmark-card" data-act="open-bookmark" data-id="${escAttr(g.w.id)}" data-f="${latest.f}">
+      <span class="home-bookmark-icon">🔖</span>
+      <span class="home-bookmark-text"><strong>${esc(g.w.t)}</strong><small>${esc(g.w.a)} · ${pct}% · ${g.items.length}個</small></span>
+      <span class="home-bookmark-arrow" aria-hidden="true">›</span>
+    </button>`;
   }).join('');
 }
+
 function renderHome(){
   $('home-clock').textContent=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
 
@@ -1568,7 +1560,7 @@ async function fetchHead(w){
     if(res.ok){
       const b=await readResponseBytes(res,SEC.maxResponseHeadBytes);if(!b)return '本文の取得をお試しください。';
       const t=new TextDecoder('shift_jis').decode(b);
-      return toPlain(parseAozora(t)).slice(0,90);
+      return parseAozora(t,true).plain.slice(0,90);
     }
   }catch{}
   return '本文の取得をお試しください。';
@@ -1586,18 +1578,7 @@ async function fetchBody(w){
   if(typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))throw new Error('invalid-book-path');
   const c=await idb.get('docs',w.id);
   if(c&&typeof c==='object'&&typeof c.html==='string'&&c.html.length<=4*1024*1024){
-    // safe:1 は fetchBody を通して一度だけ安全化済みのキャッシュ。
-    if(c.safe===1&&typeof c.plain==='string'&&c.plain.length<=SEC.maxBookBytes&&c.plain.trim().length>=20){
-      return c;
-    }
-    const safeHtml=sanitizeReaderHtml(c.html);
-    const safePlain=toPlain(safeHtml);
-    if(safeHtml.length<=4*1024*1024&&safePlain.length<=SEC.maxBookBytes&&safePlain.trim().length>=20){
-      const safeDoc={html:safeHtml,plain:safePlain,safe:1};
-      await idb.set('docs',w.id,safeDoc);
-      return safeDoc;
-    }
-    // 壊れた/空の旧キャッシュを残すと、通信に成功しても永遠に空本文を返すため破棄して再取得する。
+    if(c.safe===2&&typeof c.plain==='string'&&c.plain.length<=SEC.maxBookBytes&&c.plain.trim().length>=20)return c;
     try{await idb.del('docs',w.id);}catch{}
   }
   if(st.offline) throw new Error('オフラインです');
@@ -1625,55 +1606,63 @@ async function fetchBody(w){
     throw new Error('通信エラーが発生しました');
   }
   const txt=new TextDecoder('shift_jis').decode(buf);
-  const html=sanitizeReaderHtml(parseAozora(txt)),plain=toPlain(html);
-  const doc={html,plain,safe:1};
+  const parsed=parseAozora(txt,true);
+  const html=parsed.html,plain=parsed.plain;
+  const doc={html,plain,safe:2};
   await idb.set('docs',w.id,doc);
   savedKeys.add(w.id);
   return doc;
 }
 
 let midashiSeq=0;
-function parseAozora(raw){
+function aozoraPlain(raw){
+  let t=String(raw||'').replace(/\r\n?/g,'\n');
+  const ls=t.split('\n'),d=[];
+  ls.forEach((l,i)=>{if(/^-{20,}$/.test(l)&&i<60)d.push(i);});
+  t=d.length>=2?ls.slice(d[1]+1).join('\n'):ls.slice(2).join('\n');
+  const sourceIndex=t.search(/\n底本：/);
+  if(sourceIndex>0)t=t.slice(0,sourceIndex);
+  return t
+    .replace(/[０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0))
+    .replace(/｜([^《\n]+)《([^》\n]+)》/g,'$1')
+    .replace(/([\u4E00-\u9FFF々〆ヶ〇]+)《([^》\n]+)》/g,'$1')
+    .replace(/［＃[^］]*］/g,'')
+    .replace(/[ \t]+\n/g,'\n')
+    .trim();
+}
+function parseAozora(raw,withPlain=false){
   midashiSeq=0;
-  let t=raw.replace(/\r\n?/g,'\n');
-  const ls=t.split('\n'), d=[];
-  ls.forEach((l,i)=>{ if(/^-{20,}$/.test(l)&&i<60) d.push(i); });
+  let t=String(raw||'').replace(/\r\n?/g,'\n');
+  const ls=t.split('\n'),d=[];
+  ls.forEach((l,i)=>{if(/^-{20,}$/.test(l)&&i<60)d.push(i);});
   t=d.length>=2?ls.slice(d[1]+1).join('\n'):ls.slice(2).join('\n');
 
-  // 青空文庫の本文末尾にある底本・入力者・校正者等の由来情報は削除しない。
-  // 著作権保護期間満了作品についても、青空文庫はファイル内の由来情報を
-  // 残すことを求めているため、本文とは分離して読者に表示する。
   let sourceInfo='';
   const sourceIndex=t.search(/\n底本：/);
-  if(sourceIndex>0){
-    sourceInfo=t.slice(sourceIndex).trim();
-    t=t.slice(0,sourceIndex);
-  }
+  if(sourceIndex>0){sourceInfo=t.slice(sourceIndex).trim();t=t.slice(0,sourceIndex);}
+  const plain=aozoraPlain(raw);
 
   t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
    .replace(/[０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0))
-   .replace(/\b(\d{1,2})\b/g,'<span class="tcy">$1</span>')
    .replace(/｜([^《\n]+)《([^》\n]+)》/g,'<ruby>$1<rt>$2</rt></ruby>')
    .replace(/([\u4E00-\u9FFF々〆ヶ〇]+)《([^》\n]+)》/g,'<ruby>$1<rt>$2</rt></ruby>')
    .replace(/［＃「([^」]+)」に傍点］/g,'<em class="em">$1</em>')
    .replace(/［＃傍点］(.*?)［＃傍点終わり］/g,'<em class="em">$1</em>')
    .replace(/［＃「([^」]+)」に傍線］/g,'<u>$1</u>')
    .replace(/［＃太字］(.*?)［＃太字終わり］/g,'<b>$1</b>')
-   .replace(/［＃大見出し］([^\n]+)/g,()=>`<h2 class="serif" data-hid="h-${midashiSeq++}">$1</h2>`)
-   .replace(/［＃中見出し］([^\n]+)/g,()=>`<h3 class="serif" data-hid="h-${midashiSeq++}">$1</h3>`)
+   .replace(/［＃大見出し］([^\n]+)/g,(_,line)=>`<h2 class="serif" data-hid="h-${midashiSeq++}">${line}</h2>`)
+   .replace(/［＃中見出し］([^\n]+)/g,(_,line)=>`<h3 class="serif" data-hid="h-${midashiSeq++}">${line}</h3>`)
    .replace(/［＃(改ページ|改丁)］/g,'<hr class="aozora-page-break">')
    .replace(/［＃[^］]*］/g,'');
-  let html=t.replace(/\n/g,'<br>');
 
+  // 改行は<BR>要素に展開せず、そのまま保持してCSSのpre-wrapで表示する。
+  let html=t;
   if(sourceInfo){
-    const safeSource=esc(sourceInfo);
-    html+=`<section class="aozora-source-info" aria-label="青空文庫の作品情報">
-      <div class="aozora-source-title">青空文庫 作品情報</div>
-      <pre>${safeSource}</pre>
-    </section>`;
+    html+=`<section class="aozora-source-info" aria-label="青空文庫の作品情報"><div class="aozora-source-title">青空文庫 作品情報</div><pre>${esc(sourceInfo)}</pre></section>`;
   }
-  return html;
+  return withPlain?{html,plain}:html;
 }
+
 function toPlain(h){ const d=document.createElement('div'); d.innerHTML=h.replace(/<br>/g,'\n'); d.querySelectorAll('rt').forEach(x=>x.remove()); return d.textContent||''; }
 
 /* ==================== 9. 読書画面 & 表示 ==================== */
@@ -1838,7 +1827,7 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
 
     if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
 
-    if(st.kp && !document.body.classList.contains('low-power') && doc.plain.length<=120000){
+    if(false && st.kp && !document.body.classList.contains('low-power') && doc.plain.length<=120000){
       const schedule=fn=>{
         if(typeof window.requestIdleCallback==='function') window.requestIdleCallback(fn,{timeout:1200});
         else window.setTimeout(fn,2500);
