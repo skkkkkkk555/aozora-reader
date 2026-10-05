@@ -1831,25 +1831,53 @@ function renderReaderBody(){
   body.classList.add('paper-paged');
 }
 
-function getReaderPageSize(){
+function getReaderPageMetrics(){
   const b=$('body');
-  if(!b)return 1;
-  return Math.max(1,b.clientWidth||window.innerWidth||1);
+  if(!b)return {width:1,height:1,pt:0,pr:0,pb:0,pl:0};
+  const cs=getComputedStyle(b);
+  const pl=parseFloat(cs.paddingLeft)||0;
+  const pr=parseFloat(cs.paddingRight)||0;
+  const pt=parseFloat(cs.paddingTop)||0;
+  const pb=parseFloat(cs.paddingBottom)||0;
+  return {
+    width:Math.max(1,b.clientWidth-pl-pr),
+    height:Math.max(1,b.clientHeight-pt-pb),
+    pt,pr,pb,pl
+  };
+}
+function getReaderPageSize(){
+  return getReaderPageMetrics().width;
 }
 function getReaderPageCount(){
   const b=$('body');
   if(!b)return 1;
-  const size=getReaderPageSize();
-  const total=Math.max(0,b.scrollWidth-size);
-  return Math.max(1,Math.round(total/Math.max(1,size))+1);
+  const step=getReaderPageSize();
+  const travel=Math.max(0,b.scrollWidth-b.clientWidth);
+  return Math.max(1,Math.ceil((travel+0.5)/step)+1);
 }
 function getReaderPageIndex(){
   const b=$('body');
   const count=getReaderPageCount();
   if(!b||count<=1)return 0;
-  const size=getReaderPageSize();
-  const raw=b.classList.contains('v')?Math.abs(b.scrollLeft):b.scrollLeft;
-  return Math.max(0,Math.min(count-1,Math.round(raw/size)));
+  const step=getReaderPageSize();
+  const raw=Math.abs(Number(b.scrollLeft)||0);
+  return Math.max(0,Math.min(count-1,Math.round(raw/step)));
+}
+function syncReaderPagination(preserveFraction=null){
+  const b=$('body');
+  if(!b||!b.classList.contains('paper-paged'))return;
+  const metrics=getReaderPageMetrics();
+  b.style.setProperty('--reader-page-width',metrics.width+'px');
+  if(preserveFraction===null||!Number.isFinite(Number(preserveFraction))){
+    updateProgress(true);
+    return;
+  }
+  requestAnimationFrame(()=>{
+    const count=getReaderPageCount();
+    const idx=Math.max(0,Math.min(count-1,Math.round(Number(preserveFraction)*Math.max(0,count-1))));
+    setReaderPage(idx,false);
+    updateProgress(true);
+  });
 }
 function readerPageProgress(index=getReaderPageIndex()){
   const count=getReaderPageCount();
@@ -1872,8 +1900,9 @@ function setReaderPage(index,animate=true){
   if(!b)return;
   const count=getReaderPageCount();
   const clamped=Math.max(0,Math.min(count-1,Number(index)||0));
-  const size=getReaderPageSize();
-  const target=clamped*size;
+  const step=getReaderPageSize();
+  const maxTravel=Math.max(0,b.scrollWidth-b.clientWidth);
+  const target=Math.min(maxTravel,clamped*step);
   const isV=b.classList.contains('v');
 
   if(animate) playPaperTurn(clamped>getReaderPageIndex()?'next':'prev');
@@ -2105,13 +2134,22 @@ function applyReaderMode(){
 }
 
 function applyReaderConfig(){
-  $('body').style.setProperty('--r-fs',st.fs+'px');
-  $('body').style.setProperty('--r-lh',st.lh);
-  $('body').style.fontFamily=st.font==='gothic'?'var(--font-sans)':'var(--font-serif)';
-  $('body').classList.toggle('v',st.v!==false);
-  $('body').classList.add('paper-paged');
+  const b=$('body');
+  const open=!!$('reader')?.classList.contains('open');
+  const preserve=open&&curDoc&&b?.getAttribute('aria-busy')!=='true'?readerPageProgress():null;
+
+  b.style.setProperty('--r-fs',st.fs+'px');
+  b.style.setProperty('--r-lh',st.lh);
+  b.style.fontFamily=st.font==='gothic'?'var(--font-sans)':'var(--font-serif)';
+  b.classList.toggle('v',st.v!==false);
+  b.classList.add('paper-paged');
   applyReaderMode();
-  if($('reader')?.classList.contains('open')) requestAnimationFrame(()=>updateProgress(true));
+
+  if(open){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>syncReaderPagination(preserve)));
+  }else{
+    syncReaderPagination(null);
+  }
 }
 
 function checkNightWarm(){
@@ -2537,8 +2575,16 @@ function switchView(vid){
 
 document.addEventListener('input',e=>{
   const el=e.target.closest?.('[data-act]');if(!el)return;
-  if(el.dataset.act==='set-fs-range'){st.fs=Math.max(14,Math.min(32,Number(el.value)||18));applyReaderConfig();save();}
-  else if(el.dataset.act==='set-lh-range'){st.lh=Math.max(1.6,Math.min(2.6,Number(el.value)||2.1));applyReaderConfig();save();}
+  if(el.dataset.act==='set-fs-range'){
+    st.fs=Math.max(14,Math.min(32,Number(el.value)||18));
+    safeText('r-fs-value',st.fs+'px');
+    applyReaderConfig();save();
+  }
+  else if(el.dataset.act==='set-lh-range'){
+    st.lh=Math.max(1.6,Math.min(2.8,Number(el.value)||2.1));
+    safeText('r-lh-value',Number(st.lh).toFixed(1));
+    applyReaderConfig();save();
+  }
 });
 document.addEventListener('change',e=>{
   const b=e.target.closest('[data-act="sel-speed-change"]');
@@ -2826,14 +2872,14 @@ document.addEventListener('click',async(e)=>{
   }
   else if(act==='r-cfg'){
     sheet('表示設定',`
-      <div style="display:flex; flex-direction:column; gap:20px">
-        <div style="display:flex; justify-content:space-between; align-items:center">
-          <span>文字サイズ (${st.fs}px)</span>
-          <input type="range" min="14" max="32" value="${st.fs}" data-act="set-fs-range" style="height:44px; width:160px">
+      <div class="reader-config-panel">
+        <div class="reader-config-row">
+          <div><span class="reader-config-label">文字サイズ</span><output id="r-fs-value">${st.fs}px</output></div>
+          <input type="range" min="14" max="32" step="1" value="${st.fs}" data-act="set-fs-range" aria-label="文字サイズ">
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:center">
-          <span>行間 (${st.lh})</span>
-          <input type="range" min="1.6" max="2.6" step="0.1" value="${st.lh}" data-act="set-lh-range" style="height:44px; width:160px">
+        <div class="reader-config-row">
+          <div><span class="reader-config-label">行間</span><output id="r-lh-value">${Number(st.lh).toFixed(1)}</output></div>
+          <input type="range" min="1.6" max="2.8" step="0.1" value="${st.lh}" data-act="set-lh-range" aria-label="行間">
         </div>
       </div>`);
   }
@@ -3003,6 +3049,15 @@ $('r-slider').oninput=e=>{
   lastUserActivityTime=Date.now();
   setReaderPage(Number(e.target.value)||0,false);
 };
+let readerLayoutResizeTimer=0;
+window.addEventListener('resize',()=>{
+  if(!$('reader')?.classList.contains('open'))return;
+  clearTimeout(readerLayoutResizeTimer);
+  readerLayoutResizeTimer=setTimeout(()=>{
+    const preserve=readerPageProgress();
+    syncReaderPagination(preserve);
+  },80);
+},{passive:true});
 
 $('rng-goal').oninput=e=>{ goalMin=parseInt(e.target.value,10); $('cal-goal-txt').textContent=goalMin+'分'; save(); renderCalendar(); renderHome(); };
 $('r-search-inp').oninput=()=>execInBookSearch();
@@ -3062,6 +3117,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
   await safeStep(()=>applyPerformanceMode(),'performance');
   safeStage(30,'保存データを読み込み中…');
   await safeStep(()=>load(),'state');
+  await safeStep(()=>{ window.__aozoraPhoneSyncSettings?.(); },'phone-reader-settings');
 
   await safeStep(()=>applyPerformanceMode(),'performance-after-load');
   safeStage(52,'読書設定を反映中…');
@@ -4076,8 +4132,8 @@ window.addEventListener('DOMContentLoaded',()=>{
       '<button class="phone-sheet-row" data-phone-action="tts"><span>▷</span><b>朗読</b></button>'+
       '<button class="phone-sheet-row" data-phone-action="reader-search"><span>⌕</span><b>本文を検索</b></button>'+
       '<button class="phone-sheet-row" data-phone-action="reader-toc"><span>≡</span><b>目次を開く</b></button>'+
-      '<button class="phone-sheet-row" data-phone-action="reader-font"><span>Aa</span><b>文字サイズ</b><small>'+state.readerFs+'px</small></button>'+
-      '<button class="phone-sheet-row" data-phone-action="reader-line"><span>↕</span><b>行間</b><small>'+Number(state.readerLh).toFixed(1)+'</small></button>'+
+      '<div class="phone-reader-setting"><div><b>文字サイズ</b><strong id="phone-reader-font-value">'+state.readerFs+'px</strong></div><input id="phone-reader-font-range" type="range" min="14" max="32" step="1" value="'+state.readerFs+'" aria-label="文字サイズ"></div>'+
+      '<div class="phone-reader-setting"><div><b>行間</b><strong id="phone-reader-line-value">'+Number(state.readerLh).toFixed(1)+'</strong></div><input id="phone-reader-line-range" type="range" min="1.6" max="2.8" step="0.1" value="'+state.readerLh+'" aria-label="行間"></div>'+
       '<button class="phone-sheet-row" data-phone-action="reader-theme"><span>◐</span><b>テーマ</b></button>'+
       '<button class="phone-sheet-row" data-phone-action="reader-share"><span>↗</span><b>作品を共有</b></button>'+
       '<button class="phone-sheet-row" data-phone-action="reader-wake"><span>□</span><b>画面を消さない</b></button>'+
@@ -4100,20 +4156,48 @@ window.addEventListener('DOMContentLoaded',()=>{
     const next=cur==='auto'?'sepia':cur==='sepia'?'dark':'auto';
     st.theme=next;applySettings();save();renderSettings();toast('テーマを変更しました');
   }
+  function applyPhoneReaderTypography(kind,value){
+    const b=currentReaderBody();
+    const oldFraction=fraction();
+    if(kind==='font')state.readerFs=Math.max(14,Math.min(32,Number(value)||19));
+    else state.readerLh=Math.max(1.6,Math.min(2.8,Number(value)||2.05));
+    st.fs=state.readerFs;
+    st.lh=state.readerLh;
+    if(b){
+      b.style.setProperty('--phone-reader-fs',state.readerFs+'px');
+      b.style.setProperty('--phone-reader-lh',state.readerLh);
+      requestAnimationFrame(()=>{
+        b.scrollTop=oldFraction*Math.max(0,b.scrollHeight-b.clientHeight);
+      });
+    }
+    save();
+    const fv=$p('#phone-reader-font-value');if(fv)fv.textContent=state.readerFs+'px';
+    const lv=$p('#phone-reader-line-value');if(lv)lv.textContent=Number(state.readerLh).toFixed(1);
+  }
   function cycleFont(){
-    const seq=[17,19,21,23];let i=seq.indexOf(Number(state.readerFs));state.readerFs=seq[(i+1)%seq.length];st.fs=state.readerFs;save();
-    const b=currentReaderBody();if(b)b.style.setProperty('--phone-reader-fs',state.readerFs+'px');
-    if(state.sheetOpen)readerMenu();
-    else if(!state.reader)renderSettings();
+    const next=Math.min(32,Number(state.readerFs||19)+1);
+    applyPhoneReaderTypography('font',next);
     toast('文字サイズ '+state.readerFs+'px');
   }
   function cycleLine(){
-    const seq=[1.8,2.05,2.3,2.55];let i=seq.findIndex(x=>Math.abs(x-Number(state.readerLh))<.01);state.readerLh=seq[(i+1)%seq.length];st.lh=state.readerLh;save();
-    const b=currentReaderBody();if(b)b.style.setProperty('--phone-reader-lh',state.readerLh);
-    if(state.sheetOpen)readerMenu();
-    else if(!state.reader)renderSettings();
-    toast('行間 '+state.readerLh);
+    const next=Math.min(2.8,Number(state.readerLh||2.05)+0.1);
+    applyPhoneReaderTypography('line',next);
+    toast('行間 '+Number(state.readerLh).toFixed(1));
   }
+  document.addEventListener('input',e=>{
+    if(!isPhone())return;
+    if(e.target?.id==='phone-reader-font-range')applyPhoneReaderTypography('font',e.target.value);
+    else if(e.target?.id==='phone-reader-line-range')applyPhoneReaderTypography('line',e.target.value);
+  });
+  window.__aozoraPhoneSyncSettings=()=>{
+    state.readerFs=Math.max(14,Math.min(32,Number(st?.fs)||19));
+    state.readerLh=Math.max(1.6,Math.min(2.8,Number(st?.lh)||2.05));
+    const b=currentReaderBody();
+    if(b){
+      b.style.setProperty('--phone-reader-fs',state.readerFs+'px');
+      b.style.setProperty('--phone-reader-lh',state.readerLh);
+    }
+  };
   async function toggleWake(){
     if(typeof wakeLock==='undefined'||typeof requestScreenWakeLock!=='function'){toast('画面維持は利用できません');return}
     if(wakeLock){await releaseScreenWakeLock();toast('画面維持を解除しました');}
