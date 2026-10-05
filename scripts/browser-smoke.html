@@ -1,9 +1,6 @@
 <!doctype html>
 <html lang="ja">
-<head>
-<meta charset="utf-8">
-<title>Browser smoke test</title>
-</head>
+<head><meta charset="utf-8"><title>Browser smoke test</title></head>
 <body>
 <iframe id="app-frame" title="app" style="width:100vw;height:100vh;border:0"></iframe>
 <script>
@@ -25,8 +22,11 @@ function visible(el){
   const cs=el.ownerDocument.defaultView.getComputedStyle(el);
   return !el.hidden&&cs.display!=='none'&&cs.visibility!=='hidden';
 }
-function smokeText(d,selector){
-  return String(d.querySelector(selector)?.innerText||'').trim();
+function textOf(el){
+  return String(el?.textContent||'').replace(/\s+/g,' ').trim();
+}
+function readerText(d){
+  return textOf(d.querySelector('#phone-reader-body'))||textOf(d.querySelector('#body'));
 }
 (async()=>{
   frame.src='../index.html?browser-smoke='+Date.now();
@@ -41,31 +41,31 @@ function smokeText(d,selector){
   if(mode==='mobile'){
     if(device!=='smartphone')fail('smartphone detection failed: '+device);
 
-    const searchTab=await waitFor(()=>d.querySelector('[data-phone-tab="search"]'),5000);
-    searchTab.click();
-    const input=await waitFor(()=>d.querySelector('#phone-search-input'),5000);
-    input.value='めくらぶどうと虹';
-    input.dispatchEvent(new Event('input',{bubbles:true}));
+    const homeBook=await waitFor(()=>d.querySelector('#phone-content [data-phone-work]'),18000);
+    const testTitle=textOf(homeBook.querySelector('.phone-book-name,.phone-book-title-big'))||textOf(homeBook);
+    if(testTitle.length<2)fail('smartphone home book title missing');
+    homeBook.click();
 
-    const result=await waitFor(()=>d.querySelector('#phone-search-results [data-phone-work]'),12000);
-    result.click();
-    const read=await waitFor(()=>d.querySelector('#phone-detail [data-phone-action="detail-read"]'),5000);
+    const read=await waitFor(()=>d.querySelector('#phone-detail [data-phone-action="detail-read"]'),6000);
     read.click();
+    await waitFor(()=>visible(d.querySelector('#phone-reader'))&&d.querySelector('#phone-reader').classList.contains('phone-open'),6000);
+    await waitFor(()=>readerText(d).length>80&&!/本文を読み込んでいます/.test(readerText(d))&&!/本文を読み込めませんでした/.test(readerText(d)),20000);
 
-    await waitFor(()=>visible(d.querySelector('#phone-reader'))&&d.querySelector('#phone-reader').classList.contains('phone-open'),5000);
-    await waitFor(()=>{
-      const text=smokeText(d,'#phone-reader-body');
-      return text.length>80&&!/本文を読み込んでいます/.test(text)&&!/本文を読み込めませんでした/.test(text);
-    },20000);
-
-    const back=await waitFor(()=>d.querySelector('#phone-reader [data-phone-action="reader-back"]'),4000);
-    back.click();
+    const readerBack=await waitFor(()=>d.querySelector('#phone-reader [data-phone-action="reader-back"]'),4000);
+    readerBack.click();
     await waitFor(()=>!d.querySelector('#phone-reader')?.classList.contains('phone-open'),5000);
     await waitFor(()=>visible(d.querySelector('#phone-detail')),4000);
 
     const detailBack=await waitFor(()=>d.querySelector('#phone-detail [data-phone-action="detail-back"]'),4000);
     detailBack.click();
     await waitFor(()=>!visible(d.querySelector('#phone-detail')),5000);
+
+    const searchTab=await waitFor(()=>d.querySelector('[data-phone-tab="search"]'),4000);
+    searchTab.click();
+    const input=await waitFor(()=>d.querySelector('#phone-search-input'),5000);
+    input.value=testTitle;
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    await waitFor(()=>d.querySelector('#phone-search-results [data-phone-work]'),12000);
 
     const settings=await waitFor(()=>d.querySelector('[data-phone-tab="settings"]'),4000);
     settings.click();
@@ -76,34 +76,34 @@ function smokeText(d,selector){
   }else{
     if(device==='smartphone')fail('desktop detection unexpectedly smartphone');
 
-    const search=await waitFor(()=>d.querySelector('[data-act="nav"][data-v="v-search"]'),5000);
-    search.click();
-    const input=await waitFor(()=>d.querySelector('#q-input'),5000);
-    input.value='めくらぶどうと虹';
-    input.dispatchEvent(new Event('input',{bubbles:true}));
+    const homeEntry=await waitFor(()=>d.querySelector('#v-home [data-act="feat-read"],#v-home [data-act="open-book"],#v-home [data-act="resume-click"],#v-home [data-act="feat-click"]'),18000);
+    homeEntry.click();
 
-    const result=await waitFor(()=>d.querySelector('#search-tiles [data-act="open-book"]'),12000);
-    result.click();
-    await waitFor(()=>d.querySelector('#sheet')?.classList.contains('open'),5000);
+    const sheetOrReader=await waitFor(()=>d.querySelector('#reader')?.classList.contains('open')||d.querySelector('#sheet')?.classList.contains('open'),7000);
+    if(!d.querySelector('#reader')?.classList.contains('open')){
+      const readNow=await waitFor(()=>d.querySelector('#sheet [data-act="read-now"]'),6000);
+      readNow.click();
+      await waitFor(()=>d.querySelector('#reader')?.classList.contains('open'),7000);
+    }
+    const testTitle=await waitFor(()=>textOf(d.querySelector('#r-title'))||textOf(d.querySelector('#feat-t'))||textOf(d.querySelector('#res-t')),5000);
+    if(testTitle.length<2)fail('desktop book title missing');
 
-    const readNow=await waitFor(()=>d.querySelector('#sheet [data-act="read-now"]'),5000);
-    readNow.click();
-    await waitFor(()=>d.querySelector('#reader')?.classList.contains('open'),7000);
+    await waitFor(()=>readerText(d).length>80&&!/本文を読み込んでいます/.test(readerText(d))&&!/本文を読み込めませんでした/.test(readerText(d)),20000);
 
-    await waitFor(()=>{
-      const text=smokeText(d,'#body');
-      return text.length>80&&!/本文を読み込んでいます/.test(text)&&!/本文を読み込めませんでした/.test(text);
-    },20000);
-
-    const back=d.querySelector('[data-act="r-back"]');
-    if(!back)fail('desktop reader back missing');
+    const back=await waitFor(()=>d.querySelector('[data-act="r-back"]'),4000);
     back.click();
     await waitFor(()=>!d.querySelector('#reader')?.classList.contains('open'),5000);
 
-    const settings=await waitFor(()=>d.querySelector('[data-act="nav"][data-v="v-settings"]'),5000);
+    const search=await waitFor(()=>d.querySelector('[data-act="nav"][data-v="v-search"]'),5000);
+    search.click();
+    const input=await waitFor(()=>d.querySelector('#q-input'),5000);
+    input.value=testTitle;
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    await waitFor(()=>d.querySelector('#search-tiles [data-act="open-book"]'),12000);
+
+    const settings=await waitFor(()=>d.querySelector('[data-act="nav"][data-v="v-settings"]'),4000);
     settings.click();
     await waitFor(()=>d.querySelector('#v-settings')?.classList.contains('active'),5000);
-
     const home=await waitFor(()=>d.querySelector('[data-act="nav"][data-v="v-home"]'),4000);
     home.click();
     await waitFor(()=>d.querySelector('#v-home')?.classList.contains('active'),4000);
