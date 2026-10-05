@@ -294,7 +294,7 @@ const normalizeOllamaUrl=(value='')=>{
 const canUseOllama=()=>st.ollamaEnabled&&!st.offline&&isSafeOllamaUrl(st.oUrl);
 const BROWSER_SMOKE=/(?:[?&])browser-smoke(?:=|&|$)/.test(location.search);
 const LIVE_BROWSER_SMOKE=/(?:[?&])browser-smoke-live(?:=|&|$)/.test(location.search);
-const READER_ASSET_VERSION='20261005-04';
+const READER_ASSET_VERSION='20261005-05';
 const safeEl = id => document.getElementById(id) || null;
 async function hydrateSavedKeys(){
   const keys=await idb.keys('docs');
@@ -2035,7 +2035,11 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
       const f=(bookmarkF!==null&&Number.isFinite(Number(bookmarkF)))?Math.max(0,Math.min(1,Number(bookmarkF))):(pos[w.id]?.f||0);
       if(f<=0){
         const b=$('body');
-        if(b)b.scrollLeft=0;
+        if(b){
+          // 縦書き/横書きのどちらでも、0%は必ず作品冒頭。
+          b.scrollLeft=0;
+          b.scrollTop=0;
+        }
         safeText('r-prog','0%');
         const slider=$('r-slider');
         if(slider)slider.value='0';
@@ -2114,6 +2118,10 @@ function setLayerLoading(layer,show){
 function resetDesktopReaderBody(){
   const body=$('body');
   if(!body)return;
+  // 新しい作品を開くたび、前の作品のスクロール位置を完全に破棄する。
+  // 特に横書きでは残ったscrollTopが「最終ページから開始」する原因になる。
+  body.scrollTop=0;
+  body.scrollLeft=0;
   body.setAttribute('aria-busy','true');
   body.classList.remove('paper-paged','v','reader-building','reader-page-next','reader-page-prev','paper-turning-next','paper-turning-prev');
   body.style.removeProperty('--reader-page-width');
@@ -4416,6 +4424,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!fromHistory&&history.state?.phoneLayer!=='phone-detail')history.pushState({...history.state,phoneLayer:'phone-detail'},'',location.href);
     syncScreens('detail',direction);
     const d=$p('#phone-detail');if(!d)return;
+    d.scrollTop=0;
     const p=Math.round(progressOf(w)*100), f=progressOf(w);
     d.innerHTML='<div class="phone-detail-nav">'+
       '<button class="phone-icon-button" data-phone-action="detail-back" aria-label="戻る"><svg class="phone-svg" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>'+
@@ -4484,6 +4493,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       phoneReaderContentReady=true;
       setPhoneReaderLoading(false);
       body.scrollTop=0;
+      body.scrollLeft=0;
       let progressRaf=0;
       body.onscroll=()=>{
         if(progressRaf)return;
