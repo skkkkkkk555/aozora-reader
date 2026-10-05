@@ -15,7 +15,7 @@ jobs:
         run: |
           set -eu
           target='https://skkkkkkk555.github.io/aozora-reader/index.html'
-          expected='app.js?v=reader-mobile-zero-bug-v20261005-43'
+          expected='app.js?v=reader-mobile-zero-bug-v20261005-44'
           for i in $(seq 1 60); do
             body="$(curl -fsSL --retry 2 --connect-timeout 5 --max-time 15 "$target" || true)"
             if printf '%s' "$body" | grep -Fq "$expected"; then
