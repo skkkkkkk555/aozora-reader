@@ -13,6 +13,7 @@ const rightsManifest=readFileSync(new URL('../rights-allowlist.json',import.meta
 
 const fail=[];
 const ok=(condition,message)=>{if(!condition)fail.push(message);};
+ok(app.includes('pos=Number(d.readerProgressVersion)===READER_PROGRESS_VERSION?(d.pos||{}):{};'),'legacy reader progress migration is not enforced');
 ok(app.includes('let readerPositionReady=false'),'reader initial-position guard missing');
 ok(app.includes('!readerPositionReady'),'progress guard is not tied to initial-position readiness');
 ok(app.includes('const READER_PROGRESS_VERSION=2'),'reader progress schema version missing');
