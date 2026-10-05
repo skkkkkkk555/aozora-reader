@@ -39,7 +39,7 @@ for(const [id,count] of idCounts)ok(count===1,`duplicate id: ${id}`);
 for(const id of ['phone-app','phone-content','phone-detail','phone-reader','phone-reader-body','phone-reader-progress','phone-sheet','phone-sheet-body','phone-sheet-scrim'])ok(new RegExp(`id=["']${id}["']`).test(html),`smartphone shell id missing: ${id}`);
 ok(inlineScripts.length===0,'inline script remains and may be blocked by CSP');
 ok(html.includes('touch-action:pan-y!important'),'smartphone reader body does not allow vertical touch scrolling');
-ok(html.includes('app.js?v=ios-deep-20261005-rights4'),'app.js cache-bust was not refreshed');
+ok(html.includes('app.js?v=ios-deep-20261005-persist1'),'app.js cache-bust was not refreshed');
 ok(app.includes("reader.classList.add('phone-open')"),'smartphone reader open class lifecycle missing');
 ok(html.includes('.phone-reader.phone-open{display:flex!important}'),'smartphone reader display rule missing');
 ok(app.includes('__aozoraPhoneOpenSheet=openPhoneSheet'),'global sheet bridge missing');
@@ -98,7 +98,11 @@ let rightsIds=[];try{rightsIds=JSON.parse(rightsManifest)}catch{}
 ok(Array.isArray(rightsIds)&&rightsIds.length>1000&&rightsIds.length<30000,'rights allowlist size is invalid');
 ok(Array.isArray(rightsIds)&&rightsIds.every(id=>/^\d{6}$/.test(String(id))),'rights allowlist contains invalid IDs');
 ok(!Array.isArray(rightsIds)||!rightsIds.includes('061517'),'known excluded work is present in rights allowlist');
-ok(app.includes("const CATALOG_CACHE_KEY='cat-rights-v4'"),'legacy unverified catalog cache key is still in use');
+ok(app.includes("const CATALOG_CACHE_KEY='cat-rights-v5'"),'persistent catalog cache key is missing');
+ok(app.includes("const RIGHTS_CACHE_KEY='rights-allowlist-v1'"),'persistent rights cache key is missing');
+ok(app.includes('requestPersistentStorage'),'persistent storage request is missing');
+ok(app.includes('loadCachedCatalog'),'persistent catalog restore helper is missing');
+ok(app.includes('LEGACY_CATALOG_CACHE_KEY'),'legacy verified catalog migration is missing');
 ok(app.includes("const authorRightsFlag = cols[26]"),'CSV import does not inspect person copyright flag');
 
 ok(app.includes('m.delete(id); blocked.add(id); continue;'),'CSV import does not permanently exclude a work after any protected author row');
