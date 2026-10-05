@@ -1,0 +1,51 @@
+name: Public Pages smoke
+
+on:
+  workflow_run:
+    workflows: ["pages build and deployment"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  public-mobile-smoke:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Pages to serve the deployed asset
+        run: |
+          set -eu
+          target='https://skkkkkkk555.github.io/aozora-reader/index.html'
+          expected='app.js?v=reader-mobile-zero-bug-v20261005-43'
+          for i in $(seq 1 60); do
+            body="$(curl -fsSL --retry 2 --connect-timeout 5 --max-time 15 "$target" || true)"
+            if printf '%s' "$body" | grep -Fq "$expected"; then
+              echo "Public Pages is serving $expected"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Public Pages did not expose $expected"
+          exit 1
+
+      - name: Run public smartphone smoke test
+        run: |
+          set -eu
+          BROWSER="$(command -v chromium || command -v google-chrome || command -v chromium-browser)"
+          timeout 180s "$BROWSER" \
+            --headless \
+            --no-sandbox \
+            --disable-gpu \
+            --disable-dev-shm-usage \
+            --window-size=412,915 \
+            --user-agent='Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36' \
+            --timeout=120000 \
+            --dump-dom \
+            'https://skkkkkkk555.github.io/aozora-reader/scripts/browser-smoke.html?mode=live-mobile' \
+            > /tmp/public-mobile-smoke.html
+          grep -q 'LIVE_MOBILE_SMOKE_OK' /tmp/public-mobile-smoke.html || {
+            cat /tmp/public-mobile-smoke.html
+            exit 1
+          }
+          echo 'PUBLIC_LIVE_MOBILE_SMOKE_OK'
