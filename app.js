@@ -813,7 +813,7 @@ async function fetchCatalog({background=false,notifyOnFail=false}={}){
     if(csvText){
       if(!background&&bar)bar.style.width='70%';
       if(!background&&log)log.textContent='CSVを解析中…';
-      await parseCsv(csvText);
+      await parseCsv(csvText,{background});
       return true;
     }
     if(!background&&bar)bar.style.width='50%';
@@ -827,7 +827,7 @@ async function fetchCatalog({background=false,notifyOnFail=false}={}){
     if(!cf||!z.files[cf]||z.files[cf].dir)throw new Error('catalog-csv-missing');
     csvText=await z.files[cf].async('string');
     if(csvText.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
-    await parseCsv(csvText);
+    await parseCsv(csvText,{background});
     return true;
   }catch(e){
     console.warn('catalog fetch rejected:',e);
@@ -857,10 +857,10 @@ function parseFile(file){
         if(!cf||!z.files[cf]||z.files[cf].dir)throw new Error('catalog-csv-missing');
         const txt=await z.files[cf].async('string');
         if(txt.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
-        await parseCsv(txt);
+        await parseCsv(txt,{background:false});
       }else{
         if(typeof r.result!=='string'||r.result.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
-        await parseCsv(r.result);
+        await parseCsv(r.result,{background:false});
       }
     }catch(e){
       console.warn('catalog file rejected:',e);
@@ -870,7 +870,7 @@ function parseFile(file){
   if(file.name.toLowerCase().endsWith('.zip')) r.readAsArrayBuffer(file); else r.readAsText(file);
 }
 
-async function parseCsv(csv){
+async function parseCsv(csv,{background=false}={}){
   if(typeof csv!=='string'||csv.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
   $('c-bar').style.width='70%'; $('c-log').textContent='解析中…';
   const lines=csv.split('\n');
@@ -925,7 +925,7 @@ async function parseCsv(csv){
   filterWorks();
   await idb.set('k','cat',allWorks);
   $('c-bar').classList.remove('loading-bar-live'); $('c-bar').style.width='100%'; $('c-log').textContent='完了しました！';
-  setTimeout(()=>{ closeSheet(); renderHome(); toast('作品カタログを取り込みました'); },400);
+  if(background){renderHome();}else setTimeout(()=>{ closeSheet(); renderHome(); toast('作品カタログを取り込みました'); },400);
 }
 
 // 欠落検査 (4並列・自動除外)
