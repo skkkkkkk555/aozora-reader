@@ -8680,6 +8680,150 @@ html[data-device="smartphone"] .phone-reader-body.phone-reader-vertical > .reade
   opacity:1!important;
 }
 </style>
+
+<style id="aozora-mobile-final-stability">
+/* ===== Mobile final stability pass ===== */
+/* Use the in-header back buttons as the only visible back controls.
+   The separate global control remains in DOM for compatibility but never covers content. */
+html[data-device="smartphone"] #phone-global-back{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+html[data-device="smartphone"] .phone-reader-header,
+html[data-device="smartphone"] .phone-detail-nav{
+  position:relative!important;
+  z-index:100!important;
+}
+html[data-device="smartphone"] .phone-reader-header .phone-icon-button:first-child,
+html[data-device="smartphone"] .phone-detail-nav .phone-icon-button:first-child{
+  width:46px!important;height:46px!important;
+  min-width:46px!important;min-height:46px!important;
+  display:grid!important;
+  place-items:center!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+}
+html[data-device="smartphone"] .phone-reader-header .phone-svg,
+html[data-device="smartphone"] .phone-detail-nav .phone-svg{
+  width:28px!important;height:28px!important;
+  min-width:28px!important;min-height:28px!important;
+}
+
+/* Notifications are compact messages, never full-width cards. */
+html[data-device="smartphone"] #banner{
+  width:min(320px,calc(100vw - 28px))!important;
+  max-width:320px!important;
+  min-height:0!important;
+  max-height:64px!important;
+  padding:8px 9px 8px 11px!important;
+  gap:7px!important;
+  border-radius:13px!important;
+  font-size:12px!important;
+  line-height:1.3!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.18)!important;
+}
+html[data-device="smartphone"] #banner span{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  overflow:hidden!important;
+  line-height:1.3!important;
+}
+html[data-device="smartphone"] #banner .sm-btn{
+  min-height:32px!important;
+  height:32px!important;
+  padding:0 9px!important;
+  border-radius:9px!important;
+  font-size:11px!important;
+}
+html[data-device="smartphone"] #toast{
+  left:50%!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:calc(78px + env(safe-area-inset-bottom))!important;
+  width:min(300px,calc(100vw - 36px))!important;
+  max-width:300px!important;
+  min-height:0!important;
+  max-height:48px!important;
+  padding:7px 10px!important;
+  border-radius:12px!important;
+  font-size:12px!important;
+  line-height:1.25!important;
+  transform:translate(-50%,10px)!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.20)!important;
+}
+html[data-device="smartphone"] #toast.open{
+  transform:translate(-50%,0)!important;
+}
+html[data-device="smartphone"] #toast-m{
+  display:block!important;
+  min-width:0!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+html[data-device="smartphone"] #toast-u{
+  min-height:30px!important;
+  height:30px!important;
+  padding:0 7px!important;
+  font-size:10px!important;
+}
+
+/* Main phone screens remain scrollable and must not be blocked by notification layers. */
+html[data-device="smartphone"] #phone-content,
+html[data-device="smartphone"] #phone-detail{
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+
+/* Reader body: guaranteed visible and independently scrollable after fetch. */
+html[data-device="smartphone"] #phone-reader-body{
+  position:relative!important;
+  z-index:1!important;
+  flex:1 1 0!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  white-space:pre-wrap!important;
+  font-size:var(--phone-reader-fs,19px)!important;
+  line-height:var(--phone-reader-lh,2.05)!important;
+  font-family:var(--font-serif)!important;
+  color:inherit!important;
+  padding:26px 20px 150px!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+html[data-device="smartphone"] #phone-reader-body > .reader-flow{
+  display:block!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  min-height:100%!important;
+  color:inherit!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+html[data-device="smartphone"] #phone-reader-body.reader-building{
+  visibility:visible!important;
+  opacity:1!important;
+}
+html[data-device="smartphone"] #phone-reader-loading-layer[hidden]{
+  display:none!important;
+}
+
+/* Android back / navigation: prevent touch gestures from becoming horizontal page navigation
+   while the reader is in normal horizontal mode. */
+html[data-device="smartphone"] #phone-reader-body:not(.phone-reader-vertical){
+  touch-action:pan-y!important;
+}
+</style>
 </head>
 <body>
 <!-- Dedicated smartphone application shell -->
@@ -9527,6 +9671,6 @@ html[data-device="desktop"] #reader.open #body.v{
 }
 </style>
 <button id="phone-global-back" type="button" aria-label="戻る" title="戻る"><span aria-hidden="true">‹</span></button>
-<script src="./app.js?v=reader-actual-device-v20261005-37"></script>
+<script src="./app.js?v=reader-mobile-zero-bug-v20261005-38"></script>
 </body>
 </html>
