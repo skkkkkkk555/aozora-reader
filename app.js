@@ -1422,7 +1422,8 @@ async function fetchBody(w){
   if(!w||!isPublicWork(w))throw new Error('protected-work');
   if(BROWSER_SMOKE){
     const plain='これはブラウザスモークテスト用の本文です。PC版とスマートフォン版の読書画面、戻る操作、検索、シート表示を検証します。';
-    return {html:'<h2 data-hid="h-1">スモークテスト本文</h2><p>'+plain+'</p><p>読書機能が正常に表示されていることを確認します。</p>',plain};
+    const paragraphs=Array.from({length:18},(_,i)=>'<p>'+plain+' テスト段落'+(i+1)+'です。実際に本文領域へ描画され、スクロール可能な長さになっていることも確認します。</p>').join('');
+    return {html:'<h2 data-hid="h-1">スモークテスト本文</h2>'+paragraphs,plain:Array.from({length:18},(_,i)=>plain+' テスト段落'+(i+1)+'です。実際に本文領域へ描画され、スクロール可能な長さになっていることも確認します。').join('\n')};
   }
   if(typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))throw new Error('invalid-book-path');
   const c=await idb.get('docs',w.id);
