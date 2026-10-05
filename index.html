@@ -7644,6 +7644,102 @@ html[data-device="smartphone"] .phone-reader-ui-toggle:active{
   .home-bookmark-text small{font-size:7.5px!important;}
   .home-bookmark-arrow{font-size:17px!important;}
 }
+
+/* ===== Reader loading isolation + performance hardening ===== */
+.reader-loading-layer[hidden]{display:none!important}
+#reader-loading-layer{
+  position:absolute;left:0;right:0;
+  top:calc(54px + env(safe-area-inset-top));
+  bottom:calc(108px + env(safe-area-inset-bottom));
+  z-index:9;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  background:color-mix(in srgb,var(--bg) 86%,transparent);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+}
+#reader-loading-layer .reader-loading{width:100%;height:100%;min-height:0!important}
+#reader.reader-is-loading .r-dock,
+#reader.reader-is-loading #r-bottom-info{opacity:.42!important;pointer-events:none!important}
+#reader.reader-is-loading #r-paper-hint{opacity:0!important}
+#body.reader-building{
+  visibility:hidden!important;pointer-events:none!important;
+  user-select:none!important;-webkit-user-select:none!important;
+}
+#phone-reader-loading-layer{
+  position:absolute;left:0;right:0;
+  top:calc(58px + env(safe-area-inset-top));bottom:3px;
+  z-index:15;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  background:color-mix(in srgb,#fbfaf7 88%,transparent);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+}
+html[data-theme="dark"][data-device="smartphone"] #phone-reader-loading-layer{
+  background:color-mix(in srgb,#101010 88%,transparent);
+}
+#phone-reader-loading-layer .reader-loading{width:100%;height:100%;min-height:0!important}
+.phone-reader.reader-is-loading .phone-reader-toolbar,
+.phone-reader.reader-is-loading .phone-reader-progress{opacity:.38!important;pointer-events:none!important}
+html[data-device="smartphone"] #phone-reader-body.reader-building{visibility:hidden!important;pointer-events:none!important}
+@media(max-width:899px){
+  #reader-loading-layer{top:calc(56px + env(safe-area-inset-top));bottom:calc(164px + env(safe-area-inset-bottom))}
+}
+@media(max-width:520px){
+  #reader-loading-layer{top:calc(56px + env(safe-area-inset-top));bottom:calc(158px + env(safe-area-inset-bottom))}
+}
+@media(prefers-reduced-motion:reduce){
+  #reader-loading-layer,#phone-reader-loading-layer{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .abl-leaf{animation:none!important;transform:rotateY(-18deg) skewY(1deg)!important}
+}
+.low-power #reader-loading-layer,.low-power #phone-reader-loading-layer{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.low-power .abl-leaf{animation:none!important;transform:rotateY(-18deg) skewY(1deg)!important}
+
+/* Reader controls: final stable composition, no oversized 3x2 desktop dock. */
+#reader .r-dock{
+  display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  grid-auto-rows:1fr!important;width:min(820px,calc(100vw - 48px))!important;
+  min-height:64px!important;height:64px!important;max-height:64px!important;
+  margin:0 auto 8px!important;padding:5px!important;gap:5px!important;
+  border-radius:18px!important;overflow:hidden!important;box-sizing:border-box!important;
+}
+#reader .r-dock-btn{
+  min-width:0!important;min-height:52px!important;height:52px!important;
+  padding:5px 4px!important;border-radius:12px!important;font-size:11px!important;gap:3px!important;
+}
+#reader .r-dock-btn .icon{width:24px!important;height:24px!important}
+#reader .r-bottom-bar{min-height:52px!important;height:52px!important;box-sizing:border-box!important}
+@media(max-width:899px){
+  #reader .r-dock{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-auto-rows:minmax(51px,1fr)!important;
+    width:100%!important;min-height:122px!important;height:122px!important;max-height:none!important;
+    margin:0!important;padding:6px!important;gap:5px!important;border-radius:16px!important;
+  }
+  #reader .r-dock-btn{
+    min-height:51px!important;height:auto!important;padding:6px 4px!important;
+    border-radius:12px!important;font-size:11px!important;
+  }
+  #reader .r-bottom-bar{
+    min-height:calc(52px + env(safe-area-inset-bottom))!important;
+    height:calc(52px + env(safe-area-inset-bottom))!important;
+  }
+}
+@media(max-width:520px){
+  #reader .r-dock{min-height:118px!important;height:118px!important;gap:5px!important;padding:6px!important}
+}
+
+/* Phone reader: five compact tools in one stable row. */
+html[data-device="smartphone"] .phone-reader-toolbar{
+  display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  grid-auto-rows:1fr!important;height:72px!important;min-height:72px!important;
+  padding:5px!important;gap:5px!important;
+}
+html[data-device="smartphone"] .phone-reader-tool{
+  min-height:60px!important;height:60px!important;padding:4px 2px!important;border-radius:13px!important;
+}
+@media(max-width:380px){
+  html[data-device="smartphone"] .phone-reader-toolbar{height:68px!important;min-height:68px!important}
+  html[data-device="smartphone"] .phone-reader-tool{height:56px!important;min-height:56px!important}
+}
+
 </style>
 </head>
 <body>
@@ -7677,6 +7773,7 @@ html[data-device="smartphone"] .phone-reader-ui-toggle:active{
   <section id="phone-detail" class="phone-detail" hidden aria-hidden="true"></section>
 
   <section id="phone-reader" class="phone-reader" hidden aria-hidden="true">
+    <div id="phone-reader-loading-layer" class="reader-loading-layer phone-reader-loading-layer" hidden aria-hidden="true"></div>
     <header class="phone-reader-header">
       <button class="phone-icon-button" data-phone-action="reader-back" aria-label="戻る">
         <svg class="phone-svg" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>
@@ -8094,6 +8191,7 @@ html[data-device="smartphone"] .phone-reader-ui-toggle:active{
   <div id="r-page-turn" aria-hidden="true"></div>
   <!-- 読書画面 -->
   <div id="reader"><div id="r-scroll-progress" aria-hidden="true"></div>
+    <div id="reader-loading-layer" class="reader-loading-layer" hidden aria-hidden="true"></div>
     <button id="btn-exit-focus" data-act="r-exit-focus">集中解除</button>
     <button id="r-ui-toggle" data-act="r-ui-toggle" aria-label="読書UIを表示" title="読書UIを表示">⌃</button>
     <div class="r-bar" id="r-top">
@@ -8168,6 +8266,6 @@ html[data-device="smartphone"] .phone-reader-ui-toggle:active{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-nodombloat-bookmarktiny-20261005"></script>
+<script src="./app.js?v=reader-isolated-progressive-v20261005"></script>
 </body>
 </html>
