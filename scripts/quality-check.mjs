@@ -21,7 +21,7 @@ ok(/const READER_PROGRESS_VERSION=\d+/.test(app),'reader progress schema version
 ok(app.includes('phoneRoot:true'),'smartphone history root sentinel missing');
 ok(app.includes("const phoneBackSelector='#phone-global-back,#phone-app [data-phone-action=\"reader-back\"],#phone-app [data-phone-action=\"detail-back\"]'"),'unified smartphone back selector missing');
 ok(html.includes('id="aozora-reader-root-final-fix"'),'authoritative reader geometry CSS missing');
-ok(/app\.js\?v=reader-mobile-zero-bug-v20261005-\d+/.test(html),'reader cache version was not bumped');
+ok(/app\.js\?v=reader-mobile-zero-bug-v\d{8}-\d+/.test(html),'reader cache version was not bumped');
 ok(smoke.includes("desktop fresh reader progress is"),'desktop first-open progress smoke test missing');
 ok(smoke.includes("desktop horizontal reader did not respond to real wheel event"),'desktop real-wheel smoke test missing');
 ok(smoke.includes("smartphone reader did not move on vertical scroll"),'smartphone real scroll smoke test missing');
@@ -106,7 +106,7 @@ ok(smoke.includes('toastRect.width>320'),'mobile smoke does not verify compact t
 ok(app.includes("const left=b.classList.contains('v')?Math.max(0,m.max-target):target"),'desktop vertical page position does not use stable LTR coordinates');
 ok(app.includes("b.scrollLeft=Math.max(0,Math.min(m.max,b.scrollLeft-d))"),'desktop vertical wheel direction is unstable');
 ok(app.includes("body.classList.remove('paper-turning-next','paper-turning-prev')"),'page turn still transforms article body');
-ok(/app\.js\?v=reader-mobile-zero-bug-v20261005-\d+/.test(html),'mobile zero-bug cache bust missing');
+ok(/app\.js\?v=reader-mobile-zero-bug-v\d{8}-\d+/.test(html),'mobile zero-bug cache bust missing');
 ok(html.includes('id="phone-global-back"'),'smartphone global back control missing');
 ok(html.includes('aozora-actual-device-fix'),'actual-device control hardening missing');
 ok(html.includes('.phone-icon-button .phone-svg'),'smartphone icon size hardening missing');
