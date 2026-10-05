@@ -405,6 +405,7 @@ const load=async()=>{
           const sd=sanitizePersistedState({st:JSON.parse(savedSettingsRaw)});
           if(sd?.st)st=Object.assign(st,sd.st);
         }catch{}
+      }
       if(progressMigrated)save();
     }
   } catch (err) {
