@@ -2059,7 +2059,8 @@ async function openReaderInternal(w, fromDetail=false, bookmarkF=null){
   $('r-title').textContent=w.t;
   setReaderLoading(true);
   $('reader').classList.add('open','paper-reader');
-  $('reader').classList.remove('chrome-hidden');
+  $('reader').classList.remove('chrome-hidden','mode-focus');
+  $('reader').dataset.readerUiMode='pc-stable';
   setReaderChromeVisible(true);
   $('reader').classList.add('paper-first-open');
   pushLayer('reader');
@@ -2739,14 +2740,23 @@ function openModeSelectSheet(){
 function applyReaderMode(){
   const m=st.rMode||'normal';
   const readerEl=$('reader');
-  readerEl.classList.toggle('mode-focus', m==='focus');
-  readerEl.classList.toggle('reader-night', m==='night');
-  $('btn-read-mode').textContent=m==='normal'?'通常':m==='focus'?'集中':'夜間';
-  
+  const isDesktop=document.documentElement.dataset.device==='desktop';
+
+  // PC版は読書UIを常時表示する。集中モード由来の非表示状態もPCでは成立させない。
+  if(isDesktop){
+    readerEl.classList.remove('mode-focus','chrome-hidden');
+    $('btn-read-mode').textContent=m==='night'?'夜間':'通常';
+  }else{
+    readerEl.classList.toggle('mode-focus',m==='focus');
+    readerEl.classList.toggle('chrome-hidden',m==='focus' && readerEl.classList.contains('chrome-hidden'));
+    $('btn-read-mode').textContent=m==='normal'?'通常':m==='focus'?'集中':'夜間';
+  }
+
+  readerEl.classList.toggle('reader-night',m==='night');
   if(m==='night'){
     $('r-warm').style.display='block';
     $('r-dim').style.backgroundColor='rgba(0,0,0,0.2)';
-  } else {
+  }else{
     $('r-dim').style.backgroundColor='rgba(0,0,0,0)';
     checkNightWarm();
   }
@@ -2767,6 +2777,7 @@ function applyReaderConfig(preserveOverride=undefined){
   b.classList.toggle('v',st.v!==false);
   b.classList.add('paper-paged');
   applyReaderMode();
+  if(document.documentElement.dataset.device==='desktop'&&open)setReaderChromeVisible(true);
 
   // 初回表示では、本文DOMの直後にscrollWidthを読むと大きな作品でレイアウト計算が固まりやすい。
   // openReader側が描画を1フレーム渡してから初期ページを復元する。
