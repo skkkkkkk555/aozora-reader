@@ -1887,7 +1887,11 @@ function syncReaderPagination(preserveFraction=null){
   const b=$('body');
   if(!b||!b.classList.contains('paper-paged'))return;
   const metrics=getReaderPageMetrics();
+  const cs=getComputedStyle(b);
+  const fontSize=Math.max(1,parseFloat(cs.fontSize)||18);
+  const lineHeightPx=Math.max(fontSize,parseFloat(cs.lineHeight)||fontSize*Number(st.lh||2.1));
   b.style.setProperty('--reader-page-width',metrics.width+'px');
+  b.style.setProperty('--reader-v-column-width',lineHeightPx+'px');
   if(preserveFraction===null||!Number.isFinite(Number(preserveFraction))){
     updateProgress(true);
     return;
