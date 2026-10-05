@@ -617,6 +617,7 @@ const RIGHTS_CACHE_KEY='rights-allowlist-v1';
 const RIGHTS_MANIFEST='./rights-allowlist.json';
 const CATALOG_TARGET='https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip';
 const URLS=[
+  './catalog.json',
   CATALOG_TARGET,
   'https://raw.githubusercontent.com/aozorabunko/aozorabunko/master/index_pages/list_person_all_extended_utf8.zip',
   'https://raw.githubusercontent.com/code4fukui/koten-reader/main/list_person_all_extended_utf8.csv',
@@ -636,22 +637,31 @@ async function saveRightsAllowlist(set){
 }
 
 async function refreshRightsAllowlist(){
-  try{
-    const res=await secureFetch(RIGHTS_MANIFEST+'?'+Date.now(),{signal:sig(8000),cache:'no-store'});
-    if(!res.ok)throw new Error('rights-manifest-http-'+res.status);
-    const data=await res.json();
-    const set=validRightsAllowlist(data);
-    if(!set)throw new Error('rights-manifest-invalid');
-    rightsAllowlist=set;
-    rightsReady=true;
-    await saveRightsAllowlist(set);
-    // 最新の権利確認で対象外になった作品を即座にUIから外す。
-    if(allWorks.length){filterWorks();renderHome();}
-    return true;
-  }catch(err){
-    console.warn('rights manifest refresh failed; using persisted verification when available',err);
-    return false;
+  // 起動直後の一時的な通信遅延でカタログ全体を停止させない。
+  // 同一オリジンの静的ファイルを最大3回・合計約30秒まで再試行する。
+  let lastErr=null;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const res=await secureFetch(RIGHTS_MANIFEST+'?v='+Date.now(),{
+        signal:sig(10000),
+        cache:'no-store'
+      });
+      if(!res.ok)throw new Error('rights-manifest-http-'+res.status);
+      const data=await res.json();
+      const set=validRightsAllowlist(data);
+      if(!set)throw new Error('rights-manifest-invalid');
+      rightsAllowlist=set;
+      rightsReady=true;
+      await saveRightsAllowlist(set);
+      if(allWorks.length){filterWorks();renderHome();}
+      return true;
+    }catch(err){
+      lastErr=err;
+      if(attempt<2)await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
+    }
   }
+  console.warn('rights manifest refresh failed; using persisted verification when available',lastErr);
+  return false;
 }
 
 async function loadRightsAllowlist(){
@@ -705,7 +715,7 @@ async function loadCachedCatalog(){
 async function refreshCatalogInBackground(){
   if(catalogBusy)return false;
   try{
-    const res=await secureFetch('./catalog.json?'+Date.now(),{signal:sig(8000),cache:'no-store'});
+    const res=await secureFetch('./catalog.json?'+Date.now(),{signal:sig(30000),cache:'no-store'});
     if(res.ok){
       const data=await res.json();
       const parsed=sanitizeCatalogRecords(data);
@@ -752,10 +762,13 @@ async function checkCatalog(){
     return;
   }
 
-  // 初回は同一オリジンの自動生成カタログを取得。
-  try{
-    const res=await secureFetch('./catalog.json?'+Date.now(),{signal:sig(8000),cache:'no-store'});
-    if(res.ok){
+  // 初回はリポジトリに同梱した catalog.json を最優先で読む。
+  // GitHub Pages上では外部配信元よりこちらが安定するため、短いタイムアウトで
+  // 一度失敗しただけで「手動読み込み」に落とさない。
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const res=await secureFetch('./catalog.json',{signal:sig(15000),cache:attempt===0?'default':'no-store'});
+      if(!res.ok)throw new Error('catalog-http-'+res.status);
       const data=await res.json();
       const parsed=sanitizeCatalogRecords(data);
       if(parsed.length>=100){
@@ -764,10 +777,15 @@ async function checkCatalog(){
         filterWorks();renderHome();
         return;
       }
+      throw new Error('catalog-invalid-or-empty');
+    }catch(err){
+      console.debug('same-origin catalog attempt failed',attempt+1,err);
+      if(attempt<2)await new Promise(resolve=>setTimeout(resolve,400*(attempt+1)));
     }
-  }catch(err){console.debug('same-origin catalog unavailable',err);}
+  }
 
-  // 初回の自動取得だけは、そのまま裏で全配信元を試す。
+  // 同梱カタログが一時的に取得できない場合だけ、外部配信元を順番に試す。
+  // ここでも45秒ではなく最大2分確保し、スマホ回線等の遅延で誤って失敗扱いしない。
   filterWorks();renderHome();
   void fetchCatalog({background:true,notifyOnFail:true});
 }
@@ -808,7 +826,7 @@ async function fetchCatalog({background=false,notifyOnFail=false}={}){
   if(!background&&bar)bar.style.width='20%';
   try{
     let buf=null,csvText=null;
-    const catalogDeadline=Date.now()+45000;
+    const catalogDeadline=Date.now()+120000;
     for(let i=0;i<URLS.length&&Date.now()<catalogDeadline;i++){
       if(!background&&log)log.textContent='配信元へ接続中… ('+(i+1)+'/'+URLS.length+')';
       try{
