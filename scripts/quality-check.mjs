@@ -141,11 +141,11 @@ ok(app.includes('専用に即時処理し、Android WebView等でclick合成が�
 
 ok(html.includes('id="reader-loading-layer"'),'desktop reader loading layer missing');
 ok(html.includes('id="phone-reader-loading-layer"'),'smartphone reader loading layer missing');
-ok(app.includes('function renderReaderBodyProgressively'),'progressive reader renderer missing');
-ok(app.includes('function splitReaderHtml'),'progressive reader chunk splitter missing');
+ok(app.includes('function renderReaderBody'),'reader body renderer missing');
+ok(app.includes("body.classList.add('reader-building')"),'reader build isolation missing');
 ok(app.includes('readerTok++;'),'reader close does not invalidate pending work');
 ok(!app.includes("body.innerHTML=readerLoaderMarkup()"),'reader loader must not be injected into article body');
-ok(html.includes('app.js?v=reader-isolated-progressive-v20261005'),'reader cache-bust version missing');
+ok(html.includes('app.js?v=reader-worker-scroll-paging-v20261005'),'reader worker cache-bust version missing');
 ok(smoke.includes('loader did not hide after render'),'browser smoke does not verify loader lifecycle');
 ok(app.includes('const count=2200'),'browser smoke is not exercising long reader content');
 
