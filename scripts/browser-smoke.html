@@ -48,7 +48,8 @@ function readerScrollable(d,selector){
   return !!el&&el.clientHeight>0&&el.scrollHeight>el.clientHeight;
 }
 (async()=>{
-  frame.src='../index.html?browser-smoke='+Date.now();
+  const live=mode==='live';
+  frame.src='../index.html?browser-smoke='+Date.now()+(live?'&browser-smoke-live=1':'');
   await new Promise((resolve,reject)=>{
     let timer=0;
     const finish=(fn,value)=>{clearTimeout(timer);frame.removeEventListener('load',onload);frame.removeEventListener('error',onerror);fn(value);};
@@ -63,6 +64,28 @@ function readerScrollable(d,selector){
   const d=frame.contentDocument;
   await waitFor(()=>d?.documentElement?.dataset?.device,10000);
   const device=d.documentElement.dataset.device;
+
+  if(mode==='live'){
+    const read=await waitFor(()=>d.querySelector('[data-act="nav"][data-v="v-search"]'),5000);
+    read.click();
+    const input=await waitFor(()=>d.querySelector('#q-input'),5000);
+    input.value='吾輩は猫である';
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    const result=await waitFor(()=>d.querySelector('#search-tiles [data-act="open-book"]'),15000);
+    result.click();
+    const readNow=await waitFor(()=>d.querySelector('#sheet [data-act="read-now"]'),5000);
+    readNow.click();
+    await waitFor(()=>d.querySelector('#reader')?.classList.contains('open'),7000);
+    await waitFor(()=>readerRendered(d,'#body')&&!/本文を読み込めませんでした/.test(readerText(d)),45000);
+    if(!readerScrollable(d,'#body'))fail('live reader body is not actually scrollable');
+    const before=d.querySelector('#body').scrollTop;
+    d.querySelector('#body').scrollTop=Math.min(600,before+600);
+    await sleep(300);
+    if(d.querySelector('#body').scrollTop<=before)fail('live reader body did not scroll');
+    document.title='LIVE_SMOKE_OK';
+    document.body.textContent='LIVE_SMOKE_OK';
+    return;
+  }
 
   if(mode==='mobile'){
     if(device!=='smartphone')fail('smartphone detection failed: '+device);
