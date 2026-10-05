@@ -138,13 +138,13 @@ function sanitizeCatalogRecords(v){
   const out=[];const seen=new Set();
   for(const raw of v){
     if(out.length>=20000||!raw||typeof raw!=='object')break;
-    // 青空文庫の「作品著作権フラグ」が「なし」に対応する c:1 の作品だけを
-    // カタログそのものへ採用する。権利保護中・許諾前提の作品は検索や詳細へも流さない。
-    if(Number(raw.c)!==1)continue;
+    // 作品著作権フラグと人物著作権フラグの両方を確認済み(r:1)の作品だけを採用。
+    // 権利状態が確認できない旧/外部カタログは検索・詳細・本文へ流さない。
+    if(Number(raw.c)!==1||Number(raw.r)!==1)continue;
     const id=String(raw.id||'').slice(0,80),t=String(raw.t||'').slice(0,300),a=String(raw.a||'').slice(0,300),x=String(raw.x||'').slice(0,500);
     if(!safeStateKey(id)||seen.has(id)||!t||!x||x.length>500||x.includes('..')||x.includes('\\')||x.startsWith('http')||x.startsWith('//')||!/^[A-Za-z0-9._\/-]+$/.test(x))continue;
     seen.add(id);
-    out.push({id,t,a,tk:String(raw.tk||'').slice(0,300),ak:String(raw.ak||'').slice(0,300),d:String(raw.d||'').slice(0,80),k:Number(raw.k)===1?1:0,c:1,ndc:String(raw.ndc||'').slice(0,80),norm:String(raw.norm||'').slice(0,700),x});
+    out.push({id,t,a,tk:String(raw.tk||'').slice(0,300),ak:String(raw.ak||'').slice(0,300),d:String(raw.d||'').slice(0,80),k:Number(raw.k)===1?1:0,c:1,ndc:String(raw.ndc||'').slice(0,80),norm:String(raw.norm||'').slice(0,700),x,r:1});
   }
   return out;
 }
@@ -268,7 +268,7 @@ let calData={}, goalMin=30;
 let st={ fs:18, lh:2.1, theme:'auto', font:'mincho', warm:true, kp:true, offline:false, lowSpec:false, ollamaEnabled:false, oUrl:'http://127.0.0.1:11434', oMod:'', v:true, rMode:'normal', readSpeed:500, todayBook:null };
 let aiConn={ ok:false, models:[], err:'' };
 let activeBook=null;
-const isPublicWork = w => !!w && Number(w.c) === 1;
+const isPublicWork = w => !!w && Number(w.c) === 1 && Number(w.r) === 1;
 const dateKeyOf=(d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const localDateKey=()=>dateKeyOf(new Date());
 const normalizeOllamaUrl=(value='')=>{
@@ -609,6 +609,7 @@ window.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openSearchPage(); }
 });
 
+const CATALOG_CACHE_KEY='cat-rights-v3';
 const CATALOG_TARGET='https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip';
 const URLS=[
   CATALOG_TARGET,
@@ -621,16 +622,16 @@ const URLS=[
 async function checkCatalog(){
   if(BROWSER_SMOKE){
     // 実在する青空文庫の公開作品レコードを固定し、カタログ通信の揺らぎとUIテストを分離する。
-    allWorks=[{"id":"000789","t":"吾輩は猫である","a":"夏目 漱石","tk":"わがはいはねこである","ak":"なつめ","d":"1999-09-21","k":1,"c":1,"ndc":"NDC 913","norm":"吾輩は猫であるわがはいはねこである夏目漱石なつめ","x":"cards/000148/files/789_ruby_5639/789_ruby_5639.txt"}];
+    allWorks=[{"id":"000789","t":"吾輩は猫である","a":"夏目 漱石","tk":"わがはいはねこである","ak":"なつめ","d":"1999-09-21","k":1,"c":1,r:1,"ndc":"NDC 913","norm":"吾輩は猫であるわがはいはねこである夏目漱石なつめ","x":"cards/000148/files/789_ruby_5639/789_ruby_5639.txt"}];
     filterWorks();
     renderHome();
     return;
   }
-  const c=await idb.get('k','cat');
+  const c=await idb.get('k',CATALOG_CACHE_KEY);
   const safeCatalog=sanitizeCatalogRecords(c);
   if(safeCatalog.length){
     allWorks=safeCatalog;
-    if(safeCatalog.length!==c.length)await idb.set('k','cat',safeCatalog);
+    if(safeCatalog.length!==c.length)await idb.set('k',CATALOG_CACHE_KEY,safeCatalog);
     filterWorks();
     renderHome();
     return;
@@ -645,7 +646,7 @@ async function checkCatalog(){
       const parsed=sanitizeCatalogRecords(data);
       if(parsed.length>=100){
         allWorks=parsed;
-        await idb.set('k','cat',parsed);
+        await idb.set('k',CATALOG_CACHE_KEY,parsed);
         filterWorks();
         renderHome();
         return;
@@ -788,6 +789,7 @@ async function parseCsv(csv){
   const h=lines[0].split(',').map(s=>s.replace(/^["\uFEFF]|["\r]/g,'').trim()).slice(0,100);
   const col={ id:h.indexOf('作品ID'), t:h.indexOf('作品名'), a:h.indexOf('姓'), am:h.indexOf('名'), tk:h.indexOf('作品名読み'), ak:h.indexOf('姓読み'), x:h.indexOf('テキストファイルURL'), d:h.indexOf('公開日'), k:h.indexOf('文字遣い種別'), c:h.indexOf('作品著作権フラグ'), ndc:h.indexOf('分類番号') };
   const m=new Map();
+  const blocked=new Set();
 
   for(let i=1;i<lines.length;i++){
     const l=lines[i]; if(!l) continue;
@@ -800,6 +802,7 @@ async function parseCsv(csv){
     }
     cols.push(c);
     const rawId=String(cols[col.id]||'').trim();
+    if(blocked.has(rawId))continue;
     const rawUrl=String(cols[col.x]||'').trim();
     let parsedUrl=null;try{parsedUrl=new URL(rawUrl);}catch{}
     if(!rawId||!parsedUrl||parsedUrl.protocol!=='https:'||parsedUrl.hostname!=='www.aozora.gr.jp'||!rawUrl.toLowerCase().endsWith('.zip'))continue;
@@ -807,8 +810,11 @@ async function parseCsv(csv){
     const id=rawId;
     const rightsFlag = cols[col.c];
     const isPublic = rightsFlag === 'なし' || rightsFlag === '1' || rightsFlag === 1 || rightsFlag === '1.0';
-    // 許諾・保護中の作品は、この時点で取り込み対象から完全に除外する。
-    if(!isPublic)continue;
+    // 作品側・人物側の権利が1行でも保護中なら、その作品ID全体を除外。
+    // CSVは1作品に著者・訳者など複数行があり得るため、後続行で保護状態が出ても復活させない。
+    const authorRightsFlag = cols[26];
+    const authorIsPublic = authorRightsFlag === 'なし' || authorRightsFlag === '1' || authorRightsFlag === 1 || authorRightsFlag === '1.0';
+    if(!isPublic || !authorIsPublic){ m.delete(id); blocked.add(id); continue; }
     const author=((cols[col.a]||'')+' '+(cols[col.am]||'')).trim();
     if(m.has(id)){
       const ex=m.get(id);
@@ -818,7 +824,7 @@ async function parseCsv(csv){
     const t=cols[col.t]||'', tk=(cols[col.tk]||'').toLowerCase(), ak=(cols[col.ak]||'').toLowerCase();
     m.set(id,{
       id, t, a:author, tk, ak, d:cols[col.d]||'',
-      k:cols[col.k]?.includes('新字新仮名')?1:0, c:1,
+      k:cols[col.k]?.includes('新字新仮名')?1:0, c:1, r:1,
       ndc:cols[col.ndc]||'',
       norm:(t+' '+tk+' '+author+' '+ak).replace(/[\s　]/g,'').toLowerCase(),
       x:cols[col.x].replace('https://www.aozora.gr.jp/','').replace(/\.zip$/,'').replace(/\/([^\/]+)$/,'/$1/$1.txt').replace(/^\/+|\.\.+/g,'')
