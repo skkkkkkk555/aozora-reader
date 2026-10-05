@@ -2523,12 +2523,14 @@ function getVerticalScrollMetrics(b=$('body')){
   const max=Math.max(0,b.scrollWidth-b.clientWidth);
   if(max<=0)return {max:0,sign:1};
   const old=b.scrollLeft;
+  b.scrollLeft=0;
   b.scrollLeft=1;
-  if(b.scrollLeft!==old){b.scrollLeft=old;return {max,sign:1};}
+  const positive=b.scrollLeft!==0;
+  b.scrollLeft=0;
   b.scrollLeft=-1;
-  const negative=b.scrollLeft!==old;
+  const negative=b.scrollLeft!==0;
   b.scrollLeft=old;
-  return {max,sign:negative?-1:1};
+  return {max,sign:positive?1:(negative?-1:1)};
 }
 function scrollDesktopVerticalBy(delta,b=$('body')){
   if(!b?.classList.contains('v'))return false;
@@ -5150,23 +5152,21 @@ window.addEventListener('DOMContentLoaded',()=>{
     const max=Math.max(0,b.scrollWidth-b.clientWidth);
     if(max<=0)return {max:0,sign:1};
     const old=b.scrollLeft;
+    b.scrollLeft=0;
     b.scrollLeft=1;
-    const positive=b.scrollLeft!==old;
-    if(positive){
-      b.scrollLeft=old;
-      return {max,sign:1};
-    }
+    const positive=b.scrollLeft!==0;
+    b.scrollLeft=0;
     b.scrollLeft=-1;
-    const negative=b.scrollLeft!==old;
+    const negative=b.scrollLeft!==0;
     b.scrollLeft=old;
-    return {max,sign:negative?-1:1};
+    return {max,sign:positive?1:(negative?-1:1)};
   }
   function setPhoneVerticalFraction(f,b=currentReaderBody()){
     if(!b)return;
     const m=getPhoneVerticalMetrics(b);
     const p=Math.max(0,Math.min(1,Number(f)||0));
     b.scrollTop=0;
-    b.scrollLeft=m.sign*(-p*m.max);
+    b.scrollLeft=m.sign<0?-p*m.max:p*m.max;
   }
   function applyPhoneReaderDirection(){
     const b=currentReaderBody(),r=$p('#phone-reader');
