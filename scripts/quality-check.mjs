@@ -133,6 +133,16 @@ ok(app.includes("sheet.removeAttribute('inert')"),'phone sheet does not clear in
 ok(app.includes("scrim.removeAttribute('inert')"),'phone scrim does not clear inert state when reopening');
 ok(app.includes('専用に即時処理し、Android WebView等でclick合成が遅れても確実に閉じる'),'phone sheet close fallback is missing');
 
+ok(html.includes('id="reader-loading-layer"'),'desktop reader loading layer missing');
+ok(html.includes('id="phone-reader-loading-layer"'),'smartphone reader loading layer missing');
+ok(app.includes('function renderReaderBodyProgressively'),'progressive reader renderer missing');
+ok(app.includes('function splitReaderHtml'),'progressive reader chunk splitter missing');
+ok(app.includes('readerTok++;'),'reader close does not invalidate pending work');
+ok(!app.includes("body.innerHTML=readerLoaderMarkup()"),'reader loader must not be injected into article body');
+ok(html.includes('app.js?v=reader-isolated-progressive-v20261005'),'reader cache-bust version missing');
+ok(smoke.includes('loader did not hide after render'),'browser smoke does not verify loader lifecycle');
+ok(app.includes('const count=2200'),'browser smoke is not exercising long reader content');
+
 if(fail.length){
   console.error('QUALITY CHECK FAILED');
   for(const f of fail)console.error(' - '+f);
