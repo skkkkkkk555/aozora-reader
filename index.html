@@ -8103,6 +8103,26 @@ html[data-device="desktop"] #reader .r-dock{
   display:grid!important;
 }
 </style>
+<style id="aozora-final-navigation-fix">
+/* 戻る操作は常時到達可能にする。 */
+html[data-device="smartphone"] .phone-detail-nav{
+  position:sticky!important;
+  top:0!important;
+  z-index:80!important;
+  min-height:50px!important;
+  margin:calc(-5px - env(safe-area-inset-top)) -16px 8px!important;
+  padding:calc(5px + env(safe-area-inset-top)) 8px 0!important;
+  background:color-mix(in srgb,var(--phone-fill) 94%,transparent)!important;
+  backdrop-filter:blur(16px)!important;
+  -webkit-backdrop-filter:blur(16px)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-detail-nav{
+  background:color-mix(in srgb,#000 92%,transparent)!important;
+}
+html[data-device="smartphone"] .phone-detail-nav .phone-icon-button{
+  pointer-events:auto!important;
+}
+</style>
 </head>
 <body>
 <!-- Dedicated smartphone application shell -->
@@ -8796,6 +8816,6 @@ html[data-device="desktop"] #reader .r-dock{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-display-fix-v20261005-21"></script>
+<script src="./app.js?v=reader-display-fix-v20261005-22"></script>
 </body>
 </html>
