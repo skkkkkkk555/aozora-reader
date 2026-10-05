@@ -1550,6 +1550,26 @@ function openBookDetail(w){
       <div id="b-quote" style="padding:16px; background:var(--card-sub); border-radius:var(--radius-sm); font-size:var(--fs-b); line-height:1.6; color:var(--sub)">冒頭を読み込んでいます…</div>
     </div>`;
   sheet(w.t, html);
+  const readBtn=$('sheet')?.querySelector('[data-act="read-now"]');
+  if(readBtn){
+    const openFromButton=()=>{
+      closeSheet(true);
+      history.replaceState(null,'',location.href);
+      openReader(w,false);
+    };
+    readBtn.addEventListener('pointerup',e=>{
+      if(e.pointerType!=='mouse'){
+        e.preventDefault();
+        e.stopPropagation();
+        openFromButton();
+      }
+    },{capture:true});
+    readBtn.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      openFromButton();
+    },{capture:true});
+  }
   fetchHead(w).then(q=>{
     const el=$('b-quote');
     if(el){el.textContent=q;el.classList.remove('book-quote-loading');el.setAttribute('aria-busy','false');}
@@ -4003,6 +4023,22 @@ window.addEventListener('DOMContentLoaded',()=>{
       '<div class="phone-detail-description">'+escP(w.desc||w.description||'青空文庫の公開作品です。本文を読みながら、栞・メモ・蛍光ペン・朗読などを利用できます。')+'</div>'+
       '<button class="phone-primary" data-phone-action="detail-read" data-act="read-now">'+(p>0&&p<97?'続きから読む':'この作品を読む')+'</button>'+
       '<button class="phone-secondary" data-phone-action="detail-author">この作家の作品を見る</button>';
+    const phoneReadBtn=$p('#phone-detail [data-phone-action="detail-read"]');
+    if(phoneReadBtn){
+      const openFromButton=()=>openReader(w,true);
+      phoneReadBtn.addEventListener('pointerup',e=>{
+        if(e.pointerType!=='mouse'){
+          e.preventDefault();
+          e.stopPropagation();
+          openFromButton();
+        }
+      },{capture:true});
+      phoneReadBtn.addEventListener('click',e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        openFromButton();
+      },{capture:true});
+    }
   }
 
   function currentReaderBody(){return $p('#phone-reader-body')}
