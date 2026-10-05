@@ -47,6 +47,10 @@ function readerScrollable(d,selector){
   const el=d.querySelector(selector);
   return !!el&&el.clientHeight>0&&el.scrollHeight>el.clientHeight;
 }
+function readerAxisScrollable(d,selector){
+  const el=d.querySelector(selector);
+  return !!el&&el.clientWidth>0&&el.scrollWidth>el.clientWidth+2;
+}
 function runtimeErrors(d){return Array.from(d?.defaultView?.__aozoraRuntimeErrors||[]);}
 function clearRuntimeErrors(d){const list=d?.defaultView?.__aozoraRuntimeErrors;if(Array.isArray(list))list.length=0;}
 function assertNoRuntimeErrors(d,label){const errors=runtimeErrors(d);if(errors.length)fail(label+': '+JSON.stringify(errors));}
@@ -200,7 +204,9 @@ function assertDesktopReaderChrome(d,label){
     if(!d.querySelector('#phone-reader-body')?.classList.contains('phone-reader-vertical'))fail('smartphone vertical reader did not activate');
     if(d.defaultView.getComputedStyle(d.querySelector('#phone-reader-body')).touchAction!=='pan-x')fail('smartphone vertical reader touch axis is not horizontal');
     const phoneVerticalBody=d.querySelector('#phone-reader-body');
-    if(phoneVerticalBody.scrollWidth>phoneVerticalBody.clientWidth+2){
+    if(!phoneVerticalBody.querySelector('.reader-flow.reader-vertical-flow'))fail('smartphone vertical reader flow wrapper is missing');
+    if(!readerAxisScrollable(d,'#phone-reader-body'))fail('smartphone vertical reader has no horizontal overflow');
+    {
       const beforeX=phoneVerticalBody.scrollLeft;
       phoneVerticalBody.dispatchEvent(new WheelEvent('wheel',{deltaY:420,bubbles:true,cancelable:true}));
       await sleep(80);
@@ -339,17 +345,27 @@ function assertDesktopReaderChrome(d,label){
     verticalToggle.click();
     await sleep(300);
     if(!desktopBody.classList.contains('v'))fail('desktop vertical reader did not activate');
+    if(!desktopBody.querySelector('.reader-flow.reader-vertical-flow'))fail('desktop vertical reader flow wrapper is missing');
     assertDesktopReaderChrome(d,'desktop reader chrome after vertical toggle');
     const verticalRestore=d.querySelector('#r-ui-toggle');
     if(!verticalRestore||!visible(verticalRestore)||verticalRestore.closest('#reader'))fail('desktop vertical UI restore control is unavailable');
     // 縦書き本文は横方向に進めてもUIを失わない。
     const horizontalScrollable=desktopBody.scrollWidth>desktopBody.clientWidth+2;
-    if(horizontalScrollable){
+    if(!horizontalScrollable)fail('desktop vertical reader has no horizontal overflow');
+    {
+      const max=Math.max(0,desktopBody.scrollWidth-desktopBody.clientWidth);
+      desktopBody.scrollLeft=max;
       const beforeX=desktopBody.scrollLeft;
       if(typeof d.defaultView.scrollDesktopVerticalBy!=='function')fail('desktop vertical scroll helper is missing');
       d.defaultView.scrollDesktopVerticalBy(480,desktopBody);
       await sleep(100);
-      if(desktopBody.scrollLeft===beforeX)fail('desktop vertical reader did not respond to wheel scrolling');
+      if(desktopBody.scrollLeft>=beforeX)fail('desktop vertical reader did not respond to wheel scrolling');
+      // page turn must never apply a transform to the article surface.
+      if(typeof d.defaultView.turnReaderPage!=='function')fail('desktop page-turn helper is missing');
+      const beforeTransform=d.defaultView.getComputedStyle(desktopBody).transform;
+      d.defaultView.turnReaderPage('next');
+      await sleep(80);
+      if(d.defaultView.getComputedStyle(desktopBody).transform!=='none'&&d.defaultView.getComputedStyle(desktopBody).transform!==beforeTransform)fail('desktop page turn transformed the article text');
       desktopBody.scrollLeft=beforeX;
     }
     assertDesktopReaderChrome(d,'desktop reader chrome after vertical paging');
