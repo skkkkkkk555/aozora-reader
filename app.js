@@ -107,7 +107,13 @@ const secureFetch=async(input,init={})=>{
   if(!isConfiguredOllama&&!['GET','HEAD'].includes(method))throw new Error('blocked-network-method');
   const response=await window.fetch(u.href,{...init,referrerPolicy:'no-referrer',cache:init.cache||'no-store',redirect:'follow'});
   const finalUrl=secureUrl(response.url);
-  if(!finalUrl||finalUrl.origin!==u.origin)throw new Error('blocked-cross-origin-redirect');
+  if(!finalUrl)throw new Error('blocked-cross-origin-redirect');
+  // Aozora本文の許可済み配信先同士のリダイレクトは許可する。
+  // CDN→別CDN、プロキシ→青空文庫のような正規経路を環境差で潰さない。
+  const sameOrigin=finalUrl.origin===u.origin;
+  const sourceRedirectAllowed=NETWORK_HOSTS.has(u.hostname)&&NETWORK_HOSTS.has(finalUrl.hostname);
+  if(!sameOrigin&&!sourceRedirectAllowed)throw new Error('blocked-cross-origin-redirect');
+  if(isConfiguredOllama&&!sameOrigin)throw new Error('blocked-cross-origin-redirect');
   return response;
 };
 async function readResponseBytes(res,maxBytes){
