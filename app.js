@@ -5059,13 +5059,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='reader-wake'){void toggleWake().catch(err=>recordRuntimeError('phone-toggle-wake',err));return}
   }
 
-  let lastPhoneTabTap=0;
-  let lastPhoneTabName='';
-  let edgeSwipe=null;
-
-  let phonePointerHandledEl=null;
-  let phonePointerHandledUntil=0;
-
+  // スマホ入力は「クリック委譲」を主経路に一本化する。
+  // 旧来の pointerup/touchend の二重処理は、戻る・その他・検索などの誤遷移を起こしやすいため使わない。
   const phoneActivateElement=(el,fromTouch=false)=>{
     if(!el||!isPhone())return;
     if(el.matches('[data-phone-tab]')){
@@ -5075,123 +5070,62 @@ window.addEventListener('DOMContentLoaded',()=>{
         phoneHaptic(5);
         return;
       }
-      lastPhoneTabName=name;
-      lastPhoneTabTap=Date.now();
     }
     if(fromTouch)phonePress(el);
     phoneHaptic(6);
     activatePhone(el);
   };
 
-  // タップとエッジスワイプを pointer イベントで一元処理する。
-  // Androidブラウザの click 合成状態に依存せず、スマホUIを直接起動する。
-  let phoneStartX=0,phoneStartY=0,phoneTouching=false;
+  const phoneSelector='#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]';
 
-  const phonePointerStart=e=>{
-    if(!isPhone()||e.pointerType!=='touch')return;
-    phoneStartX=e.clientX;
-    phoneStartY=e.clientY;
-    phoneTouching=true;
-
-    const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet button,#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]');
-    if(el)phonePress(el);
-
-    const x=e.clientX,y=e.clientY;
-    if(state.sheetOpen&&x<32)edgeSwipe=null;
-    else if((state.reader||state.work)&&x<28)edgeSwipe={x,y};
-    else if(!state.reader&&!state.work&&
-      (state.screen==='home'||state.screen==='search'||state.screen==='shelf'||state.screen==='records'||state.screen==='settings')&&x<24)edgeSwipe={x,y};
-    else edgeSwipe=null;
+  // ネイティブclickを一度だけ処理。pointer/touchの合成clickはここに集約される。
+  const phoneEvent=e=>{
+    if(!isPhone())return;
+    const el=e.target.closest?.(phoneSelector);
+    if(!el)return;
+    // 入力欄・スライダー等は通常のブラウザ操作を許可。
+    if(el.matches('input,textarea,select'))return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    phoneActivateElement(el,e.detail===0?false:false);
   };
+  document.addEventListener('click',phoneEvent,{capture:true});
 
-  const phonePointerEnd=e=>{
-    if(!isPhone()||e.pointerType!=='touch'||!phoneTouching)return;
-    phoneTouching=false;
-
-    const dx=e.clientX-phoneStartX,dy=e.clientY-phoneStartY;
-    const swiped=!!edgeSwipe&&dx>82&&Math.abs(dx)>Math.abs(dy)*1.35;
-    edgeSwipe=null;
-
-    if(swiped){
+  // iOS風エッジ戻るだけは独立実装。ボタン上のタップには一切干渉しない。
+  const phoneRoot=$p('#phone-app');
+  let edgeX=0,edgeY=0,edgeActive=false;
+  if(phoneRoot&&phoneRoot.dataset.edgeBackBound!=='1'){
+    phoneRoot.dataset.edgeBackBound='1';
+    phoneRoot.addEventListener('pointerdown',e=>{
+      if(e.pointerType!=='touch')return;
+      const target=e.target.closest?.(phoneSelector);
+      if(target){edgeActive=false;return;}
+      edgeX=e.clientX;edgeY=e.clientY;
+      edgeActive=edgeX<24;
+    },{passive:true});
+    phoneRoot.addEventListener('pointerup',e=>{
+      if(e.pointerType!=='touch'||!edgeActive)return;
+      edgeActive=false;
+      const dx=e.clientX-edgeX,dy=e.clientY-edgeY;
+      if(dx<82||Math.abs(dx)<=Math.abs(dy)*1.25)return;
       e.preventDefault();
       e.stopPropagation();
       phoneHaptic(10);
       if(state.sheetOpen){closePhoneSheet();return;}
       if(state.reader){closeReader();return;}
-      else if(state.work&&history.state?.phoneLayer==='phone-detail'){history.back();return;}
-      else if(state.work){state.work=null;showScreen(state.screen,'back');}
-      else if(state.screen!=='home')showScreen('home','back');
-      return;
-    }
-
-    if(Math.abs(dx)>18||Math.abs(dy)>18)return;
-
-    const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]');
-    if(!el)return;
-    if(el.dataset.phoneAction==='detail-read' && state.work){
-      e.preventDefault();
-      e.stopPropagation();
-      phonePointerHandledEl=el;
-      phonePointerHandledUntil=Date.now()+650;
-      void openReader(state.work,true).catch(err=>recordRuntimeError('phone-reader-open',err));
-      return;
-    }
-    e.preventDefault();
-    e.stopPropagation();
-    phonePointerHandledEl=el;
-    phonePointerHandledUntil=Date.now()+650;
-    phoneActivateElement(el,true);
-  };
-
-  document.addEventListener('pointerdown',phonePointerStart,{capture:true,passive:true});
-  document.addEventListener('pointerup',phonePointerEnd,{capture:true,passive:false});
-  document.addEventListener('pointercancel',()=>{
-    phoneTouching=false;
-    edgeSwipe=null;
-  },{capture:true,passive:true});
-
-  // Pointer Events が利用できない古いWebView向けのフォールバック。
-  if(!('PointerEvent' in window)){
-    document.addEventListener('touchstart',e=>{
-      if(!isPhone())return;
-      const t=e.touches[0];if(!t)return;
-      phoneStartX=t.clientX;phoneStartY=t.clientY;phoneTouching=true;
-      const el=e.target.closest?.('#phone-app button,#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet button,#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]');
-      if(el)phonePress(el);
-    },{capture:true,passive:true});
-    document.addEventListener('touchend',e=>{
-      if(!isPhone()||!phoneTouching)return;
-      phoneTouching=false;
-      const t=e.changedTouches[0];if(!t)return;
-      const dx=t.clientX-phoneStartX,dy=t.clientY-phoneStartY;
-      if(Math.abs(dx)>18||Math.abs(dy)>18)return;
-      const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]');
-      if(!el)return;
-      e.preventDefault();
-      e.stopPropagation();
-      phoneActivateElement(el,true);
-    },{capture:true,passive:false});
+      if(state.work&&history.state?.phoneLayer==='phone-detail'){
+        const w=state.work;
+        state.work=null;
+        state.readerFromDetail=false;
+        history.replaceState({...history.state,phoneLayer:undefined},'',location.href);
+        openDetail(w,'back',true);
+        return;
+      }
+      if(state.work){state.work=null;showScreen(state.screen,'back');return;}
+      if(state.screen!=='home')showScreen('home','back');
+    },{passive:false});
+    phoneRoot.addEventListener('pointercancel',()=>{edgeActive=false},{passive:true});
   }
-
-  const phoneEvent=e=>{
-    if(!isPhone()||e.type!=='click')return;
-    const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]');
-    if(!el)return;
-
-    // Touch pointerup handled this command already. Keep click for keyboard/mouse accessibility.
-    if(phonePointerHandledEl===el&&Date.now()<phonePointerHandledUntil){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      phonePointerHandledEl=null;
-      phonePointerHandledUntil=0;
-      return;
-    }
-
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    phoneActivateElement(el,false);
-  };
-  document.addEventListener('click',phoneEvent,{capture:true});
 
   const phoneTouchGuard=e=>{
     if(!isPhone())return;
