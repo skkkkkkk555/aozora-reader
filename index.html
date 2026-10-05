@@ -6653,6 +6653,280 @@ html[data-device="smartphone"] .r-dock{min-height:0!important}
   animation:none!important;
 }
 
+
+/* ===== Reader controls / typography / pagination refinement ===== */
+.reader-config-panel{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+.reader-config-row{
+  padding:15px 16px;
+  border:1px solid var(--apple-separator,rgba(60,60,67,.13));
+  border-radius:16px;
+  background:rgba(118,118,128,.06);
+}
+.reader-config-row > div{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:9px;
+}
+.reader-config-label{font-weight:700}
+.reader-config-row output{
+  font-variant-numeric:tabular-nums;
+  color:var(--apple-blue,#007aff);
+  font-weight:750;
+}
+.reader-config-row input[type="range"]{
+  width:100%!important;
+  height:44px;
+  margin:0;
+}
+
+/* ページは「表示領域1枚」を単位とする。JSが実測した本文領域幅を列幅へ反映。 */
+#body.paper-paged{
+  column-width:var(--reader-page-width,100%)!important;
+  column-gap:0!important;
+  column-fill:auto!important;
+  column-rule:0!important;
+  scroll-snap-type:x mandatory;
+  scroll-padding:0;
+}
+#body.paper-paged > *{
+  max-width:100%;
+}
+#body.paper-paged p,
+#body.paper-paged pre,
+#body.paper-paged section{
+  overflow-wrap:anywhere;
+}
+#body.paper-paged h2,
+#body.paper-paged h3{
+  break-after:avoid;
+}
+#body.paper-paged .aozora-page-break{
+  break-after:column;
+}
+
+/* 非表示中だけ端に出る、小さくて見つけやすいUI復帰ボタン */
+#r-ui-toggle{
+  position:fixed;
+  right:0;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:58;
+  display:none;
+  width:30px;
+  height:54px;
+  min-height:54px;
+  padding:0;
+  border-radius:15px 0 0 15px;
+  background:rgba(28,28,30,.18);
+  color:rgba(255,255,255,.88);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 4px 18px rgba(0,0,0,.08);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  opacity:.34;
+  transition:opacity .2s ease,background .2s ease,transform .2s var(--spring);
+}
+#reader.chrome-hidden #r-ui-toggle,
+#reader.mode-focus #r-ui-toggle{
+  display:flex;
+}
+#r-ui-toggle:hover,
+#r-ui-toggle:focus-visible{
+  opacity:.78;
+  background:rgba(28,28,30,.38);
+}
+#r-ui-toggle:active{
+  opacity:1;
+  transform:translateY(-50%) scale(.92);
+}
+@media(max-width:899px){
+  #reader.chrome-hidden #r-ui-toggle,
+  #reader.mode-focus #r-ui-toggle{
+    width:28px;
+    height:52px;
+    min-height:52px;
+    border-radius:13px 0 0 13px;
+  }
+}
+
+/* スマホの文字サイズ・行間調整は固定段階ではなく連続値 */
+.phone-reader-setting{
+  padding:12px 12px 10px;
+  border:1px solid var(--phone-line);
+  border-radius:14px;
+  background:var(--phone-fill);
+}
+.phone-reader-setting > div{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:5px;
+}
+.phone-reader-setting b{font-size:14px}
+.phone-reader-setting strong{
+  color:var(--phone-blue);
+  font-size:13px;
+  font-variant-numeric:tabular-nums;
+}
+.phone-reader-setting input[type="range"]{
+  width:100%;
+  height:42px;
+  accent-color:var(--phone-blue);
+}
+
+/* 起動演出を「派手さ」ではなく、静かなページオープン表現へ */
+#app-boot{
+  animation:bootFailsafeClean 12s ease forwards!important;
+  background:
+    radial-gradient(circle at 50% 43%,rgba(0,122,255,.08),transparent 27%),
+    #f2f2f7!important;
+}
+#app-boot::before{
+  animation:bootAmbientClean 8s ease-in-out infinite alternate!important;
+  background:
+    radial-gradient(circle at 50% 45%,rgba(0,122,255,.08),transparent 30%),
+    radial-gradient(circle at 28% 74%,rgba(88,86,214,.045),transparent 25%);
+}
+#app-boot::after{display:none!important}
+#app-boot .boot-orbit-a,
+#app-boot .boot-orbit-b,
+#app-boot .boot-particles{display:none!important}
+#app-boot .boot-noise{display:none!important}
+#app-boot .boot-card{
+  width:min(370px,calc(100vw - 44px))!important;
+  padding:14px 24px 22px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  animation:bootCleanIn 700ms cubic-bezier(.16,1,.3,1) both!important;
+}
+#app-boot .boot-glow{
+  inset:8% 5% 38%!important;
+  background:radial-gradient(circle,rgba(0,122,255,.16),transparent 68%)!important;
+  filter:blur(22px)!important;
+  opacity:.65!important;
+  animation:bootGlowClean 5s ease-in-out infinite alternate!important;
+}
+#app-boot .boot-mark{
+  width:74px!important;height:74px!important;
+  margin:0 auto 20px!important;
+  border-radius:24px!important;
+  background:linear-gradient(145deg,#007aff,#5ac8fa)!important;
+  box-shadow:0 16px 34px rgba(0,122,255,.18),0 0 0 1px rgba(255,255,255,.28) inset!important;
+  animation:bootMarkClean 900ms cubic-bezier(.16,1,.3,1) both!important;
+}
+#app-boot .boot-mark::before{
+  inset:15px 14px!important;
+  border:2px solid rgba(255,255,255,.62)!important;
+  border-right:0!important;
+  border-radius:9px 3px 3px 9px!important;
+  animation:bootPageFold 2.4s ease-in-out infinite!important;
+}
+#app-boot .boot-mark::after{
+  inset:14px auto 14px 50%!important;
+  width:1px!important;
+  border-radius:0!important;
+  background:rgba(255,255,255,.46)!important;
+  box-shadow:none!important;
+}
+#app-boot .boot-mark span{
+  font-size:21px!important;
+  font-weight:800!important;
+  color:#fff!important;
+  text-shadow:0 2px 7px rgba(0,0,0,.14)!important;
+}
+#app-boot .boot-title{
+  font-size:22px!important;
+  letter-spacing:-.035em!important;
+  animation:bootCleanText 560ms cubic-bezier(.16,1,.3,1) .10s both!important;
+}
+#app-boot .boot-sub{
+  margin-top:7px!important;
+  font-size:13px!important;
+  animation:bootCleanText 560ms cubic-bezier(.16,1,.3,1) .18s both!important;
+}
+#app-boot .boot-progress-meta{
+  margin-top:24px!important;
+  font-size:11px!important;
+  animation:bootCleanText 560ms cubic-bezier(.16,1,.3,1) .25s both!important;
+}
+#app-boot .boot-progress-meta strong{
+  padding:2px 7px!important;
+  background:rgba(120,120,128,.075)!important;
+}
+#app-boot .boot-track{
+  height:4px!important;
+  margin-top:8px!important;
+  background:rgba(120,120,128,.13)!important;
+  box-shadow:none!important;
+}
+#app-boot .boot-fill{
+  background:linear-gradient(90deg,#007aff,#5ac8fa)!important;
+  box-shadow:none!important;
+}
+#app-boot .boot-fill::after{
+  width:24%!important;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.8),transparent)!important;
+  animation:bootFillClean 1.7s ease-in-out infinite!important;
+}
+#app-boot .boot-signal{display:none!important}
+@keyframes bootAmbientClean{
+  from{transform:scale(1) translate3d(-1%,0,0)}
+  to{transform:scale(1.04) translate3d(1%,1%,0)}
+}
+@keyframes bootCleanIn{
+  0%{opacity:0;transform:translateY(14px) scale(.985)}
+  100%{opacity:1;transform:none}
+}
+@keyframes bootMarkClean{
+  0%{opacity:0;transform:translateY(10px) scale(.82)}
+  65%{opacity:1;transform:translateY(-1px) scale(1.035)}
+  100%{opacity:1;transform:none}
+}
+@keyframes bootPageFold{
+  0%,100%{transform:perspective(180px) rotateY(0deg);opacity:.65}
+  50%{transform:perspective(180px) rotateY(-18deg);opacity:1}
+}
+@keyframes bootCleanText{
+  from{opacity:0;transform:translateY(5px)}
+  to{opacity:1;transform:none}
+}
+@keyframes bootGlowClean{
+  from{transform:scale(.94);opacity:.42}
+  to{transform:scale(1.06);opacity:.72}
+}
+@keyframes bootFillClean{
+  0%,22%{transform:translateX(-190%);opacity:0}
+  42%{opacity:.8}
+  70%,100%{transform:translateX(470%);opacity:0}
+}
+@keyframes bootFailsafeClean{
+  0%,84%{opacity:1;visibility:visible;pointer-events:auto}
+  100%{opacity:0;visibility:hidden;pointer-events:none}
+}
+@media(prefers-reduced-motion:reduce){
+  #r-ui-toggle{transition:none}
+  #app-boot,#app-boot::before,#app-boot .boot-card,#app-boot .boot-mark,#app-boot .boot-mark::before,
+  #app-boot .boot-glow,#app-boot .boot-fill::after,#app-boot .boot-title,#app-boot .boot-sub,#app-boot .boot-progress-meta{
+    animation:none!important;
+  }
+}
+.low-power #r-ui-toggle{
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+.low-power #app-boot .boot-glow{animation:none!important}
+
 </style>
 </head>
 <body>
@@ -7103,6 +7377,7 @@ html[data-device="smartphone"] .r-dock{min-height:0!important}
   <!-- 読書画面 -->
   <div id="reader"><div id="r-scroll-progress" aria-hidden="true"></div>
     <button id="btn-exit-focus" data-act="r-exit-focus">集中解除</button>
+    <button id="r-ui-toggle" data-act="r-ui-toggle" aria-label="読書UIを表示" title="読書UIを表示">⌃</button>
     <div class="r-bar" id="r-top">
       <button class="secondary sm-btn" data-act="r-back" style="width:52px"><svg class="icon"><path d="m15 18-6-6 6-6"/></svg></button>
       <div id="r-title" class="serif" style="font-size:var(--fs-t); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:45%"></div>
