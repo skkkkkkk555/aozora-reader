@@ -1195,11 +1195,13 @@ function startFeatTimer(){
 function showBanner(msg){
   const banner=$('banner');
   const text=$('ban-txt');
+  const btn=banner?.querySelector('[data-act="ban-btn"]');
   if(text)text.textContent=msg;
   if(banner){
     banner.dataset.reason='';
     banner.style.display='flex';
   }
+  if(btn)btn.textContent='確認';
 }
 function showCatalogManualNotice(){
   const banner=$('banner');
@@ -2512,7 +2514,19 @@ document.addEventListener('click',async(e)=>{
   if(act==='nav') switchView(b.dataset.v);
   else if(act==='back-home') switchView('v-home');
   else if(act==='close-sheet'){ e.preventDefault(); e.stopPropagation(); closeSheet(false); }
-  else if(act==='ban-btn') switchView('v-settings');
+  else if(act==='ban-btn'){
+    const banner=$('banner');
+    const manual=banner?.dataset.reason==='catalog-manual';
+    if(banner)banner.style.display='none';
+    if(manual){
+      if(document.documentElement.dataset.device==='smartphone'&&typeof window.__aozoraPhoneOpenCatalogManual==='function'){
+        window.__aozoraPhoneOpenCatalogManual();
+      }else{
+        switchView('v-settings');
+        setTimeout(()=>openCatalogIntro(),60);
+      }
+    }else switchView('v-settings');
+  }
   else if(act==='nav-settings') switchView('v-settings');
 
   // 検索画面
@@ -4355,7 +4369,21 @@ window.addEventListener('DOMContentLoaded',()=>{
     }catch{}
   }
 
+  function openPhoneCatalogManual(){
+    openPhoneSheet('カタログを手動で読み込む',
+      '<div class="phone-catalog-manual">'+
+      '<p>自動読み込みに失敗しました。青空文庫のカタログ（.zip / .csv）を選択してください。</p>'+
+      '<label class="phone-sheet-row phone-catalog-file"><span>↑</span><b>ファイルを選択</b><input id="phone-catalog-file" type="file" accept=".zip,.csv" style="position:absolute;opacity:0;inset:0;width:100%;height:100%;cursor:pointer"></label>'+
+      '</div>'
+    );
+    $p('#phone-catalog-file')?.addEventListener('change',e=>{
+      const file=e.target.files?.[0];
+      if(file){closePhoneSheet();parseFile(file);}
+    },{once:true});
+  }
+
   window.__aozoraPhoneOpenSheet=openPhoneSheet;
+  window.__aozoraPhoneOpenCatalogManual=openPhoneCatalogManual;
   window.__aozoraPhoneCloseSheet=closePhoneSheet;
   window.__aozoraPhoneOpenReader=openReader;
   window.__aozoraPhoneOpenDetail=openDetail;
