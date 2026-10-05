@@ -8123,6 +8123,48 @@ html[data-device="smartphone"] .phone-detail-nav .phone-icon-button{
   pointer-events:auto!important;
 }
 </style>
+<style id="aozora-absolute-navigation-guard">
+html[data-device="smartphone"] #phone-global-back{
+  position:fixed!important;
+  left:10px!important;
+  top:calc(8px + env(safe-area-inset-top))!important;
+  width:44px!important;
+  height:44px!important;
+  min-width:44px!important;
+  min-height:44px!important;
+  display:none!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border-radius:50%!important;
+  background:rgba(255,255,255,.92)!important;
+  color:#007aff!important;
+  border:1px solid rgba(60,60,67,.12)!important;
+  box-shadow:0 4px 16px rgba(0,0,0,.12)!important;
+  z-index:2147483000!important;
+  font-size:34px!important;
+  line-height:1!important;
+}
+html[data-device="smartphone"] #phone-global-back:active{transform:scale(.92)!important}
+html[data-device="smartphone"] #phone-detail:not([hidden]) ~ #phone-global-back,
+html[data-device="smartphone"] #phone-reader.phone-open ~ #phone-global-back{
+  display:flex!important;
+}
+html[data-theme="dark"][data-device="smartphone"] #phone-global-back{
+  background:rgba(28,28,30,.94)!important;
+  color:#0a84ff!important;
+  border-color:#38383a!important;
+}
+html[data-device="desktop"] #reader .r-bar.hide,
+html[data-device="desktop"] #reader .r-dock.hide,
+html[data-device="desktop"] #reader .r-bottom-bar.hide{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  transform:none!important;
+}
+html[data-device="desktop"] #reader .r-dock.hide{display:grid!important}
+</style>
 </head>
 <body>
 <!-- Dedicated smartphone application shell -->
@@ -8186,6 +8228,7 @@ html[data-device="smartphone"] .phone-detail-nav .phone-icon-button{
     <div class="phone-reader-progress"><span id="phone-reader-progress"></span></div>
   </section>
 
+  <button id="phone-global-back" type="button" aria-label="戻る" title="戻る"><span aria-hidden="true">‹</span></button>
   <div id="phone-sheet-scrim" class="phone-sheet-scrim" hidden data-phone-action="sheet-close"></div>
   <section id="phone-sheet" class="phone-sheet" hidden aria-hidden="true">
     <header class="phone-sheet-head">
@@ -8816,6 +8859,6 @@ html[data-device="smartphone"] .phone-detail-nav .phone-icon-button{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-display-fix-v20261005-22"></script>
+<script src="./app.js?v=reader-display-fix-v20261005-23"></script>
 </body>
 </html>
