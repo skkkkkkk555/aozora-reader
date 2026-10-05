@@ -7114,54 +7114,57 @@ html[data-device="smartphone"] .r-dock{min-height:0!important}
 
 
 
-/* ===== Compact bookmark cards ===== */
+/* ===== Ultra compact bookmark rows ===== */
 #home-bookmarks-section{
   width:100%!important;
-  margin:18px 0 8px!important;
-  font-size:18px!important;
+  margin:14px 0 6px!important;
+  font-size:17px!important;
   font-weight:750!important;
 }
 .home-bookmark-list{
   display:flex!important;
   flex-direction:column!important;
   width:100%!important;
-  gap:9px!important;
-  margin:0 0 16px!important;
+  gap:7px!important;
+  margin:0 0 12px!important;
 }
 .home-bookmark-card{
-  display:block!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
   width:100%!important;
   min-height:0!important;
-  height:auto!important;
-  border-radius:16px!important;
+  height:56px!important;
+  border-radius:14px!important;
   overflow:hidden!important;
   box-sizing:border-box!important;
 }
 .home-bookmark-main{
   display:grid!important;
-  grid-template-columns:34px minmax(0,1fr)!important;
+  grid-template-columns:30px minmax(0,1fr)!important;
   align-items:center!important;
   width:100%!important;
-  min-height:64px!important;
-  height:64px!important;
-  padding:10px 13px!important;
-  gap:10px!important;
+  min-width:0!important;
+  min-height:56px!important;
+  height:56px!important;
+  padding:8px 10px!important;
+  gap:8px!important;
   box-sizing:border-box!important;
 }
 .home-bookmark-icon{
-  width:34px!important;
-  height:34px!important;
+  width:30px!important;
+  height:30px!important;
   display:grid!important;
   place-items:center!important;
-  border-radius:10px!important;
-  font-size:18px!important;
+  border-radius:9px!important;
+  font-size:16px!important;
 }
 .home-bookmark-text{
   min-width:0!important;
   max-width:100%!important;
   display:flex!important;
   flex-direction:column!important;
-  gap:3px!important;
+  gap:2px!important;
   align-items:flex-start!important;
   overflow:hidden!important;
 }
@@ -7169,8 +7172,8 @@ html[data-device="smartphone"] .r-dock{min-height:0!important}
   display:block!important;
   width:100%!important;
   max-width:100%!important;
-  font-size:15px!important;
-  line-height:1.3!important;
+  font-size:14px!important;
+  line-height:1.25!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important;
   white-space:nowrap!important;
@@ -7178,62 +7181,80 @@ html[data-device="smartphone"] .r-dock{min-height:0!important}
 .home-bookmark-text small{
   display:block!important;
   max-width:100%!important;
-  font-size:11px!important;
-  line-height:1.3!important;
+  font-size:10px!important;
+  line-height:1.2!important;
   color:var(--sub)!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
 }
 .home-bookmark-points{
-  display:grid!important;
-  grid-template-columns:repeat(3,minmax(0,1fr))!important;
-  width:100%!important;
-  gap:6px!important;
-  padding:0 10px 10px!important;
-  box-sizing:border-box!important;
-  overflow:visible!important;
-}
-.home-bookmark-point{
   display:flex!important;
-  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:4px!important;
+  width:auto!important;
+  max-width:46%!important;
+  padding:0 8px 0 2px!important;
+  box-sizing:border-box!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scrollbar-width:none!important;
+}
+.home-bookmark-points::-webkit-scrollbar{display:none!important}
+.home-bookmark-point{
+  display:inline-flex!important;
+  flex:0 0 30px!important;
   align-items:center!important;
   justify-content:center!important;
-  width:100%!important;
-  min-width:0!important;
-  min-height:38px!important;
-  height:38px!important;
+  width:30px!important;
+  min-width:30px!important;
+  min-height:28px!important;
+  height:28px!important;
   box-sizing:border-box!important;
-  padding:0 6px!important;
-  border-radius:10px!important;
-  gap:4px!important;
-  font-size:10px!important;
+  padding:0!important;
+  border-radius:8px!important;
+  gap:0!important;
+  font-size:9px!important;
 }
-.home-bookmark-point span{font-size:11px!important;font-weight:800!important}
-.home-bookmark-point em{font-size:10px!important;font-style:normal!important}
+.home-bookmark-point span{font-size:10px!important;font-weight:800!important}
+.home-bookmark-point em{display:none!important}
 @media(max-width:520px){
-  .home-bookmark-card{border-radius:14px!important}
+  .home-bookmark-card{
+    height:52px!important;
+    border-radius:13px!important;
+  }
   .home-bookmark-main{
-    grid-template-columns:32px minmax(0,1fr)!important;
-    min-height:60px!important;
-    height:60px!important;
-    padding:9px 12px!important;
+    min-height:52px!important;
+    height:52px!important;
+    grid-template-columns:28px minmax(0,1fr)!important;
+    padding:7px 9px!important;
+    gap:7px!important;
   }
   .home-bookmark-icon{
-    width:32px!important;
-    height:32px!important;
-    border-radius:9px!important;
-    font-size:17px!important;
+    width:28px!important;
+    height:28px!important;
+    border-radius:8px!important;
+    font-size:15px!important;
   }
+  .home-bookmark-text strong{font-size:13px!important}
+  .home-bookmark-text small{font-size:9px!important}
   .home-bookmark-points{
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:5px!important;
-    padding:0 9px 9px!important;
+    max-width:44%!important;
+    gap:3px!important;
+    padding-right:6px!important;
   }
   .home-bookmark-point{
-    min-height:34px!important;
-    height:34px!important;
-    border-radius:9px!important;
+    flex-basis:27px!important;
+    width:27px!important;
+    min-width:27px!important;
+    min-height:26px!important;
+    height:26px!important;
+    border-radius:7px!important;
+    font-size:8px!important;
   }
+  .home-bookmark-point span{font-size:9px!important}
 }
-
 /* ===== Final reader/block UI correction ===== */
 #reader .r-dock{
   grid-template-columns:repeat(3,minmax(0,1fr))!important;
@@ -7884,6 +7905,6 @@ html[data-device="smartphone"] .phone-reader-ui-toggle:active{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=ios-deep-20261005-bookmarkcompact1"></script>
+<script src="./app.js?v=reader-freeze-bookmarkrow-20261005"></script>
 </body>
 </html>
