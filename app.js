@@ -2424,9 +2424,19 @@ function ensureDesktopReaderFlow(){
   }else{
     flow.style.setProperty('writing-mode','horizontal-tb','important');
     flow.style.setProperty('direction','ltr','important');
-    flow.style.setProperty('width','100%','important');
-    flow.style.setProperty('min-height','100%','important');
-    flow.style.removeProperty('height');
+      if(state.readerVertical){
+        flow.style.setProperty('width','max-content','important');
+        flow.style.setProperty('min-width','max-content','important');
+        flow.style.setProperty('max-width','none','important');
+        flow.style.setProperty('height','100%','important');
+        flow.style.setProperty('min-height','100%','important');
+        flow.style.setProperty('writing-mode','vertical-rl','important');
+        flow.style.setProperty('direction','ltr','important');
+      }else{
+        flow.style.setProperty('width','100%','important');
+        flow.style.setProperty('min-width','0','important');
+        flow.style.setProperty('max-width','none','important');
+      }
     flow.style.removeProperty('padding');
   }
 }
@@ -5565,24 +5575,15 @@ window.addEventListener('DOMContentLoaded',()=>{
     window.__aozoraPhoneBackHandledUntil=phoneBackHandledUntil;
     window.__aozoraPhoneBack?.();
   };
-  document.addEventListener('pointerdown',e=>{
-    if(!isPhone()||!['touch','pen'].includes(e.pointerType))return;
-    const el=e.target.closest?.(phoneBackSelector);
-    if(!el)return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    handlePhoneBack();
-  },{capture:true,passive:false});
+  // 戻るはcaptureでイベントを奪わず、通常のclickで確実に処理する。
   document.addEventListener('click',e=>{
     if(!isPhone())return;
     const el=e.target.closest?.(phoneBackSelector);
     if(!el)return;
-    if(Date.now()<phoneBackHandledUntil)return;
     e.preventDefault();
-    e.stopImmediatePropagation();
+    e.stopPropagation();
     handlePhoneBack();
-  },{capture:true});
-
+  });
   // ネイティブclickを一度だけ処理。戻る以外のスマホ操作をここに集約する。
   const phoneEvent=e=>{
     if(!isPhone())return;
