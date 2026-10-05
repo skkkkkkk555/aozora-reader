@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdnjs.cloudflare.com; connect-src 'self' https: http:; worker-src 'none'; media-src 'self' blob:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdnjs.cloudflare.com; connect-src 'self' https: http:; worker-src 'self'; media-src 'self' blob:">
 <title>青空文庫リーダー（非公式）</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
@@ -7740,6 +7740,25 @@ html[data-device="smartphone"] .phone-reader-tool{
   html[data-device="smartphone"] .phone-reader-tool{height:56px!important;min-height:56px!important}
 }
 
+
+/* ===== Reader stability: normal flow + viewport paging ===== */
+#body.paper-paged{
+  overflow:auto!important;overflow-x:auto!important;overflow-y:auto!important;
+  column-width:auto!important;column-gap:0!important;column-fill:auto!important;column-rule:0!important;
+  columns:auto!important;contain:none!important;scroll-behavior:auto!important;
+  scroll-snap-type:none!important;overscroll-behavior:contain!important;
+}
+#body.paper-paged>*{break-inside:auto!important}
+#body.paper-paged.v{
+  writing-mode:vertical-rl!important;width:max-content!important;min-width:100%!important;max-width:none!important;
+  height:100%!important;min-height:0!important;overflow-x:auto!important;overflow-y:hidden!important;
+}
+#body.paper-paged:not(.v){
+  writing-mode:horizontal-tb!important;width:auto!important;min-width:100%!important;
+  height:auto!important;min-height:100%!important;
+}
+#body.reader-building{visibility:hidden!important;pointer-events:none!important}
+
 </style>
 </head>
 <body>
@@ -8266,6 +8285,6 @@ html[data-device="smartphone"] .phone-reader-tool{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-isolated-progressive-v20261005"></script>
+<script src="./app.js?v=reader-worker-scroll-paging-v20261005"></script>
 </body>
 </html>
