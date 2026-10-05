@@ -8212,6 +8212,46 @@ html[data-device="desktop"] #reader.open #btn-exit-focus{
   z-index:2147483646!important;
 }
 </style>
+<style id="aozora-reader-ui-escape-fix">
+/* ===== 2026-10-05 Reader UI escape fix =====
+   PCの復帰ボタンを#readerの外へ分離。読書レイヤー内部のoverflow/stacking/状態変更に影響されない。 */
+#r-ui-toggle{
+  display:none!important;
+}
+html[data-device="desktop"][data-reader-open="1"] #r-ui-toggle{
+  position:fixed!important;
+  right:18px!important;
+  bottom:76px!important;
+  top:auto!important;
+  width:auto!important;
+  min-width:92px!important;
+  height:42px!important;
+  min-height:42px!important;
+  margin:0!important;
+  padding:0 14px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-sizing:border-box!important;
+  border-radius:999px!important;
+  background:rgba(28,28,30,.88)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.24)!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.24)!important;
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+  transform:none!important;
+  z-index:2147483647!important;
+  isolation:isolate!important;
+}
+html[data-device="desktop"][data-reader-open="1"] #r-ui-toggle:hover{
+  background:rgba(28,28,30,.96)!important;
+}
+html[data-device="desktop"][data-reader-open="1"] #r-ui-toggle:active{
+  transform:scale(.96)!important;
+}
+</style>
 </head>
 <body>
 <!-- Dedicated smartphone application shell -->
@@ -8665,7 +8705,6 @@ html[data-device="desktop"] #reader.open #btn-exit-focus{
   <div id="reader"><div id="r-scroll-progress" aria-hidden="true"></div>
     <div id="reader-loading-layer" class="reader-loading-layer" hidden aria-hidden="true"></div>
     <button id="btn-exit-focus" data-act="r-exit-focus">集中解除</button>
-    <button id="r-ui-toggle" data-act="r-ui-toggle" aria-label="読書UIを表示" title="読書UIを表示"><span aria-hidden="true">⌃</span><span style="margin-left:6px">UI表示</span></button>
     <div class="r-bar" id="r-top">
       <button class="secondary sm-btn" data-act="r-back" style="width:52px"><svg class="icon"><path d="m15 18-6-6 6-6"/></svg></button>
       <div id="r-title" class="serif" style="font-size:var(--fs-t); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:45%"></div>
@@ -8720,6 +8759,10 @@ html[data-device="desktop"] #reader.open #btn-exit-focus{
 
 </div>
 
+<!-- PC読書UIの独立復帰ボタン。#readerのoverflow/stacking contextから分離して常に操作可能にする -->
+<button id="r-ui-toggle" type="button" data-act="r-ui-toggle" aria-label="読書UIを表示" title="読書UIを表示">
+  <span aria-hidden="true">⌃</span><span style="margin-left:6px">UI表示</span>
+</button>
 
 <style id="aozora-splash-style">
 /* スプラッシュ全画面オーバーレイ */
