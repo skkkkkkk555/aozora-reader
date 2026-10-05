@@ -81,7 +81,6 @@ function assertDesktopReaderChrome(d,label){
   await sleep(500);
   assertNoRuntimeErrors(d,'runtime error during startup');
   clearRuntimeErrors(d);
-  if(runtimeErrors.length)fail('runtime error during startup: '+JSON.stringify(runtimeErrors));
   const device=d.documentElement.dataset.device;
 
   if(mode==='live'){
@@ -137,12 +136,16 @@ function assertDesktopReaderChrome(d,label){
     const homeBook=await waitFor(()=>d.querySelector('#phone-content [data-phone-work]'),18000);
     const testTitle=textOf(homeBook.querySelector('.phone-book-name,.phone-book-title-big'))||textOf(homeBook);
     if(testTitle.length<2)fail('smartphone home book title missing');
+    clearRuntimeErrors(d);
     homeBook.click();
     clearRuntimeErrors(d);
     await sleep(100);
     assertNoRuntimeErrors(d,'mobile after home book open');
     clearRuntimeErrors(d);
 
+    await sleep(100);
+    assertNoRuntimeErrors(d,'mobile after home book open');
+    clearRuntimeErrors(d);
     const more=await waitFor(()=>d.querySelector('#phone-detail [data-phone-action="detail-more"]'),4000);
     more.click();
     await waitFor(()=>d.querySelector('#phone-sheet')?.classList.contains('open'),5000);
@@ -151,7 +154,11 @@ function assertDesktopReaderChrome(d,label){
     await waitFor(()=>!d.querySelector('#phone-sheet')?.classList.contains('open'),5000);
 
     const read=await waitFor(()=>d.querySelector('#phone-detail [data-phone-action="detail-read"]'),6000);
+    clearRuntimeErrors(d);
     read.click();
+    assertNoRuntimeErrors(d,'mobile immediately after read click');
+    clearRuntimeErrors(d);
+    await sleep(150);
     assertNoRuntimeErrors(d,'mobile immediately after read click');
     clearRuntimeErrors(d);
     const loadLayer=await waitFor(()=>d.querySelector('#phone-reader-loading-layer'),5000);
@@ -165,30 +172,41 @@ function assertDesktopReaderChrome(d,label){
     if(!readerScrollable(d,'#phone-reader-body'))fail('smartphone reader body is not actually scrollable');
     assertNoRuntimeErrors(d,'mobile after reader render');
     clearRuntimeErrors(d);
+    assertNoRuntimeErrors(d,'mobile after reader render');
+    clearRuntimeErrors(d);
 
     const readerSearch=d.querySelector('#phone-reader [data-phone-action="reader-search"]');
     if(!readerSearch)fail('smartphone reader search action missing');
     readerSearch.click();
     await waitFor(()=>!d.querySelector('#phone-reader-search')?.hidden,4000);
     const readerSearchClose=await waitFor(()=>d.querySelector('#phone-reader [data-phone-action="reader-search-close"]'),4000);
+    clearRuntimeErrors(d);
     readerSearchClose.click();
     await sleep(100);
     assertNoRuntimeErrors(d,'mobile after reader search close');
     clearRuntimeErrors(d);
     await waitFor(()=>d.querySelector('#phone-reader-search')?.hidden,4000);
+    assertNoRuntimeErrors(d,'mobile after reader search close');
+    clearRuntimeErrors(d);
 
     const readerBack=await waitFor(()=>d.querySelector('#phone-reader [data-phone-action="reader-back"]'),4000);
+    clearRuntimeErrors(d);
     readerBack.click();
     assertNoRuntimeErrors(d,'mobile after reader back');
     clearRuntimeErrors(d);
     await waitFor(()=>!d.querySelector('#phone-reader')?.classList.contains('phone-open'),5000);
+    assertNoRuntimeErrors(d,'mobile after reader back');
+    clearRuntimeErrors(d);
     await waitFor(()=>visible(d.querySelector('#phone-detail')),4000);
 
     const detailBack=await waitFor(()=>d.querySelector('#phone-detail [data-phone-action="detail-back"]'),4000);
+    clearRuntimeErrors(d);
     detailBack.click();
     assertNoRuntimeErrors(d,'mobile after detail back');
     clearRuntimeErrors(d);
     await waitFor(()=>!visible(d.querySelector('#phone-detail')),5000);
+    assertNoRuntimeErrors(d,'mobile after detail back');
+    clearRuntimeErrors(d);
 
     const searchTab=await waitFor(()=>d.querySelector('[data-phone-tab="search"]'),4000);
     searchTab.click();
@@ -221,25 +239,34 @@ function assertDesktopReaderChrome(d,label){
     await sleep(500);
 
     const result=await waitFor(()=>d.querySelector('#search-tiles [data-act="open-book"]'),15000);
-    result.click();
     clearRuntimeErrors(d);
+    result.click();
     await waitFor(()=>d.querySelector('#sheet')?.classList.contains('open'),5000);
+    assertNoRuntimeErrors(d,'desktop after book detail open');
+    clearRuntimeErrors(d);
 
     const close=await waitFor(()=>d.querySelector('#sheet [data-act="close-sheet"]'),4000);
+    clearRuntimeErrors(d);
     close.click();
     assertNoRuntimeErrors(d,'desktop after detail sheet close');
     clearRuntimeErrors(d);
     await waitFor(()=>!d.querySelector('#sheet')?.classList.contains('open'),5000);
+    assertNoRuntimeErrors(d,'desktop after detail sheet close');
+    clearRuntimeErrors(d);
 
     result.click();
     await waitFor(()=>d.querySelector('#sheet')?.classList.contains('open'),5000);
     const readNow=await waitFor(()=>d.querySelector('#sheet [data-act="read-now"]'),5000);
+    clearRuntimeErrors(d);
     readNow.click();
     assertNoRuntimeErrors(d,'desktop immediately after read click');
     clearRuntimeErrors(d);
     const loadLayer=await waitFor(()=>d.querySelector('#reader-loading-layer'),5000);
     if(loadLayer.parentElement?.id!=='reader')throw new Error('desktop reader loader is not isolated');
     await waitFor(()=>d.querySelector('#reader')?.classList.contains('open'),7000);
+    await sleep(150);
+    assertNoRuntimeErrors(d,'desktop immediately after read click');
+    clearRuntimeErrors(d);
     const readerOpacity=d.defaultView.getComputedStyle(d.querySelector('#reader')).opacity;
     if(Number(readerOpacity)<0.99)throw new Error('desktop reader still fades over the previous UI');
     assertDesktopReaderChrome(d,'desktop reader chrome after open');
@@ -267,12 +294,20 @@ function assertDesktopReaderChrome(d,label){
     clearRuntimeErrors(d);
     const uiToggle=d.querySelector('#r-ui-toggle');
     if(uiToggle){uiToggle.click();await sleep(120);assertDesktopReaderChrome(d,'desktop reader chrome after UI toggle');clearRuntimeErrors(d);}
+    await sleep(100);
+    assertNoRuntimeErrors(d,'desktop after reader search');
+    clearRuntimeErrors(d);
+    const uiToggle=d.querySelector('#r-ui-toggle');
+    if(uiToggle){uiToggle.click();await sleep(120);assertDesktopReaderChrome(d,'desktop reader chrome after UI toggle');clearRuntimeErrors(d);}
 
     const back=await waitFor(()=>d.querySelector('[data-act="r-back"]'),4000);
+    clearRuntimeErrors(d);
     back.click();
     assertNoRuntimeErrors(d,'desktop after reader back');
     clearRuntimeErrors(d);
     await waitFor(()=>!d.querySelector('#reader')?.classList.contains('open'),5000);
+    assertNoRuntimeErrors(d,'desktop after reader back');
+    clearRuntimeErrors(d);
 
     const settings=await waitFor(()=>d.querySelector('[data-act="nav"][data-v="v-settings"]'),4000);
     settings.click();
