@@ -712,6 +712,17 @@ async function refreshCatalogInBackground(){
   return fetchCatalog({background:true,notifyOnFail:false});
 }
 
+let catalogRefreshTimer=null;
+function scheduleCatalogRefresh(){
+  clearTimeout(catalogRefreshTimer);
+  const delay=6*60*60*1000;
+  catalogRefreshTimer=setTimeout(async()=>{
+    try{
+      if(!document.hidden&&navigator.onLine!==false)await refreshCatalogInBackground();
+    }catch(err){console.debug('scheduled catalog refresh failed',err);}
+    scheduleCatalogRefresh();
+  },delay);
+}
 async function checkCatalog(){
   const rightsOk=await loadRightsAllowlist();
   if(!rightsOk){
@@ -3026,6 +3037,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
 
   safeStage(70,'本棚を準備中…');
   await safeStep(()=>checkCatalog(),'catalog');
+  scheduleCatalogRefresh();
   await safeStep(()=>hydrateSavedKeys(),'saved-keys');
   await safeStep(()=>renderHome(),'home');
 
