@@ -19,7 +19,7 @@ ok(app.includes('let readerPositionReady=false'),'reader initial-position guard 
 ok(app.includes('!readerPositionReady'),'progress guard is not tied to initial-position readiness');
 ok(/const READER_PROGRESS_VERSION=\d+/.test(app),'reader progress schema version missing');
 ok(app.includes('phoneRoot:true'),'smartphone history root sentinel missing');
-ok(app.includes('const bindPhoneBackControl=(button)=>'),'direct smartphone back binding missing');
+ok(app.includes("const phoneBackSelector='#phone-global-back,#phone-app [data-phone-action=\"reader-back\"],#phone-app [data-phone-action=\"detail-back\"]'"),'unified smartphone back selector missing');
 ok(html.includes('id="aozora-reader-root-final-fix"'),'authoritative reader geometry CSS missing');
 ok(/app\.js\?v=reader-mobile-zero-bug-v20261005-\d+/.test(html),'reader cache version was not bumped');
 ok(smoke.includes("desktop fresh reader progress is"),'desktop first-open progress smoke test missing');
