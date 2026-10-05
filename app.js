@@ -1555,20 +1555,37 @@ async function fetchHead(w){
   if(typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))return '本文の取得をお試しください。';
   const c=await idb.get('docs',w.id);
   if(c&&typeof c==='object'&&typeof c.plain==='string'&&c.plain.length<=SEC.maxBookBytes/2)return c.plain.slice(0,90);
-  const u=`https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${w.x}`;
-  try {
-    const res=await secureFetch(u,{headers:{'Range':'bytes=0-3500'},signal:sig(5000)});
-    if(res.ok){
-      const b=await readResponseBytes(res,SEC.maxResponseHeadBytes);if(!b)return '本文の取得をお試しください。';
+  const urls=buildBodyUrlCandidates(w);
+  for(const u of urls){
+    try{
+      const res=await secureFetch(u,{headers:{'Range':'bytes=0-3500'},signal:sig(5000)});
+      if(!res.ok)continue;
+      const b=await readResponseBytes(res,SEC.maxResponseHeadBytes);
+      if(!b)continue;
       const t=new TextDecoder('shift_jis').decode(b);
-      return parseAozora(t,true).plain.slice(0,90);
-    }
-  }catch{}
+      const q=parseAozora(t,true).plain.slice(0,90);
+      if(q.trim())return q;
+    }catch{}
+  }
   return '本文の取得をお試しください。';
 }
 
 let readerTok=0;
 let readerLoadingWorkId='';
+function buildBodyUrlCandidates(w){
+  if(!w||typeof w.x!=='string')return [];
+  const path=String(w.x).replace(/^\/+|\s+$/g,'');
+  if(!path||path.length>500||path.includes('..')||path.includes('\\')||path.startsWith('http'))return [];
+  const official=`https://www.aozora.gr.jp/${path}`;
+  const raw=`https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${path}`;
+  const mirror=`https://aozorahack.org/aozorabunko_text/${path}`;
+  const proxy1=`https://corsproxy.io/?url=${encodeURIComponent(official)}`;
+  const proxy2=`https://corsproxy.org/?url=${encodeURIComponent(official)}`;
+  const proxy3=`https://api.allorigins.win/raw?url=${encodeURIComponent(official)}`;
+  // raw/mirrorを先に試し、公式→CORSプロキシへ段階的にフォールバック。
+  return [...new Set([raw,mirror,official,proxy1,proxy2,proxy3])];
+}
+
 async function fetchBody(w){
   if(!w||!isPublicWork(w))throw new Error('protected-work');
   if(BROWSER_SMOKE){
@@ -1585,28 +1602,31 @@ async function fetchBody(w){
     try{await idb.del('docs',w.id);}catch{}
   }
   if(st.offline) throw new Error('オフラインです');
-  const urls=[
-    `https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${w.x}`,
-    `https://aozorahack.org/aozorabunko_text/${w.x}`,
-    `https://www.aozora.gr.jp/${w.x}`,
-    `https://corsproxy.io/?url=`+encodeURIComponent(`https://www.aozora.gr.jp/${w.x}`)
-  ];
-  let buf=null, is404=true;
-  // 本文取得も複数候補を試すが、作品1冊あたりの総待機時間に上限を設ける。
-  const bodyDeadline=Date.now()+30000;
+  const urls=buildBodyUrlCandidates(w);
+  let buf=null, notFoundCount=0, attempted=0;
+  // 本文取得は「同じ作品を複数経路」で確認する。1経路のCORS/一時障害で作品を死蔵しない。
+  const bodyDeadline=Date.now()+45000;
   for(const u of urls){
     if(Date.now()>=bodyDeadline)break;
-    try {
-      const remain=Math.max(1000,Math.min(10000,bodyDeadline-Date.now()));
+    attempted++;
+    try{
+      const remain=Math.max(1500,Math.min(9000,bodyDeadline-Date.now()));
       const res=await secureFetch(u,{signal:sig(remain)});
-      if(res.status===404) continue;
-      is404=false;
-      if(res.ok){ const b=await readResponseBytes(res,SEC.maxBookBytes); if(b&&b.byteLength>=200){buf=b;break;} }
-    }catch{ is404=false; }
+      if(res.status===404){notFoundCount++;continue;}
+      if(!res.ok)continue;
+      const b=await readResponseBytes(res,SEC.maxBookBytes);
+      if(b&&b.byteLength>=200){buf=b;break;}
+    }catch(err){
+      console.debug('book source failed',u,err);
+    }
   }
   if(!buf){
-    if(is404){ dead.add(w.id); filterWorks(); save(); throw {dead:true}; }
-    throw new Error('通信エラーが発生しました');
+    // すべての経路で404だった場合だけ「存在しない作品」と判断する。
+    // CORS/タイムアウト等の通信失敗では作品をcatalogから除外しない。
+    if(attempted>0 && notFoundCount===attempted){
+      dead.add(w.id); filterWorks(); save(); throw {dead:true};
+    }
+    throw new Error('通信エラーが発生しました。本文の配信元を切り替えて再試行してください。');
   }
   const parsed=await parseAozoraAsync(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength));
   const html=parsed.html,plain=parsed.plain;
