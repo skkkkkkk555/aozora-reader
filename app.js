@@ -4252,6 +4252,15 @@ window.addEventListener('DOMContentLoaded',()=>{
   window.addEventListener('aozora-phone-data-ready',refreshPhoneFromCatalog);
   // カタログイベントがこのルーター初期化より先に発火していても取りこぼさない。
   if(allWorks.length)queueMicrotask(refreshPhoneFromCatalog);
+  // 非同期カタログ復元とスマホルーターの初期化順が前後しても、作品一覧を確実に再描画する。
+  let phoneCatalogRetry=0;
+  const retryPhoneCatalog=()=>{
+    if(!isPhone()||state.reader||phoneCatalogRetry>=12)return;
+    phoneCatalogRetry++;
+    if(works().length){refreshPhoneFromCatalog();return;}
+    setTimeout(retryPhoneCatalog,250);
+  };
+  setTimeout(retryPhoneCatalog,0);
   window.addEventListener('popstate',()=>{
     if(!isPhone())return;
     const layer=history.state?.phoneLayer||null;
