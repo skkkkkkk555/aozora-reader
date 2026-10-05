@@ -4567,7 +4567,11 @@ window.addEventListener('DOMContentLoaded',()=>{
     const baseState={...(history.state||{})};
     delete baseState.phoneLayer;
     delete baseState.phoneParent;
-    history.replaceState(baseState,'',location.href);
+    // 共有リンク用の #work=... は通常画面へ戻った時に解除する。
+    // 残したままだと非同期カタログ更新が同じ詳細画面を再度開く。
+    const cleanUrl=new URL(location.href);
+    if(/^#work=/.test(cleanUrl.hash))cleanUrl.hash='';
+    history.replaceState(baseState,'',cleanUrl.href);
     const previous=state.screen;
     const tabNames=['home','search','shelf','records','settings'];
     const fromIndex=tabNames.indexOf(previous),toIndex=tabNames.indexOf(name);
@@ -5117,7 +5121,8 @@ window.addEventListener('DOMContentLoaded',()=>{
         const w=state.work;
         state.work=null;
         state.readerFromDetail=false;
-        history.replaceState({...history.state,phoneLayer:undefined},'',location.href);
+        const base={...(history.state||{})};delete base.phoneLayer;delete base.phoneParent;
+        history.replaceState(base,'',location.href);
         openDetail(w,'back',true);
         return;
       }
