@@ -6927,6 +6927,111 @@ html[data-device="smartphone"] .r-dock{min-height:0!important}
 }
 .low-power #app-boot .boot-glow{animation:none!important}
 
+
+
+/* ===== Reader vertical layout + comfortable block controls ===== */
+#body.paper-paged.v{
+  writing-mode:vertical-rl!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  box-sizing:border-box!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  column-width:var(--reader-v-column-width,38px)!important;
+  column-gap:0!important;
+  column-fill:auto!important;
+  column-rule:0!important;
+  scroll-snap-type:x mandatory;
+  touch-action:pan-x;
+}
+#body.paper-paged.v > *{
+  max-width:none!important;
+  break-inside:auto;
+}
+#body.paper-paged.v p,
+#body.paper-paged.v pre,
+#body.paper-paged.v section{
+  max-width:none!important;
+  overflow-wrap:anywhere;
+}
+#body.paper-paged.v .aozora-page-break{
+  break-after:column;
+}
+
+/* スマホでは6分割をやめ、3×2の独立ブロックにする */
+@media(max-width:899px){
+  #reader .r-dock{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-auto-rows:minmax(60px,1fr);
+    min-height:132px!important;
+    gap:7px!important;
+    padding:8px!important;
+  }
+  #reader .r-dock-btn{
+    min-width:0!important;
+    min-height:58px!important;
+    width:100%!important;
+    padding:8px 5px!important;
+    border-radius:15px!important;
+    font-size:12px!important;
+  }
+  #reader .r-dock-btn .icon{
+    width:25px!important;
+    height:25px!important;
+  }
+}
+@media(max-width:520px){
+  #reader .r-dock{
+    min-height:126px!important;
+    gap:6px!important;
+    padding:7px!important;
+  }
+  #reader .r-dock-btn{
+    min-height:55px!important;
+    border-radius:14px!important;
+    font-size:11px!important;
+  }
+}
+
+/* しおりカード内の位置ボタンも「細い帯」ではなく押しやすいブロック */
+.home-bookmark-points{
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(92px,1fr))!important;
+  gap:8px!important;
+  padding:0 13px 13px!important;
+  overflow:visible!important;
+}
+.home-bookmark-point{
+  width:100%!important;
+  min-height:50px!important;
+  padding:7px 10px!important;
+  justify-content:center!important;
+  border-radius:14px!important;
+  flex-direction:column!important;
+  gap:1px!important;
+  line-height:1.15;
+}
+.home-bookmark-point span{
+  font-size:13px!important;
+}
+.home-bookmark-point em{
+  font-size:11px!important;
+}
+@media(max-width:520px){
+  .home-bookmark-main{
+    min-height:88px!important;
+    padding:14px 15px!important;
+  }
+  .home-bookmark-points{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  .home-bookmark-point{
+    min-height:52px!important;
+  }
+}
+
 </style>
 </head>
 <body>
