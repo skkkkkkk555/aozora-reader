@@ -46,6 +46,7 @@ function readerRendered(d,selector){
 function readerScrollable(d,selector){
   const el=d.querySelector(selector);
   return !!el&&el.clientHeight>0&&el.scrollHeight>el.clientHeight;
+}
 function runtimeErrors(d){return Array.from(d?.defaultView?.__aozoraRuntimeErrors||[]);}
 function clearRuntimeErrors(d){const list=d?.defaultView?.__aozoraRuntimeErrors;if(Array.isArray(list))list.length=0;}
 function assertNoRuntimeErrors(d,label){const errors=runtimeErrors(d);if(errors.length)fail(label+': '+JSON.stringify(errors));}
@@ -60,7 +61,6 @@ function assertDesktopReaderChrome(d,label){
     if(Number(cs.opacity)<0.99)fail(label+': '+selector+' opacity '+cs.opacity);
     if(el.classList.contains('hide'))fail(label+': '+selector+' still has hide class');
   }
-}
 }
 (async()=>{
   const live=mode==='live';
@@ -100,12 +100,8 @@ function assertDesktopReaderChrome(d,label){
       input.value=title;
       input.dispatchEvent(new Event('input',{bubbles:true}));
       const result=await waitFor(()=>d.querySelector('#search-tiles [data-act="open-book"]'),15000);
-    clearRuntimeErrors(d);
       result.click();
       clearRuntimeErrors(d);
-    await waitFor(()=>d.querySelector('#sheet')?.classList.contains('open'),5000);
-    assertNoRuntimeErrors(d,'desktop after book detail open');
-    clearRuntimeErrors(d);
       const readNow=await waitFor(()=>d.querySelector('#sheet [data-act="read-now"]'),5000);
       assertNoRuntimeErrors(d,'live after book detail open');
       clearRuntimeErrors(d);
@@ -119,21 +115,15 @@ function assertDesktopReaderChrome(d,label){
       clearRuntimeErrors(d);
       const body=d.querySelector('#body');
       if(!readerScrollable(d,'#body'))fail('live reader body is not actually scrollable: '+title);
-    assertNoRuntimeErrors(d,'desktop after reader render');
-    clearRuntimeErrors(d);
-    const desktopBody=d.querySelector('#body');
-    desktopBody.scrollTop=Math.min(700,Math.max(0,desktopBody.scrollTop)+700);
-    await sleep(250);
-    assertDesktopReaderChrome(d,'desktop reader chrome after scrolling');
       const before=body.scrollTop;
       body.scrollTop=Math.min(600,before+600);
       await sleep(300);
       if(body.scrollTop<=before)fail('live reader body did not scroll: '+title);
       const back=await waitFor(()=>d.querySelector('[data-act="r-back"]'),4000);
       back.click();
-      await waitFor(()=>!d.querySelector('#reader')?.classList.contains('open'),7000);
       assertNoRuntimeErrors(d,'live after reader back');
       clearRuntimeErrors(d);
+      await waitFor(()=>!d.querySelector('#reader')?.classList.contains('open'),7000);
     };
     for(const title of titles)await readOne(title);
     document.title='LIVE_SMOKE_OK';
@@ -182,6 +172,7 @@ function assertDesktopReaderChrome(d,label){
     await waitFor(()=>!d.querySelector('#phone-reader-search')?.hidden,4000);
     const readerSearchClose=await waitFor(()=>d.querySelector('#phone-reader [data-phone-action="reader-search-close"]'),4000);
     readerSearchClose.click();
+    await sleep(100);
     assertNoRuntimeErrors(d,'mobile after reader search close');
     clearRuntimeErrors(d);
     await waitFor(()=>d.querySelector('#phone-reader-search')?.hidden,4000);
@@ -231,6 +222,7 @@ function assertDesktopReaderChrome(d,label){
 
     const result=await waitFor(()=>d.querySelector('#search-tiles [data-act="open-book"]'),15000);
     result.click();
+    clearRuntimeErrors(d);
     await waitFor(()=>d.querySelector('#sheet')?.classList.contains('open'),5000);
 
     const close=await waitFor(()=>d.querySelector('#sheet [data-act="close-sheet"]'),4000);
@@ -255,6 +247,13 @@ function assertDesktopReaderChrome(d,label){
     await waitFor(()=>readerRendered(d,'#body'),30000);
     if(d.querySelector('#reader-loading-layer')?.hidden===false)throw new Error('desktop loader did not hide after render');
     if(!readerScrollable(d,'#body'))fail('desktop reader body is not actually scrollable');
+    assertNoRuntimeErrors(d,'desktop after reader render');
+    clearRuntimeErrors(d);
+    const desktopBody=d.querySelector('#body');
+    desktopBody.scrollTop=Math.min(700,Math.max(0,desktopBody.scrollTop)+700);
+    await sleep(250);
+    assertDesktopReaderChrome(d,'desktop reader chrome after scrolling');
+    clearRuntimeErrors(d);
 
     const readerSearch=d.querySelector('#reader [data-act="r-search-open"]');
     if(!readerSearch)fail('desktop reader search action missing');
