@@ -4837,7 +4837,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='records'){showScreen('records');return}
     if(act==='random'){const ws=works();if(ws.length)openDetail(ws[Math.floor(Math.random()*ws.length)]);return}
     if(act==='today'){const w=getTodayWork();if(w)openDetail(w);return}
-    if(act==='resume'){const w=getResumeWork();if(w)openReader(w);return}
+    if(act==='resume'){const w=getResumeWork();if(w)void openReader(w).catch(err=>recordRuntimeError('phone-reader-open',err));return}
     if(act==='search-filter'){state.searchFilter=el.dataset.filter||'all';renderSearch();return}
     if(act==='shelf-filter'){state.shelf=el.dataset.filter||'reading';if(state.shelf==='records'){showScreen('records')}else renderShelf();return}
     if(act==='record-filter'){state.record=el.dataset.filter||'all';renderRecords();return}
@@ -4882,7 +4882,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='detail-want'){if(want.has(state.work.id))want.delete(state.work.id);else want.add(state.work.id);save();openDetail(state.work);return}
     if(act==='detail-done'){if(done.has(state.work.id))done.delete(state.work.id);else done.add(state.work.id);save();openDetail(state.work);return}
     if(act==='reader-back'){closeReader();return}
-    if(act==='reader-retry'){openReader(state.work,state.readerFromDetail);return}
+    if(act==='reader-retry'){void openReader(state.work,state.readerFromDetail).catch(err=>recordRuntimeError('phone-reader-open',err));return}
     if(act==='reader-ui-toggle'){
       const reader=$p('#phone-reader');
       if(reader)reader.classList.remove('reader-chrome-hidden');
