@@ -46,10 +46,25 @@ function readerText(d){
     if(testTitle.length<2)fail('smartphone home book title missing');
     homeBook.click();
 
+    const more=await waitFor(()=>d.querySelector('#phone-detail [data-phone-action="detail-more"]'),4000);
+    more.click();
+    await waitFor(()=>d.querySelector('#phone-sheet')?.classList.contains('open'),5000);
+    const sheetClose=await waitFor(()=>d.querySelector('#phone-sheet [data-phone-action="sheet-close"]'),4000);
+    sheetClose.click();
+    await waitFor(()=>!d.querySelector('#phone-sheet')?.classList.contains('open'),5000);
+
     const read=await waitFor(()=>d.querySelector('#phone-detail [data-phone-action="detail-read"]'),6000);
     read.click();
     await waitFor(()=>visible(d.querySelector('#phone-reader'))&&d.querySelector('#phone-reader').classList.contains('phone-open'),6000);
     await waitFor(()=>readerText(d).length>80&&!/本文を読み込んでいます/.test(readerText(d))&&!/本文を読み込めませんでした/.test(readerText(d)),20000);
+
+    const readerSearch=d.querySelector('#phone-reader [data-phone-action="reader-search"]');
+    if(!readerSearch)fail('smartphone reader search action missing');
+    readerSearch.click();
+    await waitFor(()=>!d.querySelector('#phone-reader-search')?.hidden,4000);
+    const readerSearchClose=await waitFor(()=>d.querySelector('#phone-reader [data-phone-action="reader-search-close"]'),4000);
+    readerSearchClose.click();
+    await waitFor(()=>d.querySelector('#phone-reader-search')?.hidden,4000);
 
     const readerBack=await waitFor(()=>d.querySelector('#phone-reader [data-phone-action="reader-back"]'),4000);
     readerBack.click();
@@ -73,6 +88,12 @@ function readerText(d){
     d.querySelector('#phone-content [data-phone-action="theme"]').click();
     await waitFor(()=>d.querySelector('#phone-content [data-phone-action="reader-font"]'),4000);
     d.querySelector('#phone-content [data-phone-action="reader-font"]').click();
+    const readerMore=await waitFor(()=>d.querySelector('#phone-content [data-phone-action="reader-more"]'),4000);
+    readerMore.click();
+    await waitFor(()=>d.querySelector('#phone-sheet')?.classList.contains('open'),5000);
+    const settingsSheetClose=await waitFor(()=>d.querySelector('#phone-sheet [data-phone-action="sheet-close"]'),4000);
+    settingsSheetClose.click();
+    await waitFor(()=>!d.querySelector('#phone-sheet')?.classList.contains('open'),5000);
   }else{
     if(device==='smartphone')fail('desktop detection unexpectedly smartphone');
 
@@ -103,7 +124,12 @@ function readerText(d){
     const input=await waitFor(()=>d.querySelector('#q-input'),5000);
     input.value=testTitle;
     input.dispatchEvent(new Event('input',{bubbles:true}));
-    await waitFor(()=>d.querySelector('#search-tiles [data-act="open-book"]'),12000);
+    const result=await waitFor(()=>d.querySelector('#search-tiles [data-act="open-book"]'),12000);
+    result.click();
+    await waitFor(()=>d.querySelector('#sheet')?.classList.contains('open'),5000);
+    const close=await waitFor(()=>d.querySelector('#sheet [data-act="close-sheet"]'),4000);
+    close.click();
+    await waitFor(()=>!d.querySelector('#sheet')?.classList.contains('open'),5000);
 
     const settings=await waitFor(()=>d.querySelector('[data-act="nav"][data-v="v-settings"]'),4000);
     settings.click();
