@@ -91,6 +91,8 @@ ok(license.includes('MIT License'),'LICENSE.md is missing MIT License');
 ok(license.includes('catalog.json'),'LICENSE.md does not separate catalog.json licensing');
 ok(readme.includes('CC BY 4.0'),'README.md is missing CC BY 4.0 information');
 ok(html.includes('青空文庫リーダー（非公式）'),'index.html title is missing unofficial designation');
+ok(app.includes("if(Number(raw.c)!==1)continue;"),'catalog sanitizer does not remove protected works before catalog exposure');
+ok(app.includes('// 許諾・保護中の作品は、この時点で取り込み対象から完全に除外する。'),'CSV import does not explicitly exclude protected works');
 ok(app.includes("if(!w||!isPublicWork(w))throw new Error('protected-work')"),'fetchBody public-work guard missing');
 ok(app.includes("if(!w||!isPublicWork(w))return 'この作品はアプリの公開対象外です。';"),'fetchHead public-work guard missing');
 ok(app.includes('青空文庫 作品情報'),'Aozora source metadata rendering is missing');
