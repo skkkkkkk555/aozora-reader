@@ -281,6 +281,7 @@ const normalizeOllamaUrl=(value='')=>{
   }catch{return ''}
 };
 const canUseOllama=()=>st.ollamaEnabled&&!st.offline&&isSafeOllamaUrl(st.oUrl);
+const BROWSER_SMOKE=/(?:[?&])browser-smoke(?:=|&|$)/.test(location.search);
 const safeEl = id => document.getElementById(id) || null;
 async function hydrateSavedKeys(){
   const keys=await idb.keys('docs');
@@ -1402,6 +1403,10 @@ async function fetchHead(w){
 let readerTok=0;
 async function fetchBody(w){
   if(!w||!isPublicWork(w))throw new Error('protected-work');
+  if(BROWSER_SMOKE){
+    const plain='これはブラウザスモークテスト用の本文です。PC版とスマートフォン版の読書画面、戻る操作、検索、シート表示を検証します。';
+    return {html:'<h2 data-hid="h-1">スモークテスト本文</h2><p>'+plain+'</p><p>読書機能が正常に表示されていることを確認します。</p>',plain};
+  }
   if(typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))throw new Error('invalid-book-path');
   const c=await idb.get('docs',w.id);
   if(c&&typeof c==='object'&&typeof c.html==='string'&&c.html.length<=4*1024*1024){
