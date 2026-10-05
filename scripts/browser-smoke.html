@@ -73,8 +73,8 @@ function assertDesktopReaderChrome(d,label){
 }
 (async()=>{
   const live=mode==='live'||mode==='live-mobile';
-  frame.src='../reader-latest.html?browser-smoke='+Date.now()+(live?'&browser-smoke-live=1':'');
-  await new Promise((resolve,reject)=>{
+  const targetWork=qs.get('target-work')||'';
+  frame.src='../reader-latest.html?browser-smoke='+Date.now()+(live?'&browser-smoke-live=1':'')+(targetWork?'#work='+encodeURIComponent(targetWork):'');
     let timer=0;
     const finish=(fn,value)=>{clearTimeout(timer);frame.removeEventListener('load',onload);frame.removeEventListener('error',onerror);fn(value);};
     const onload=()=>finish(resolve);
@@ -149,6 +149,9 @@ function assertDesktopReaderChrome(d,label){
     }
     if(device!=='smartphone')fail('smartphone detection failed: '+device);
 
+     if(targetWork==='050014'){
+       await waitFor(()=>textOf(d.querySelector('#phone-detail')).includes('アメリカの牛豚'),18000);
+     }
     const homeBook=await waitFor(()=>d.querySelector('#phone-content [data-phone-work]'),18000);
     const testTitle=textOf(homeBook.querySelector('.phone-book-name,.phone-book-title-big'))||textOf(homeBook);
     if(testTitle.length<2)fail('smartphone home book title missing');
