@@ -80,7 +80,7 @@ const escAttr=esc;
 
 /* ==================== SECURITY HARDENING ==================== */
 const SEC={maxCatalogBytes:30*1024*1024,maxCatalogText:32*1024*1024,maxLocalFileBytes:30*1024*1024,maxBookBytes:32*1024*1024,maxResponseHeadBytes:4096,maxStateChars:4*1024*1024};
-const NETWORK_HOSTS=new Set(['www.aozora.gr.jp','aozorahack.org','raw.githubusercontent.com','corsproxy.io','corsproxy.org','api.allorigins.win']);
+const NETWORK_HOSTS=new Set(['www.aozora.gr.jp','aozorahack.org','raw.githubusercontent.com','cdn.jsdelivr.net','fastly.jsdelivr.net','corsproxy.io','corsproxy.org','api.allorigins.win']);
 const secureUrl=input=>{
   try{
     const u=new URL(typeof input==='string'?input:input.url,location.href);
@@ -1615,13 +1615,16 @@ function buildBodyUrlCandidates(w){
   const path=String(w.x).replace(/^\/+|\s+$/g,'');
   if(!path||path.length>500||path.includes('..')||path.includes('\\')||path.startsWith('http'))return [];
   const official=`https://www.aozora.gr.jp/${path}`;
+  const cdn=`https://cdn.jsdelivr.net/gh/aozorahack/aozorabunko_text@master/${path}`;
+  const cdnFast=`https://fastly.jsdelivr.net/gh/aozorahack/aozorabunko_text@master/${path}`;
   const raw=`https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/${path}`;
   const mirror=`https://aozorahack.org/aozorabunko_text/${path}`;
   const proxy1=`https://corsproxy.io/?url=${encodeURIComponent(official)}`;
   const proxy2=`https://corsproxy.org/?url=${encodeURIComponent(official)}`;
   const proxy3=`https://api.allorigins.win/raw?url=${encodeURIComponent(official)}`;
-  // raw/mirrorを先に試し、公式→CORSプロキシへ段階的にフォールバック。
-  return [...new Set([raw,mirror,official,proxy1,proxy2,proxy3])];
+  // CDNを第一候補にして、raw/mirror/公式/CORSプロキシへ段階的にフォールバック。
+  // 地域・ISP・GitHub CDNの一時的な到達障害でも本文を表示できるようにする。
+  return [...new Set([cdn,cdnFast,raw,mirror,official,proxy1,proxy2,proxy3])];
 }
 
 async function fetchBody(w){
