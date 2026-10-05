@@ -435,6 +435,7 @@ function bindBookPhysics(root){
 }
 
 function enhanceActionables(root=document){
+  if(root?.id==='body'||root?.id==='phone-reader-body'||root?.closest?.('#body,#phone-reader-body'))return;
   const list=root.querySelectorAll?.('[data-act]:not(button):not(input):not(select):not(textarea):not(label):not(a)')||[];
   list.forEach(el=>{
     if(!el.hasAttribute('role'))el.setAttribute('role','button');
@@ -1616,13 +1617,21 @@ async function fetchBody(w){
 }
 
 let readerParseSeq=0;
+let activeReaderParserWorker=null;
+function cancelReaderParser(){
+  if(!activeReaderParserWorker)return;
+  try{activeReaderParserWorker.terminate();}catch{}
+  activeReaderParserWorker=null;
+}
 function parseAozoraAsync(buffer){
   return new Promise((resolve,reject)=>{
+    cancelReaderParser();
     const id=++readerParseSeq;
     let settled=false,worker=null;
-    const finish=(fn,val)=>{if(settled)return;settled=true;try{worker?.terminate()}catch{}fn(val)};
+    const finish=(fn,val)=>{if(settled)return;settled=true;try{worker?.terminate()}catch{}if(activeReaderParserWorker===worker)activeReaderParserWorker=null;fn(val)};
     try{
       worker=new Worker('./reader-worker.js');
+      activeReaderParserWorker=worker;
       worker.onmessage=e=>{
         const d=e.data||{};if(d.id!==id)return;
         if(d.ok&&typeof d.html==='string'&&typeof d.plain==='string')finish(resolve,{html:d.html,plain:d.plain,safe:2});
@@ -1802,7 +1811,30 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
     else if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
     return;
   }
-  closeSheet();
+  if($('sheet')?.classList.contains('open')){
+    const sheetEl=$('sheet'),scrimEl=$('scrim');
+    sheetEl.style.transition='none';
+    scrimEl.style.transition='none';
+    sheetEl.classList.remove('open');
+    scrimEl.classList.remove('open');
+    sheetEl.setAttribute('aria-hidden','true');
+    scrimEl.setAttribute('aria-hidden','true');
+    sheetEl.style.pointerEvents='none';
+    scrimEl.style.pointerEvents='none';
+    popLayer('sheet');
+    const baseState={...(history.state||{})};
+    delete baseState.layer;
+    history.replaceState(baseState,'',location.href);
+    requestAnimationFrame(()=>{
+      sheetEl.style.removeProperty('transition');
+      scrimEl.style.removeProperty('transition');
+      sheetEl.style.removeProperty('pointer-events');
+      scrimEl.style.removeProperty('pointer-events');
+      restoreFocusEl=null;
+    });
+  }else{
+    closeSheet();
+  }
   closeOneLineMode();
   curWork=w;
   lastUserActivityTime=Date.now();
@@ -1822,9 +1854,9 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
     const doc=await fetchBody(w);
     if(tId!==readerTok||!$('reader')?.classList.contains('open'))return;
     curDoc=doc;
-    renderReaderBody();
+    const rendered=await renderReaderBody(()=>tId===readerTok&&curWork?.id===w.id&&$('reader')?.classList.contains('open'));
+    if(!rendered)return;
     if(tId!==readerTok||!$('reader')?.classList.contains('open'))return;
-    $('body').classList.add('paper-paged');
     setReaderLoading(false);
     applyReaderConfig(null);
 
@@ -1915,6 +1947,7 @@ function setReaderLoading(show){
   const body=$('body'),reader=$('reader'),layer=$('reader-loading-layer');
   if(body)body.setAttribute('aria-busy',show?'true':'false');
   if(show){
+    cancelReaderRender();
     resetDesktopReaderBody();
     if(reader)reader.classList.add('reader-is-loading');
     setLayerLoading(layer,true);
@@ -1927,6 +1960,7 @@ function setPhoneReaderLoading(show){
   const body=$p('#phone-reader-body'),reader=$p('#phone-reader'),layer=$p('#phone-reader-loading-layer');
   if(body)body.setAttribute('aria-busy',show?'true':'false');
   if(show){
+    cancelReaderRender();
     if(body){
       body.innerHTML='';
       body.classList.remove('reader-building');
@@ -1946,13 +1980,90 @@ function pulseState(el){
   window.setTimeout(()=>el.classList.remove('state-bump'),360);
 }
 
-function renderReaderBody(){
-  if(!curDoc)return;
+let readerRenderSeq=0;
+function cancelReaderRender(){readerRenderSeq++;}
+
+function readerRenderYield(){
+  return new Promise(resolve=>{
+    const run=()=>resolve();
+    if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(run,{timeout:50});
+    else window.setTimeout(run,0);
+  });
+}
+
+function splitReaderHtml(html,maxChars=16000){
+  const source=String(html||'');
+  if(!source)return [''];
+  const sourceInfoIndex=source.indexOf('<section class="aozora-source-info"');
+  const main=sourceInfoIndex>=0?source.slice(0,sourceInfoIndex):source;
+  const tail=sourceInfoIndex>=0?source.slice(sourceInfoIndex):'';
+  const chunks=[];
+  let start=0,lastSafe=0;
+  const boundary=/<\/p>|<\/h[1-6]>|<\/div>|<hr\b[^>]*>|\n/gi;
+  let m;
+  while((m=boundary.exec(main))){
+    const end=m.index+m[0].length;
+    if(end-start>=maxChars){
+      const cut=lastSafe>start?lastSafe:end;
+      chunks.push(main.slice(start,cut));
+      start=cut;
+      lastSafe=start;
+    }
+    lastSafe=end;
+  }
+  while(main.length-start>maxChars){
+    const desired=start+maxChars;
+    let cut=main.lastIndexOf('\n',desired);
+    if(cut<=start)cut=desired;
+    const tagStart=main.lastIndexOf('<',cut),tagEnd=main.lastIndexOf('>',cut);
+    if(tagStart>tagEnd&&tagStart>start)cut=tagStart;
+    if(cut<=start)cut=desired;
+    chunks.push(main.slice(start,cut));
+    start=cut;
+  }
+  if(start<main.length)chunks.push(main.slice(start));
+  if(tail)chunks.push(tail);
+  return chunks.filter(Boolean);
+}
+
+async function renderReaderBody(isCurrent){
   const body=$('body');
-  body.classList.add('reader-building');
-  body.innerHTML=curDoc.html;
+  if(!curDoc||!body)return false;
+  const seq=++readerRenderSeq;
+  body.setAttribute('aria-busy','true');
+  body.classList.add('reader-building','paper-paged');
+  body.classList.toggle('v',st.v!==false);
+  body.innerHTML='';
+  const chunks=splitReaderHtml(curDoc.html);
+  for(let i=0;i<chunks.length;i++){
+    if(seq!==readerRenderSeq||!isCurrent())return false;
+    body.insertAdjacentHTML('beforeend',chunks[i]);
+    if(i<chunks.length-1)await readerRenderYield();
+  }
+  if(seq!==readerRenderSeq||!isCurrent())return false;
+  await new Promise(requestAnimationFrame);
+  if(seq!==readerRenderSeq||!isCurrent())return false;
   body.classList.remove('reader-building');
-  body.classList.add('paper-paged');
+  return true;
+}
+
+async function renderPhoneReaderBody(body,html,isCurrent){
+  if(!body)return false;
+  const seq=++readerRenderSeq;
+  body.setAttribute('aria-busy','true');
+  body.classList.add('reader-building');
+  body.innerHTML='';
+  const chunks=splitReaderHtml(html);
+  for(let i=0;i<chunks.length;i++){
+    if(seq!==readerRenderSeq||!isCurrent())return false;
+    body.insertAdjacentHTML('beforeend',chunks[i]);
+    if(i<chunks.length-1)await readerRenderYield();
+  }
+  if(seq!==readerRenderSeq||!isCurrent())return false;
+  await new Promise(requestAnimationFrame);
+  if(seq!==readerRenderSeq||!isCurrent())return false;
+  body.classList.remove('reader-building');
+  return true;
 }
 
 function getReaderPageMetrics(){
@@ -2049,6 +2160,8 @@ function playPaperTurn(direction){
 
 async function closeReader(fromPop=false){
   closeOneLineMode();
+  cancelReaderRender();
+  cancelReaderParser();
   readerTok++;
   readerLoadingWorkId='';
   if(curWork){
@@ -4158,9 +4271,8 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(!state.reader||String(state.work?.id)!==String(w.id))return;
       state.readerDoc=doc;
       curDoc=doc;
-      body.classList.add('reader-building');
-      body.innerHTML=doc.html;
-      body.classList.remove('reader-building');
+      const rendered=await renderPhoneReaderBody(body,doc.html,()=>state.reader&&String(state.work?.id)===String(w.id)&&$p('#phone-reader')?.classList.contains('phone-open'));
+      if(!rendered)return;
       if(!state.reader||String(state.work?.id)!==String(w.id))return;
       setPhoneReaderLoading(false);
       body.scrollTop=0;
@@ -4184,6 +4296,8 @@ window.addEventListener('DOMContentLoaded',()=>{
 
 
   function closeReader(fromHistory=false){
+    cancelReaderRender();
+    cancelReaderParser();
     saveReaderProgress();
     const b=currentReaderBody();
     if(!fromHistory&&history.state?.phoneLayer==='phone-reader'){
