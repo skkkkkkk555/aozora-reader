@@ -5807,9 +5807,10 @@ html[data-theme="dark"][data-device="smartphone"] .phone-reader-header{
   background:rgba(16,16,16,.94);
 }
 html[data-device="smartphone"] .phone-reader.reader-chrome-hidden .phone-reader-header{
-  transform:translateY(-100%);
-  opacity:0;
-  pointer-events:none;
+  /* 戻るボタンだけは読書UIを隠していても常時使用可能にする。 */
+  transform:none!important;
+  opacity:1!important;
+  pointer-events:auto!important;
 }
 html[data-device="smartphone"] .phone-reader.reader-chrome-hidden .phone-reader-toolbar{
   transform:translateY(calc(100% + 18px));
@@ -7868,6 +7869,302 @@ html[data-device="smartphone"] .phone-sheet-row{
 }
 </style>
 
+<style id="aozora-stability-pass">
+/* ===== 2026-10-05 stability pass: mobile/desktop reader hardening ===== */
+html[data-device="smartphone"] #phone-app{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow:hidden!important;
+}
+html[data-device="smartphone"] #phone-content,
+html[data-device="smartphone"] #phone-detail,
+html[data-device="smartphone"] #phone-reader{
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+html[data-device="smartphone"] .phone-reader{
+  width:100%!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+}
+html[data-device="smartphone"] .phone-reader-body{
+  display:block!important;
+  flex:1 1 auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  box-sizing:border-box!important;
+  color:inherit!important;
+  visibility:visible;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  contain:layout style;
+}
+html[data-device="smartphone"] .phone-reader-body.reader-building{
+  visibility:hidden!important;
+}
+html[data-device="smartphone"] .phone-reader-body > *{
+  max-width:100%!important;
+  box-sizing:border-box;
+}
+html[data-device="smartphone"] .phone-reader-body pre,
+html[data-device="smartphone"] .phone-reader-body section{
+  max-width:100%!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+}
+html[data-device="smartphone"] .phone-reader-header,
+html[data-device="smartphone"] .phone-reader-toolbar,
+html[data-device="smartphone"] .phone-reader-progress{
+  max-width:100%;
+  box-sizing:border-box;
+}
+html[data-device="smartphone"] .phone-reader-toolbar{
+  bottom:calc(58px + env(safe-area-inset-bottom))!important;
+}
+html[data-device="smartphone"] .phone-reader-ui-toggle{
+  pointer-events:auto!important;
+  z-index:500!important;
+}
+html[data-device="smartphone"] .phone-reader.reader-chrome-hidden .phone-reader-ui-toggle{
+  visibility:visible!important;
+  opacity:1!important;
+}
+html[data-device="desktop"] #reader .r-bar,
+html[data-device="desktop"] #reader .r-dock,
+html[data-device="desktop"] #reader .r-bottom-bar{
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+html[data-device="desktop"] #reader .r-bar.hide,
+html[data-device="desktop"] #reader .r-dock.hide,
+html[data-device="desktop"] #reader .r-bottom-bar.hide{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  transform:none!important;
+  pointer-events:auto!important;
+}
+html[data-device="desktop"] #reader .r-dock.hide{
+  display:grid!important;
+}
+html[data-device="desktop"] #r-ui-toggle{
+  z-index:1000!important;
+  pointer-events:auto!important;
+  visibility:visible!important;
+}
+@media(max-width:899px){
+  html[data-device="smartphone"] #phone-app .phone-grid,
+  html[data-device="smartphone"] #phone-app .phone-quick-grid,
+  html[data-device="smartphone"] #phone-app .phone-stat-row{
+    width:100%;
+    min-width:0;
+  }
+  html[data-device="smartphone"] #phone-app img,
+  html[data-device="smartphone"] #phone-app video,
+  html[data-device="smartphone"] #phone-app iframe{
+    max-width:100%!important;
+  }
+}
+</style>
+<style id="aozora-final-stability">
+/* ===== Final responsive hardening 2026-10-05 ===== */
+
+/* Smartphone shell: every generated card/control uses the viewport as a hard boundary. */
+html[data-device="smartphone"] #phone-app,
+html[data-device="smartphone"] #phone-app *{
+  box-sizing:border-box;
+}
+html[data-device="smartphone"] #phone-app{
+  width:100vw!important;
+  max-width:100vw!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  contain:none!important;
+}
+html[data-device="smartphone"] #phone-app > *{
+  max-width:100%!important;
+  min-width:0!important;
+}
+html[data-device="smartphone"] #phone-content,
+html[data-device="smartphone"] #phone-detail,
+html[data-device="smartphone"] #phone-reader{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+html[data-device="smartphone"] .phone-reader{
+  contain:none!important;
+}
+html[data-device="smartphone"] .phone-reader-body{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  overscroll-behavior-x:none!important;
+  contain:none!important;
+}
+html[data-device="smartphone"] .phone-reader-body img,
+html[data-device="smartphone"] .phone-reader-body video,
+html[data-device="smartphone"] .phone-reader-body iframe,
+html[data-device="smartphone"] .phone-reader-body canvas{
+  display:block;
+  max-width:100%!important;
+  width:auto;
+  height:auto;
+}
+html[data-device="smartphone"] .phone-reader-body pre,
+html[data-device="smartphone"] .phone-reader-body section,
+html[data-device="smartphone"] .phone-reader-body a{
+  max-width:100%!important;
+  min-width:0!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+html[data-device="smartphone"] .phone-reader-body.reader-plain-fallback{
+  white-space:pre-wrap!important;
+}
+
+/* Notifications: never let long diagnostic text/URLs determine the viewport width. */
+html[data-device="smartphone"] #banner,
+html[data-device="smartphone"] .toast,
+html.smartphone-ui[data-device="smartphone"] #banner,
+html.smartphone-ui[data-device="smartphone"] .toast{
+  box-sizing:border-box!important;
+  max-width:calc(100vw - 16px)!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+html[data-device="smartphone"] #banner span,
+html[data-device="smartphone"] .toast span{
+  min-width:0!important;
+  max-width:100%!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+html[data-device="smartphone"] #toast{
+  left:12px!important;
+  right:12px!important;
+  width:auto!important;
+}
+html[data-device="smartphone"] #toast,
+html[data-device="smartphone"] #toast.open,
+html.smartphone-ui[data-device="smartphone"] #toast,
+html.smartphone-ui[data-device="smartphone"] #toast.open{
+  transform:none!important;
+}
+html[data-device="smartphone"] #toast.open,
+html.smartphone-ui[data-device="smartphone"] #toast.open{
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+
+/* Sheet/detail controls cannot create an implicit form navigation. */
+html[data-device="smartphone"] #phone-app button,
+html[data-device="smartphone"] #phone-sheet button{
+  -webkit-appearance:none;
+  appearance:none;
+}
+
+/* Reader UI restore control must sit above every reader surface on PC. */
+html[data-device="desktop"] #reader{
+  isolation:isolate;
+}
+html[data-device="desktop"] #reader #r-ui-toggle{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  z-index:2147483000!important;
+}
+html[data-device="desktop"] #reader .r-bar,
+html[data-device="desktop"] #reader .r-dock,
+html[data-device="desktop"] #reader .r-bottom-bar{
+  position:relative;
+  z-index:200!important;
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  transform:none!important;
+}
+html[data-device="desktop"] #reader .r-dock{
+  display:grid!important;
+}
+</style>
+<style id="aozora-final-navigation-fix">
+/* 戻る操作は常時到達可能にする。 */
+html[data-device="smartphone"] .phone-detail-nav{
+  position:sticky!important;
+  top:0!important;
+  z-index:80!important;
+  min-height:50px!important;
+  margin:calc(-5px - env(safe-area-inset-top)) -16px 8px!important;
+  padding:calc(5px + env(safe-area-inset-top)) 8px 0!important;
+  background:color-mix(in srgb,var(--phone-fill) 94%,transparent)!important;
+  backdrop-filter:blur(16px)!important;
+  -webkit-backdrop-filter:blur(16px)!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-detail-nav{
+  background:color-mix(in srgb,#000 92%,transparent)!important;
+}
+html[data-device="smartphone"] .phone-detail-nav .phone-icon-button{
+  pointer-events:auto!important;
+}
+</style>
+<style id="aozora-absolute-navigation-guard">
+html[data-device="smartphone"] #phone-global-back{
+  position:fixed!important;
+  left:10px!important;
+  top:calc(8px + env(safe-area-inset-top))!important;
+  width:44px!important;
+  height:44px!important;
+  min-width:44px!important;
+  min-height:44px!important;
+  display:none!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border-radius:50%!important;
+  background:rgba(255,255,255,.92)!important;
+  color:#007aff!important;
+  border:1px solid rgba(60,60,67,.12)!important;
+  box-shadow:0 4px 16px rgba(0,0,0,.12)!important;
+  z-index:2147483000!important;
+  font-size:34px!important;
+  line-height:1!important;
+}
+html[data-device="smartphone"] #phone-global-back:active{transform:scale(.92)!important}
+html[data-device="smartphone"] #phone-detail:not([hidden]) ~ #phone-global-back,
+html[data-device="smartphone"] #phone-reader.phone-open ~ #phone-global-back{
+  display:flex!important;
+}
+html[data-theme="dark"][data-device="smartphone"] #phone-global-back{
+  background:rgba(28,28,30,.94)!important;
+  color:#0a84ff!important;
+  border-color:#38383a!important;
+}
+html[data-device="desktop"] #reader .r-bar.hide,
+html[data-device="desktop"] #reader .r-dock.hide,
+html[data-device="desktop"] #reader .r-bottom-bar.hide{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  transform:none!important;
+}
+html[data-device="desktop"] #reader .r-dock.hide{display:grid!important}
+</style>
 </head>
 <body>
 <!-- Dedicated smartphone application shell -->
@@ -7931,6 +8228,7 @@ html[data-device="smartphone"] .phone-sheet-row{
     <div class="phone-reader-progress"><span id="phone-reader-progress"></span></div>
   </section>
 
+  <button id="phone-global-back" type="button" aria-label="戻る" title="戻る"><span aria-hidden="true">‹</span></button>
   <div id="phone-sheet-scrim" class="phone-sheet-scrim" hidden data-phone-action="sheet-close"></div>
   <section id="phone-sheet" class="phone-sheet" hidden aria-hidden="true">
     <header class="phone-sheet-head">
@@ -8561,6 +8859,6 @@ html[data-device="smartphone"] .phone-sheet-row{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-display-fix-v20261005-15"></script>
+<script src="./app.js?v=reader-display-fix-v20261005-23"></script>
 </body>
 </html>
