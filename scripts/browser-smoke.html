@@ -198,6 +198,14 @@ function assertDesktopReaderChrome(d,label){
     d.querySelector('#phone-sheet [data-phone-action="reader-vertical"]').click();
     await sleep(120);
     if(!d.querySelector('#phone-reader-body')?.classList.contains('phone-reader-vertical'))fail('smartphone vertical reader did not activate');
+    if(d.defaultView.getComputedStyle(d.querySelector('#phone-reader-body')).touchAction!=='pan-x')fail('smartphone vertical reader touch axis is not horizontal');
+    const phoneVerticalBody=d.querySelector('#phone-reader-body');
+    if(phoneVerticalBody.scrollWidth>phoneVerticalBody.clientWidth+2){
+      const beforeX=phoneVerticalBody.scrollLeft;
+      phoneVerticalBody.dispatchEvent(new WheelEvent('wheel',{deltaY:420,bubbles:true,cancelable:true}));
+      await sleep(80);
+      if(phoneVerticalBody.scrollLeft===beforeX)fail('smartphone vertical reader did not respond to horizontal-axis wheel');
+    }
     if(d.querySelector('#phone-reader')?.classList.contains('reader-chrome-hidden'))fail('smartphone vertical reader lost chrome');
     await waitFor(()=>d.querySelector('#phone-reader .phone-reader-ui-toggle')&&visible(d.querySelector('#phone-reader .phone-reader-ui-toggle')),4000);
     d.querySelector('#phone-reader [data-phone-action="reader-more"]')?.click();
@@ -338,6 +346,10 @@ function assertDesktopReaderChrome(d,label){
     const horizontalScrollable=desktopBody.scrollWidth>desktopBody.clientWidth+2;
     if(horizontalScrollable){
       const beforeX=desktopBody.scrollLeft;
+      desktopBody.dispatchEvent(new WheelEvent('wheel',{deltaY:480,bubbles:true,cancelable:true}));
+      await sleep(100);
+      if(desktopBody.scrollLeft===beforeX)fail('desktop vertical reader did not respond to wheel scrolling');
+      desktopBody.scrollLeft=beforeX;
       desktopBody.scrollLeft=Math.min(desktopBody.scrollWidth-desktopBody.clientWidth,Math.max(0,beforeX+Math.max(200,desktopBody.clientWidth)));
       await sleep(300);
       if(desktopBody.scrollLeft===beforeX&&desktopBody.scrollWidth>desktopBody.clientWidth+2)fail('desktop vertical reader did not move horizontally');
