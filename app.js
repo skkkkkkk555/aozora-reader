@@ -2112,6 +2112,7 @@ async function openReaderInternal(w, fromDetail=false, bookmarkF=null){
     setReaderLoading(false);
     applyReaderConfig(null);
     enforceDesktopReaderChrome();
+    enforceDesktopVerticalReaderLayout();
     ensureReaderBodyText();
     ensureReaderBodyVisible();
 
@@ -2802,6 +2803,26 @@ function applyReaderMode(){
   }
 }
 
+function enforceDesktopVerticalReaderLayout(){
+  if(document.documentElement.dataset.device!=='desktop')return;
+  const reader=$('reader'),b=$('body');
+  if(!reader?.classList.contains('open')||!b)return;
+  if(!b.classList.contains('v'))return;
+  // 縦書き時は本文の物理幅/高さが#readerのUI領域を侵食しないよう、
+  // readerのflex列の中へ明示的に固定する。ページ送りの横方向overflowだけを本文に持たせる。
+  b.style.setProperty('flex','1 1 auto','important');
+  b.style.setProperty('height','auto','important');
+  b.style.setProperty('width','100%','important');
+  b.style.setProperty('min-width','0','important');
+  b.style.setProperty('max-width','none','important');
+  b.style.setProperty('min-height','0','important');
+  b.style.setProperty('overflow-x','auto','important');
+  b.style.setProperty('overflow-y','hidden','important');
+  b.style.setProperty('position','relative','important');
+  b.style.setProperty('z-index','1','important');
+  enforceDesktopReaderChrome();
+}
+
 function applyReaderConfig(preserveOverride=undefined){
   const b=$('body');
   const open=!!$('reader')?.classList.contains('open');
@@ -2817,7 +2838,10 @@ function applyReaderConfig(preserveOverride=undefined){
   b.classList.toggle('v',st.v!==false);
   b.classList.add('paper-paged');
   applyReaderMode();
-  if(document.documentElement.dataset.device==='desktop'&&open)setReaderChromeVisible(true);
+  if(document.documentElement.dataset.device==='desktop'&&open){
+    setReaderChromeVisible(true);
+    if(st.v!==false)enforceDesktopVerticalReaderLayout();
+  }
 
   // 初回表示では、本文DOMの直後にscrollWidthを読むと大きな作品でレイアウト計算が固まりやすい。
   // openReader側が描画を1フレーム渡してから初期ページを復元する。
@@ -3518,7 +3542,13 @@ document.addEventListener('click',e=>{
     (bm[curWork.id]=bm[curWork.id]||[]).push({f,s:curWork.plain?curWork.plain.slice(f*curWork.plain.length,f*curWork.plain.length+18).replace(/\s+/g,' '):curWork.t,t:Date.now()});
     save(); toast('しおりを挟みました');
   }
-  else if(act==='r-vt'){ st.v=st.v===false; applyReaderConfig(); updateProgress(); save(); }
+  else if(act==='r-vt'){
+    st.v=st.v===false;
+    applyReaderConfig();
+    if(st.v!==false)enforceDesktopVerticalReaderLayout(); else enforceDesktopReaderChrome();
+    updateProgress();
+    save();
+  }
   else if(act==='r-mode-sheet'){ openModeSelectSheet(); }
   else if(act==='r-ui-toggle'){
     // PCでは表示UIを即座に強制復帰させる。
@@ -3812,6 +3842,19 @@ const desktopReaderChromeGuard=new MutationObserver(()=>{
     if(el.style.getPropertyValue('pointer-events')!=='auto'){el.style.setProperty('pointer-events','auto','important');changed=true;}
     if(el.style.getPropertyValue('transform')!=='none'){el.style.setProperty('transform','none','important');changed=true;}
   });
+  const b=$('body');
+  if(reader.classList.contains('open')&&b?.classList.contains('v')){
+    b.style.setProperty('flex','1 1 auto','important');
+    b.style.setProperty('height','auto','important');
+    b.style.setProperty('width','100%','important');
+    b.style.setProperty('min-width','0','important');
+    b.style.setProperty('max-width','none','important');
+    b.style.setProperty('min-height','0','important');
+    b.style.setProperty('overflow-x','auto','important');
+    b.style.setProperty('overflow-y','hidden','important');
+    b.style.setProperty('position','relative','important');
+    b.style.setProperty('z-index','1','important');
+  }
   if(changed){
     desktopChromeGuardBusy=true;
     queueMicrotask(()=>{desktopChromeGuardBusy=false});
