@@ -7381,6 +7381,172 @@ html[data-device="smartphone"] .phone-reader-ui-toggle:active{
   }
 }
 
+
+/* ===== Aozora multi-leaf reader loader ===== */
+.aozora-loader{
+  display:flex;align-items:center;justify-content:center;
+  perspective:1000px;
+}
+.reader-loading.aozora-loader{
+  min-height:100%;
+  flex-direction:column;
+}
+.abl-rig{
+  width:136px;height:92px;position:relative;
+  transform-style:preserve-3d;transform:rotateX(16deg);
+}
+.abl-base{
+  position:absolute;top:0;width:68px;height:92px;
+  background:#faf7f0;border:1px solid #dfd8cc;
+}
+.abl-base.l{left:0;border-right:none;border-radius:3px 0 0 3px;box-shadow:inset -6px 0 12px rgba(0,0,0,.06)}
+.abl-base.r{right:0;border-left:none;border-radius:0 3px 3px 0;box-shadow:inset 6px 0 12px rgba(0,0,0,.06)}
+.abl-spine-crease{
+  position:absolute;left:66px;top:0;width:4px;height:92px;
+  background:linear-gradient(90deg,rgba(0,0,0,.15),rgba(0,0,0,.02) 50%,rgba(0,0,0,.15));
+  z-index:50;
+}
+.abl-leaf{
+  position:absolute;right:0;top:0;width:68px;height:92px;
+  background:#fff;border:1px solid #e2ddd3;border-left:none;
+  border-radius:0 2px 2px 0;transform-origin:left center;
+  transform-style:preserve-3d;backface-visibility:visible;
+  animation:ablCushionFlip 2.4s cubic-bezier(.35,0,.25,1) infinite;
+}
+.abl-typeset-front,.abl-typeset-back{
+  position:absolute;inset:6px 8px;writing-mode:vertical-rl;
+  font-size:4px;line-height:1.8;letter-spacing:.15em;
+  overflow:hidden;pointer-events:none;user-select:none;
+}
+.abl-typeset-front{color:rgba(32,30,27,.45);backface-visibility:hidden}
+.abl-typeset-back{color:rgba(32,30,27,.20);transform:rotateY(180deg);backface-visibility:hidden}
+.abl-leaf:nth-child(4){animation-delay:0s;z-index:7}
+.abl-leaf:nth-child(5){animation-delay:.12s;z-index:6}
+.abl-leaf:nth-child(6){animation-delay:.22s;z-index:5}
+.abl-leaf:nth-child(7){animation-delay:.31s;z-index:4}
+.abl-leaf:nth-child(8){animation-delay:.41s;z-index:3}
+.abl-leaf:nth-child(9){animation-delay:.53s;z-index:2}
+.abl-leaf:nth-child(10){animation-delay:.68s;z-index:1}
+@keyframes ablCushionFlip{
+  0%{transform:rotateY(-0deg) skewY(0deg);filter:brightness(1);box-shadow:-10px 1px 2px rgba(0,0,0,.04)}
+  18%{transform:rotateY(-18deg) skewY(2.2deg);filter:brightness(.96);box-shadow:-7px 3px 6px rgba(0,0,0,.07)}
+  45%{transform:rotateY(-90deg) skewY(4.2deg);filter:brightness(.85);box-shadow:0 6px 16px rgba(0,0,0,.18)}
+  72%{transform:rotateY(-162deg) skewY(1.8deg);filter:brightness(.92);box-shadow:6px 3px 8px rgba(0,0,0,.07)}
+  80%{transform:rotateY(-178.6deg) skewY(.4deg);filter:brightness(.98);box-shadow:8px 2px 4px rgba(0,0,0,.05)}
+  86%{transform:rotateY(-179.8deg) skewY(.1deg);filter:brightness(1);box-shadow:9px 1px 3px rgba(0,0,0,.04)}
+  92%,100%{transform:rotateY(-180deg) skewY(0deg);filter:brightness(1);box-shadow:10px 1px 2px rgba(0,0,0,.04)}
+}
+.aozora-loader .reader-loading-title{margin-top:20px}
+.aozora-loader .reader-loading-sub{margin-top:6px}
+@media(prefers-reduced-motion:reduce){
+  .abl-leaf{animation:none!important;transform:rotateY(-180deg)!important}
+}
+.low-power .abl-leaf{animation:none!important;transform:rotateY(-180deg)!important}
+
+/* ===== Final bookmark compact override ===== */
+#home-bookmarks-section{
+  width:100%!important;
+  margin:12px 0 4px!important;
+}
+.home-bookmark-list{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:5px!important;
+  width:100%!important;
+  margin:0 0 10px!important;
+}
+.home-bookmark-card{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  width:100%!important;
+  height:50px!important;
+  min-height:50px!important;
+  padding:0!important;
+  margin:0!important;
+  border-radius:11px!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.home-bookmark-main{
+  display:grid!important;
+  grid-template-columns:26px minmax(0,1fr)!important;
+  align-items:center!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:50px!important;
+  height:50px!important;
+  padding:6px 9px!important;
+  gap:7px!important;
+  box-sizing:border-box!important;
+}
+.home-bookmark-icon{
+  width:26px!important;
+  height:26px!important;
+  border-radius:8px!important;
+  font-size:14px!important;
+}
+.home-bookmark-text{
+  min-width:0!important;
+  max-width:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:1px!important;
+  overflow:hidden!important;
+}
+.home-bookmark-text strong{
+  width:100%!important;
+  max-width:100%!important;
+  font-size:13px!important;
+  line-height:1.2!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.home-bookmark-text small{
+  max-width:100%!important;
+  font-size:9px!important;
+  line-height:1.15!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.home-bookmark-points{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:3px!important;
+  width:auto!important;
+  max-width:45%!important;
+  padding:0 6px 0 2px!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.home-bookmark-point{
+  display:inline-flex!important;
+  flex:0 0 25px!important;
+  width:25px!important;
+  min-width:25px!important;
+  min-height:25px!important;
+  height:25px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  border-radius:7px!important;
+  font-size:8px!important;
+}
+.home-bookmark-point span{font-size:9px!important;line-height:1!important}
+.home-bookmark-point em{display:none!important}
+@media(max-width:520px){
+  .home-bookmark-card{height:46px!important;min-height:46px!important;border-radius:10px!important}
+  .home-bookmark-main{min-height:46px!important;height:46px!important;grid-template-columns:24px minmax(0,1fr)!important;padding:5px 8px!important;gap:6px!important}
+  .home-bookmark-icon{width:24px!important;height:24px!important;border-radius:7px!important;font-size:13px!important}
+  .home-bookmark-text strong{font-size:12px!important}
+  .home-bookmark-text small{font-size:8px!important}
+  .home-bookmark-points{max-width:43%!important;gap:2px!important;padding-right:5px!important}
+  .home-bookmark-point{flex-basis:23px!important;width:23px!important;min-width:23px!important;height:23px!important;min-height:23px!important;border-radius:6px!important}
+  .home-bookmark-point span{font-size:8px!important}
+}
 </style>
 </head>
 <body>
@@ -7905,6 +8071,6 @@ html[data-device="smartphone"] .phone-reader-ui-toggle:active{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-freeze-bookmarkrow-20261005"></script>
+<script src="./app.js?v=reader-loader-stable-bookmark-final-20261005"></script>
 </body>
 </html>
