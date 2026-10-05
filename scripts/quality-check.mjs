@@ -7,6 +7,7 @@ const license=readFileSync(new URL('../LICENSE.md',import.meta.url),'utf8');
 const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
 const smoke=readFileSync(new URL('./browser-smoke.html',import.meta.url),'utf8');
 const workflow=readFileSync(new URL('../.github/workflows/quality.yml',import.meta.url),'utf8');
+const rightsManifest=readFileSync(new URL('../rights-allowlist.json',import.meta.url),'utf8');
 
 const fail=[];
 const ok=(condition,message)=>{if(!condition)fail.push(message);};
@@ -93,6 +94,10 @@ ok(readme.includes('CC BY 4.0'),'README.md is missing CC BY 4.0 information');
 ok(html.includes('青空文庫リーダー（非公式）'),'index.html title is missing unofficial designation');
 ok(app.includes("if(Number(raw.c)!==1||Number(raw.r)!==1)continue;"),'catalog sanitizer does not remove unverified works before catalog exposure');
 ok(app.includes('rightsReady&&rightsAllowlist.has')||app.includes('rightsReady && rightsAllowlist.has'),'reader public-work guard does not require copyright allowlist verification');
+let rightsIds=[];try{rightsIds=JSON.parse(rightsManifest)}catch{}
+ok(Array.isArray(rightsIds)&&rightsIds.length>1000&&rightsIds.length<30000,'rights allowlist size is invalid');
+ok(Array.isArray(rightsIds)&&rightsIds.every(id=>/^\d{6}$/.test(String(id))),'rights allowlist contains invalid IDs');
+ok(!Array.isArray(rightsIds)||!rightsIds.includes('061517'),'known excluded work is present in rights allowlist');
 ok(app.includes("const CATALOG_CACHE_KEY='cat-rights-v4'"),'legacy unverified catalog cache key is still in use');
 ok(app.includes("const authorRightsFlag = cols[26]"),'CSV import does not inspect person copyright flag');
 
