@@ -1891,7 +1891,8 @@ function syncReaderPagination(preserveFraction=null){
   const fontSize=Math.max(1,parseFloat(cs.fontSize)||18);
   const lineHeightPx=Math.max(fontSize,parseFloat(cs.lineHeight)||fontSize*Number(st.lh||2.1));
   b.style.setProperty('--reader-page-width',metrics.width+'px');
-  b.style.setProperty('--reader-v-column-width',lineHeightPx+'px');
+  // 縦書きも「1画面＝1ページ」。列幅を行の高さではなく実際の本文ページ幅にする。
+  b.style.setProperty('--reader-v-column-width',metrics.width+'px');
   if(preserveFraction===null||!Number.isFinite(Number(preserveFraction))){
     updateProgress(true);
     return;
