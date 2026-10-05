@@ -3742,6 +3742,30 @@ function initHomeHeroMotion(){
   });
 }
 
+/* PC読書UIの復帰ボタンは委譲イベントに依存させず、直接操作できるようにする。 */
+window.addEventListener('DOMContentLoaded',()=>{
+  const b=$('r-ui-toggle');
+  if(!b||b.dataset.pcRestoreBound==='1')return;
+  b.dataset.pcRestoreBound='1';
+  const restore=e=>{
+    if(document.documentElement.dataset.device!=='desktop')return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const r=$('reader');
+    const els=[$('r-top'),$('r-dock'),$('r-bottom-info')].filter(Boolean);
+    if(!r||!r.classList.contains('open'))return;
+    r.classList.remove('chrome-hidden','mode-focus');
+    els.forEach(el=>{
+      el.classList.remove('hide');
+      el.classList.add('show-temp');
+      el.style.cssText += ';display:'+(el.id==='r-dock'?'grid':'flex')+';visibility:visible;opacity:1;pointer-events:auto;transform:none;';
+    });
+    b.style.display='flex';
+    b.style.visibility='visible';
+    b.style.opacity='1';
+  };
+  b.addEventListener('click',restore,{capture:true});
+});
 window.addEventListener('DOMContentLoaded',()=>{
   void (async()=>{
   const phoneMode=()=>document.documentElement.dataset.device==='smartphone';
