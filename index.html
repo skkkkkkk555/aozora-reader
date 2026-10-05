@@ -7112,6 +7112,134 @@ html[data-device="smartphone"] .r-dock{min-height:0!important}
   overflow-y:hidden!important;
 }
 
+
+
+/* ===== Final reader/block UI correction ===== */
+#reader .r-dock{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-auto-rows:minmax(72px,1fr)!important;
+  min-height:152px!important;
+  gap:8px!important;
+  padding:8px!important;
+  border-radius:22px!important;
+}
+#reader .r-dock-btn{
+  min-width:0!important;
+  min-height:68px!important;
+  width:100%!important;
+  border-radius:16px!important;
+  padding:9px 8px!important;
+  gap:6px!important;
+  font-size:13px!important;
+}
+#reader .r-dock-btn .icon{
+  width:27px!important;
+  height:27px!important;
+}
+
+/* ホームのしおりカードを十分な高さのブロックに */
+#home-bookmarks-section{
+  font-size:20px!important;
+  font-weight:750!important;
+  margin-top:24px!important;
+  margin-bottom:10px!important;
+}
+.home-bookmark-list{
+  gap:14px!important;
+}
+.home-bookmark-card{
+  min-height:150px!important;
+  height:auto!important;
+  border-radius:22px!important;
+}
+.home-bookmark-main{
+  min-height:94px!important;
+  height:auto!important;
+  padding:18px 19px!important;
+  gap:14px!important;
+}
+.home-bookmark-icon{
+  width:44px!important;
+  height:44px!important;
+  border-radius:14px!important;
+  font-size:23px!important;
+}
+.home-bookmark-text{gap:6px!important}
+.home-bookmark-text strong{font-size:17px!important}
+.home-bookmark-text small{font-size:12px!important}
+.home-bookmark-points{
+  grid-template-columns:repeat(auto-fit,minmax(110px,1fr))!important;
+  gap:9px!important;
+  padding:0 15px 15px!important;
+}
+.home-bookmark-point{
+  min-height:56px!important;
+  height:auto!important;
+  border-radius:15px!important;
+  padding:8px 10px!important;
+}
+
+/* スマホ読書画面：細い横一列をやめてカード状の3×2 */
+html[data-device="smartphone"] .phone-reader-toolbar{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-auto-rows:minmax(66px,1fr)!important;
+  gap:7px!important;
+  padding:8px!important;
+  min-height:146px!important;
+}
+html[data-device="smartphone"] .phone-reader-tool{
+  min-height:62px!important;
+  height:auto!important;
+  width:100%!important;
+  border-radius:15px!important;
+  background:var(--phone-card)!important;
+}
+html[data-device="smartphone"] .phone-reader-tool .phone-tool-icon{
+  font-size:24px!important;
+}
+html[data-device="smartphone"] .phone-reader-ui-toggle{
+  position:fixed!important;
+  right:0!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  z-index:120!important;
+  width:36px!important;
+  height:60px!important;
+  min-height:60px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:17px 0 0 17px!important;
+  background:rgba(28,28,30,.76)!important;
+  color:#fff!important;
+  box-shadow:0 5px 18px rgba(0,0,0,.22)!important;
+  display:none!important;
+  pointer-events:auto!important;
+}
+html[data-device="smartphone"] .phone-reader.reader-chrome-hidden .phone-reader-ui-toggle{
+  display:flex!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-reader-ui-toggle{
+  background:rgba(235,235,240,.28)!important;
+}
+html[data-device="smartphone"] .phone-reader-ui-toggle:active{
+  transform:translateY(-50%) scale(.92)!important;
+}
+@media(max-width:520px){
+  #reader .r-dock{
+    min-height:146px!important;
+    gap:6px!important;
+    padding:7px!important;
+  }
+  #reader .r-dock-btn{min-height:64px!important;font-size:12px!important}
+  .home-bookmark-card{min-height:154px!important}
+  .home-bookmark-point{min-height:58px!important}
+  html[data-device="smartphone"] .phone-reader-toolbar{
+    min-height:140px!important;
+    grid-auto-rows:minmax(63px,1fr)!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -7164,6 +7292,7 @@ html[data-device="smartphone"] .r-dock{min-height:0!important}
       <button class="phone-icon-button" data-phone-action="reader-search-close" aria-label="閉じる">×</button>
     </div>
     <article id="phone-reader-body" class="phone-reader-body"></article>
+    <button class="phone-reader-ui-toggle" data-phone-action="reader-ui-toggle" aria-label="読書UIを表示">⌃</button>
     <div class="phone-reader-toolbar">
       <button class="phone-reader-tool" data-phone-action="bookmark"><span class="phone-tool-icon">▱</span><small>栞</small></button>
       <button class="phone-reader-tool" data-phone-action="note"><span class="phone-tool-icon">✎</span><small>メモ</small></button>
@@ -7635,6 +7764,6 @@ html[data-device="smartphone"] .r-dock{min-height:0!important}
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=ios-deep-20261005-vertical-fix7"></script>
+<script src="./app.js?v=ios-deep-20261005-ui-fix9"></script>
 </body>
 </html>
