@@ -39,6 +39,7 @@ function readerText(d){
 function readerRendered(d,selector){
 function touchTap(el){
   if(!el)throw new Error('touch target missing');
+  el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerType:'touch',clientX:80,clientY:80}));
   el.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,cancelable:true,pointerType:'touch',clientX:80,clientY:80}));
   el.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,detail:1}));
 }
@@ -94,7 +95,7 @@ function assertDesktopReaderChrome(d,label){
   const device=d.documentElement.dataset.device;
 
   if(mode==='live'){
-    const probe='https://cdn.jsdelivr.net/gh/aozorahack/aozorabunko_text@master/cards/000148/files/789_ruby_5639/789_ruby_5639.txt';
+    const probe='https://raw.githubusercontent.com/aozorahack/aozorabunko_text/master/cards/001403/files/50014_ruby_37713/50014_ruby_37713.txt';
     const probeRes=await fetch(probe,{cache:'no-store'});
     if(!probeRes.ok)fail('jsDelivr Aozora source unavailable: HTTP '+probeRes.status);
     const probeText=await probeRes.text();
