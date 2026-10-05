@@ -8577,6 +8577,109 @@ html[data-device="smartphone"] .phone-reader-body.reader-plain-fallback{
   min-width:0!important;
 }
 </style>
+
+<style id="aozora-reader-structural-fix">
+/* ===== Reader structural fix 2026-10-05 =====
+   Outer element = normal LTR scroll container.
+   Inner element = Japanese vertical writing surface.
+   This avoids browser-specific vertical-rl scrollLeft semantics. */
+#body.paper-paged.v{
+  writing-mode:horizontal-tb!important;
+  direction:ltr!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:auto!important;
+  min-height:0!important;
+  flex:1 1 auto!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  box-sizing:border-box!important;
+  scroll-snap-type:none!important;
+  touch-action:pan-x!important;
+  overscroll-behavior-x:contain!important;
+  overscroll-behavior-y:none!important;
+  white-space:normal!important;
+}
+#body.paper-paged.v > .reader-flow.reader-vertical-flow{
+  writing-mode:vertical-rl!important;
+  direction:ltr!important;
+  display:block!important;
+  width:max-content!important;
+  min-width:100%!important;
+  max-width:none!important;
+  height:100%!important;
+  min-height:100%!important;
+  box-sizing:border-box!important;
+  padding:28px 32px 32px!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
+#body.paper-paged.v > .reader-flow.reader-vertical-flow > *{
+  max-width:none!important;
+  box-sizing:border-box!important;
+  break-inside:auto!important;
+}
+#body.paper-paged.v > .reader-flow.reader-vertical-flow p,
+#body.paper-paged.v > .reader-flow.reader-vertical-flow pre,
+#body.paper-paged.v > .reader-flow.reader-vertical-flow section{
+  overflow-wrap:anywhere!important;
+  white-space:pre-wrap!important;
+}
+
+html[data-device="smartphone"] .phone-reader-body.phone-reader-vertical{
+  writing-mode:horizontal-tb!important;
+  direction:ltr!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:auto!important;
+  min-height:0!important;
+  flex:1 1 auto!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  box-sizing:border-box!important;
+  touch-action:pan-x!important;
+  overscroll-behavior-x:contain!important;
+  overscroll-behavior-y:none!important;
+  white-space:normal!important;
+}
+html[data-device="smartphone"] .phone-reader-body.phone-reader-vertical > .reader-flow.reader-vertical-flow{
+  writing-mode:vertical-rl!important;
+  direction:ltr!important;
+  display:block!important;
+  width:max-content!important;
+  min-width:100%!important;
+  max-width:none!important;
+  height:100%!important;
+  min-height:100%!important;
+  box-sizing:border-box!important;
+  padding:28px 23px 118px!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
+html[data-device="smartphone"] .phone-reader-body.phone-reader-vertical > .reader-flow.reader-vertical-flow > *{
+  max-width:none!important;
+  box-sizing:border-box!important;
+  break-inside:auto!important;
+}
+html[data-device="smartphone"] .phone-reader-body.phone-reader-vertical > .reader-flow.reader-vertical-flow p,
+html[data-device="smartphone"] .phone-reader-body.phone-reader-vertical > .reader-flow.reader-vertical-flow pre,
+html[data-device="smartphone"] .phone-reader-body.phone-reader-vertical > .reader-flow.reader-vertical-flow section{
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+}
+
+/* Page-turn animation is a chrome effect; never transform the article surface itself. */
+#body.paper-paged.paper-turning-next,
+#body.paper-paged.paper-turning-prev{
+  animation:none!important;
+  transform:none!important;
+  opacity:1!important;
+}
+</style>
 </head>
 <body>
 <!-- Dedicated smartphone application shell -->
@@ -9274,6 +9377,6 @@ html[data-device="smartphone"] .phone-reader-body.reader-plain-fallback{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-axis-scrollfix-v20261005-34"></script>
+<script src="./app.js?v=reader-structural-reader-v20261005-35"></script>
 </body>
 </html>
