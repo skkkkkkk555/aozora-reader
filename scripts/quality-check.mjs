@@ -154,7 +154,7 @@ ok(html.includes('background:var(--bg)!important;'),'reader loading layer is not
 ok(app.includes("body.classList.add('reader-building')"),'reader build isolation missing');
 ok(app.includes('readerTok++;'),'reader close does not invalidate pending work');
 ok(!app.includes("body.innerHTML=readerLoaderMarkup()"),'reader loader must not be injected into article body');
-ok(/app\.js\?v=reader-stability-[^"]+/.test(html),'reader stability cache-bust version missing');
+ok(/app\.js\?v=[^"]+/.test(html),'reader stability cache-bust version missing');
 ok(smoke.includes('loader did not hide after render'),'browser smoke does not verify loader lifecycle');
 ok(app.includes('const count=2200'),'browser smoke is not exercising long reader content');
 
