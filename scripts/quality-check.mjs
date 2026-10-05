@@ -54,6 +54,21 @@ ok(app.includes("if(document.documentElement.dataset.device==='smartphone')retur
 ok(app.includes("state.sheetOpen&&layer!=='phone-sheet'"),'smartphone sheet back handling missing');
 ok(app.includes("state.reader&&layer!=='phone-reader'"),'smartphone reader back handling missing');
 ok(app.includes("openReader(w,fromDetail=false)"),'smartphone reader origin default is unstable');
+ok(/\/Android\|iPhone\|iPad\|iPod/.test(app),'handheld detection does not include Android tablets/iPad');
+ok(app.includes("const handheld=document.documentElement.dataset.device==='smartphone'"),'handheld fetch path missing');
+ok(app.includes("headers:{'Accept':'text/plain,*/*'}"),'handheld plain GET fallback missing');
+ok(app.includes('readerVertical:false'),'smartphone vertical reader state missing');
+ok(app.includes("data-phone-action="reader-vertical""),'smartphone vertical reader menu action missing');
+ok(app.includes('function applyPhoneReaderDirection'),'smartphone reader direction helper missing');
+ok(app.includes('function togglePhoneReaderDirection'),'smartphone reader direction toggle missing');
+ok(app.includes('if(state.readerVertical)'),'smartphone vertical progress axis handling missing');
+ok(app.includes("showScreen(state.screen||'home','back');"),'smartphone back navigation does not return to the previous main screen');
+ok(app.includes("globalBack.style.setProperty('display',showBack?'flex':'none','important')"),'smartphone global back control is not independently synchronized');
+ok(html.includes('aozora-final-device-ui-hardening'),'final cross-device UI hardening block is missing');
+ok(html.includes('phone-reader-body.phone-reader-vertical'),'smartphone vertical reader CSS is missing');
+ok(html.includes('--phone-sub:#d0d6de!important'),'dark smartphone contrast palette is missing');
+ok(html.includes('html[data-device="desktop"] #reader.open.mode-focus .r-bar'),'desktop mode-focus UI lockdown is missing');
+
 ok(app.includes("cur==='auto'?'sepia':cur==='sepia'?'dark':'auto'"),'smartphone theme cycle contains invalid theme value');
 ok(app.includes("const isAnyReaderOpen=()=>"),'PC/smartphone shared reader tracking missing');
 ok(app.includes("state.work=w;curWork=w"),'smartphone AI context is not synchronized');
