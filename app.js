@@ -3742,6 +3742,27 @@ function initHomeHeroMotion(){
   });
 }
 
+/* PC読書UIは後続処理から隠されても即座に復元する。 */
+const desktopReaderChromeGuard=new MutationObserver(()=>{
+  if(document.documentElement.dataset.device!=='desktop')return;
+  const reader=$('reader');
+  if(!reader?.classList.contains('open'))return;
+  const els=[$('r-top'),$('r-dock'),$('r-bottom-info')].filter(Boolean);
+  reader.classList.remove('chrome-hidden');
+  els.forEach(el=>{
+    el.classList.remove('hide');
+    el.style.setProperty('display',el.id==='r-dock'?'grid':'flex','important');
+    el.style.setProperty('visibility','visible','important');
+    el.style.setProperty('opacity','1','important');
+    el.style.setProperty('pointer-events','auto','important');
+    el.style.setProperty('transform','none','important');
+  });
+});
+window.addEventListener('DOMContentLoaded',()=>{
+  const reader=$('reader');
+  if(reader)desktopReaderChromeGuard.observe(reader,{subtree:true,attributes:true,attributeFilter:['class','style','hidden']});
+});
+
 /* PC読書UIの復帰ボタンは委譲イベントに依存させず、直接操作できるようにする。 */
 window.addEventListener('DOMContentLoaded',()=>{
   const b=$('r-ui-toggle');
@@ -5157,6 +5178,17 @@ window.addEventListener('DOMContentLoaded',()=>{
     syncScreens(state.reader?'reader':'main');
   }
 
+  window.addEventListener('DOMContentLoaded',()=>{
+    const b=$p('#phone-global-back');
+    if(!b||b.dataset.bound==='1')return;
+    b.dataset.bound='1';
+    b.type='button';
+    b.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      window.__aozoraPhoneBack?.();
+    });
+  },{once:true});
   const phoneBootWatchdog=setTimeout(()=>{
     if(!isPhone())return;
     try{
@@ -5201,6 +5233,22 @@ window.addEventListener('DOMContentLoaded',()=>{
     },{once:true});
   }
 
+  window.__aozoraPhoneBack=()=>{
+    if(!isPhone())return;
+    if(state.sheetOpen){closePhoneSheet();return;}
+    if(state.reader){closeReader();return;}
+    if(state.work&&history.state?.phoneLayer==='phone-detail'){
+      const w=state.work;
+      state.work=null;
+      state.readerFromDetail=false;
+      const base={...(history.state||{})};delete base.phoneLayer;delete base.phoneParent;
+      history.replaceState(base,'',location.href);
+      openDetail(w,'back',true);
+      return;
+    }
+    if(state.work){state.work=null;showScreen(state.screen,'back');return;}
+    if(state.screen!=='home')showScreen('home','back');
+  };
   window.__aozoraPhoneOpenSheet=openPhoneSheet;
   window.__aozoraPhoneOpenCatalogManual=openPhoneCatalogManual;
   window.__aozoraPhoneCloseSheet=closePhoneSheet;
