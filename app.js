@@ -1571,9 +1571,11 @@ let readerLoadingWorkId='';
 async function fetchBody(w){
   if(!w||!isPublicWork(w))throw new Error('protected-work');
   if(BROWSER_SMOKE){
-    const plain='これはブラウザスモークテスト用の本文です。PC版とスマートフォン版の読書画面、戻る操作、検索、シート表示を検証します。';
-    const paragraphs=Array.from({length:18},(_,i)=>'<p>'+plain+' テスト段落'+(i+1)+'です。実際に本文領域へ描画され、スクロール可能な長さになっていることも確認します。</p>').join('');
-    return {html:'<h2 data-hid="h-1">スモークテスト本文</h2>'+paragraphs,plain:Array.from({length:18},(_,i)=>plain+' テスト段落'+(i+1)+'です。実際に本文領域へ描画され、スクロール可能な長さになっていることも確認します。').join('\n')};
+    const plain='これは長文スモークテスト用の本文です。ローダー隔離、段階的描画、ページ化、スクロール、戻る操作を検証します。';
+    const count=2200;
+    const paragraphs=Array.from({length:count},(_,i)=>'<p>'+plain+' テスト段落'+(i+1)+'です。長い青空文庫作品を想定した十分な本文量で、メインスレッドを占有し続けない描画を検証します。</p>').join('');
+    const text=Array.from({length:count},(_,i)=>plain+' テスト段落'+(i+1)+'です。長い青空文庫作品を想定した十分な本文量で、メインスレッドを占有し続けない描画を検証します。').join('\n');
+    return {html:'<h2 data-hid="h-1">スモークテスト本文</h2>'+paragraphs,plain:text};
   }
   if(typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))throw new Error('invalid-book-path');
   const c=await idb.get('docs',w.id);
