@@ -2294,7 +2294,7 @@ function ensureReaderBodyText(target=$('body'),doc=curDoc){
   const plain=String(doc.plain||'').replace(/\s+/g,'').trim();
   if(plain.length<1)return false;
   // 見出しだけ描画され本文が欠落した状態を成功扱いにしない。
-  const meaningful=Math.max(20,Math.min(400,Math.floor(plain.length*0.08)));
+  const meaningful=Math.max(20,Math.floor(plain.length*0.75));
   if(text.length>=20 && text.length>=meaningful)return true;
   b.innerHTML='';
   b.classList.remove('paper-paged','v','reader-building');
