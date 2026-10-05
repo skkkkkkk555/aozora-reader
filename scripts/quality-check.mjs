@@ -6,6 +6,7 @@ const notice=readFileSync(new URL('../NOTICE.md',import.meta.url),'utf8');
 const license=readFileSync(new URL('../LICENSE.md',import.meta.url),'utf8');
 const readme=readFileSync(new URL('../README.md',import.meta.url),'utf8');
 const smoke=readFileSync(new URL('./browser-smoke.html',import.meta.url),'utf8');
+const workflow=readFileSync(new URL('../.github/workflows/quality.yml',import.meta.url),'utf8');
 
 const fail=[];
 const ok=(condition,message)=>{if(!condition)fail.push(message);};
@@ -79,6 +80,8 @@ ok(app.includes('const bodyDeadline=Date.now()+30000'),'book fetch has no total 
 ok(smoke.includes('function readerScrollable'),'browser smoke does not verify actual reader scrollability');
 ok(smoke.includes("readerRendered(d,'#phone-reader-body')"),'smartphone smoke does not verify visible reader geometry');
 ok(smoke.includes("readerRendered(d,'#body')"),'desktop smoke does not verify visible reader geometry');
+ok(workflow.includes('--timeout 120s'),'browser process timeout is missing');
+ok(!workflow.includes('--virtual-time-budget='),'browser smoke still relies on virtual-time-budget');
 ok(app.includes("currentView==='v-search'"),'desktop search does not recover after catalog initialization');
 ok(app.includes('retryPhoneCatalog'),'smartphone catalog boot retry is missing');
 ok(notice.includes('CC BY 4.0'),'NOTICE.md is missing CC BY 4.0 attribution');
