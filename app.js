@@ -138,10 +138,13 @@ function sanitizeCatalogRecords(v){
   const out=[];const seen=new Set();
   for(const raw of v){
     if(out.length>=20000||!raw||typeof raw!=='object')break;
+    // 青空文庫の「作品著作権フラグ」が「なし」に対応する c:1 の作品だけを
+    // カタログそのものへ採用する。権利保護中・許諾前提の作品は検索や詳細へも流さない。
+    if(Number(raw.c)!==1)continue;
     const id=String(raw.id||'').slice(0,80),t=String(raw.t||'').slice(0,300),a=String(raw.a||'').slice(0,300),x=String(raw.x||'').slice(0,500);
     if(!safeStateKey(id)||seen.has(id)||!t||!x||x.length>500||x.includes('..')||x.includes('\\')||x.startsWith('http')||x.startsWith('//')||!/^[A-Za-z0-9._\/-]+$/.test(x))continue;
     seen.add(id);
-    out.push({id,t,a,tk:String(raw.tk||'').slice(0,300),ak:String(raw.ak||'').slice(0,300),d:String(raw.d||'').slice(0,80),k:Number(raw.k)===1?1:0,c:Number(raw.c)===1?1:0,ndc:String(raw.ndc||'').slice(0,80),norm:String(raw.norm||'').slice(0,700),x});
+    out.push({id,t,a,tk:String(raw.tk||'').slice(0,300),ak:String(raw.ak||'').slice(0,300),d:String(raw.d||'').slice(0,80),k:Number(raw.k)===1?1:0,c:1,ndc:String(raw.ndc||'').slice(0,80),norm:String(raw.norm||'').slice(0,700),x});
   }
   return out;
 }
@@ -802,6 +805,10 @@ async function parseCsv(csv){
     if(!rawId||!parsedUrl||parsedUrl.protocol!=='https:'||parsedUrl.hostname!=='www.aozora.gr.jp'||!rawUrl.toLowerCase().endsWith('.zip'))continue;
     if(!safeStateKey(rawId))continue;
     const id=rawId;
+    const rightsFlag = cols[col.c];
+    const isPublic = rightsFlag === 'なし' || rightsFlag === '1' || rightsFlag === 1 || rightsFlag === '1.0';
+    // 許諾・保護中の作品は、この時点で取り込み対象から完全に除外する。
+    if(!isPublic)continue;
     const author=((cols[col.a]||'')+' '+(cols[col.am]||'')).trim();
     if(m.has(id)){
       const ex=m.get(id);
@@ -809,11 +816,9 @@ async function parseCsv(csv){
       continue;
     }
     const t=cols[col.t]||'', tk=(cols[col.tk]||'').toLowerCase(), ak=(cols[col.ak]||'').toLowerCase();
-    const rightsFlag = cols[col.c];
-    const isPublic = rightsFlag === 'なし' || rightsFlag === '1' || rightsFlag === 1 || rightsFlag === '1.0';
     m.set(id,{
       id, t, a:author, tk, ak, d:cols[col.d]||'',
-      k:cols[col.k]?.includes('新字新仮名')?1:0, c:isPublic ? 1 : 0,
+      k:cols[col.k]?.includes('新字新仮名')?1:0, c:1,
       ndc:cols[col.ndc]||'',
       norm:(t+' '+tk+' '+author+' '+ak).replace(/[\s　]/g,'').toLowerCase(),
       x:cols[col.x].replace('https://www.aozora.gr.jp/','').replace(/\.zip$/,'').replace(/\/([^\/]+)$/,'/$1/$1.txt').replace(/^\/+|\.\.+/g,'')
