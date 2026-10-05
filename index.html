@@ -8165,6 +8165,53 @@ html[data-device="desktop"] #reader .r-bottom-bar.hide{
 }
 html[data-device="desktop"] #reader .r-dock.hide{display:grid!important}
 </style>
+<style id="aozora-pc-ui-absolute-final">
+/* ===== PC reader UI: absolute final rule =====
+   PCの読書画面ではUIを非表示にする経路そのものを無効化する。
+   smartphoneは専用の #phone-reader を使うため、この規則はPC側だけに適用。 */
+html[data-device="desktop"] #reader.open .r-bar,
+html[data-device="desktop"] #reader.open .r-dock,
+html[data-device="desktop"] #reader.open #r-bottom-info,
+html[data-device="desktop"] #reader.open .r-bar.hide,
+html[data-device="desktop"] #reader.open .r-dock.hide,
+html[data-device="desktop"] #reader.open #r-bottom-info.hide,
+html[data-device="desktop"] #reader.open.mode-focus .r-bar,
+html[data-device="desktop"] #reader.open.mode-focus .r-dock,
+html[data-device="desktop"] #reader.open.mode-focus #r-bottom-info,
+html[data-device="desktop"] #reader.open.mode-focus .r-bar:not(.show-temp),
+html[data-device="desktop"] #reader.open.mode-focus .r-dock:not(.show-temp),
+html[data-device="desktop"] #reader.open.mode-focus #r-bottom-info:not(.show-temp){
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  transform:none!important;
+}
+html[data-device="desktop"] #reader.open .r-dock{
+  display:grid!important;
+}
+html[data-device="desktop"] #reader.open #r-ui-toggle,
+html[data-device="desktop"] #reader.open.chrome-hidden #r-ui-toggle,
+html[data-device="desktop"] #reader.open.mode-focus #r-ui-toggle{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  position:fixed!important;
+  right:18px!important;
+  bottom:76px!important;
+  top:auto!important;
+  width:auto!important;
+  min-width:82px!important;
+  height:40px!important;
+  min-height:40px!important;
+  transform:none!important;
+  z-index:2147483647!important;
+}
+html[data-device="desktop"] #reader.open #btn-exit-focus{
+  z-index:2147483646!important;
+}
+</style>
 </head>
 <body>
 <!-- Dedicated smartphone application shell -->
