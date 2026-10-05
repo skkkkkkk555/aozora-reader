@@ -1822,15 +1822,18 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
     setReaderLoading(false);
     applyReaderConfig(null);
 
+    const restoreInitialPage=()=>{
+      if(tId!==readerTok||curWork?.id!==w.id||!$('reader')?.classList.contains('open'))return;
+      const f=(bookmarkF!==null&&Number.isFinite(Number(bookmarkF)))?Math.max(0,Math.min(1,Number(bookmarkF))):(pos[w.id]?.f||0);
+      const page=getReaderPageCount();
+      const idx=Math.max(0,Math.min(page-1,Math.round(f*Math.max(0,page-1))));
+      setReaderPage(idx,false);
+      updateProgress(true);
+      window.setTimeout(()=>$('reader').classList.remove('paper-first-open'),900);
+    };
     requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        const f=(bookmarkF!==null&&Number.isFinite(Number(bookmarkF)))?Math.max(0,Math.min(1,Number(bookmarkF))):(pos[w.id]?.f||0);
-        const page=getReaderPageCount();
-        const idx=Math.max(0,Math.min(page-1,Math.round(f*Math.max(0,page-1))));
-        setReaderPage(idx,false);
-        updateProgress(true);
-        window.setTimeout(()=>$('reader').classList.remove('paper-first-open'),900);
-      });
+      if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(restoreInitialPage,{timeout:700});
+      else window.setTimeout(restoreInitialPage,120);
     });
 
     if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
@@ -1858,7 +1861,22 @@ function setReaderLoading(show){
   if(!body)return;
   body.setAttribute('aria-busy',show?'true':'false');
   if(show){
-    body.innerHTML='<div class="reader-loading" role="status" aria-live="polite"><div class="reader-loading-orb"></div><div class="reader-loading-title">本文を読み込んでいます</div><div class="reader-loading-sub">青空文庫から本文を準備中…</div><div class="reader-loading-bar"><span></span></div></div>';
+    body.innerHTML='<div class="reader-loading aozora-loader" role="status" aria-live="polite">'+
+      '<div class="abl-rig">'+
+        '<div class="abl-base l"></div>'+
+        '<div class="abl-base r"></div>'+
+        '<div class="abl-spine-crease"></div>'+
+        '<div class="abl-leaf"><div class="abl-typeset-front">私はその人を常に先生と呼んでいた。だからここでもただ先生と書くだけで本名は打ち明けない。</div><div class="abl-typeset-back">私はその人を常に先生と呼んでいた。だからここでもただ先生と書くだけで本名は打ち明けない。</div></div>'+
+        '<div class="abl-leaf"><div class="abl-typeset-front">これは世間を憚かる遠慮というよりも、その方が私にとって自然だからである。</div><div class="abl-typeset-back">これは世間を憚かる遠慮というよりも、その方が私にとって自然だからである。</div></div>'+
+        '<div class="abl-leaf"><div class="abl-typeset-front">私はその人の記憶を呼び起すごとに、すぐ「先生」といいたくなる。</div><div class="abl-typeset-back">私はその人の記憶を呼び起すごとに、すぐ「先生」といいたくなる。</div></div>'+
+        '<div class="abl-leaf"><div class="abl-typeset-front">筆を執っても心持は同じ事である。余所余所しい頭文字などはとても使う気にならない。</div><div class="abl-typeset-back">筆を執っても心持は同じ事である。余所余所しい頭文字などはとても使う気にならない。</div></div>'+
+        '<div class="abl-leaf"><div class="abl-typeset-front">私が先生と知り合いになったのは鎌倉である。その時私はまだ若々しい書生であった。</div><div class="abl-typeset-back">私が先生と知り合いになったのは鎌倉である。その時私はまだ若々しい書生であった。</div></div>'+
+        '<div class="abl-leaf"><div class="abl-typeset-front">暑中休暇を利用して海へ泳ぎに行った友達からぜひ来いという端書を受け取ったので、</div><div class="abl-typeset-back">暑中休暇を利用して海へ泳ぎに行った友達からぜひ来いという端書を受け取ったので、</div></div>'+
+        '<div class="abl-leaf"><div class="abl-typeset-front">私は多少の金を工面して出掛ける事にした。私は金の工面に二三日を費やした。</div><div class="abl-typeset-back">私は多少の金を工面して出掛ける事にした。私は金の工面に二三日を費やした。</div></div>'+
+      '</div>'+
+      '<div class="reader-loading-title">本文を読み込んでいます</div>'+
+      '<div class="reader-loading-sub">青空文庫から本文を準備中…</div>'+
+    '</div>';
   }
 }
 
@@ -2221,10 +2239,14 @@ function applyReaderMode(){
   }
 }
 
-function applyReaderConfig(){
+function applyReaderConfig(preserveOverride=undefined){
   const b=$('body');
   const open=!!$('reader')?.classList.contains('open');
-  const preserve=open&&curDoc&&b?.getAttribute('aria-busy')!=='true'?readerPageProgress():null;
+  const preserve=preserveOverride===null
+    ? null
+    : (preserveOverride!==undefined
+      ? Number(preserveOverride)
+      : (open&&curDoc&&b?.getAttribute('aria-busy')!=='true'?readerPageProgress():null));
 
   b.style.setProperty('--r-fs',st.fs+'px');
   b.style.setProperty('--r-lh',st.lh);
@@ -2232,6 +2254,10 @@ function applyReaderConfig(){
   b.classList.toggle('v',st.v!==false);
   b.classList.add('paper-paged');
   applyReaderMode();
+
+  // 初回表示では、本文DOMの直後にscrollWidthを読むと大きな作品でレイアウト計算が固まりやすい。
+  // openReader側が描画を1フレーム渡してから初期ページを復元する。
+  if(open && preserveOverride===null)return;
 
   if(open){
     requestAnimationFrame(()=>requestAnimationFrame(()=>syncReaderPagination(preserve)));
