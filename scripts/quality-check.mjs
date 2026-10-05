@@ -66,13 +66,21 @@ ok(app.includes("showScreen(state.screen||'home','back');"),'smartphone back nav
 ok(app.includes("globalBack.style.setProperty('display',showBack?'flex':'none','important')"),'smartphone global back control is not independently synchronized');
 ok(html.includes('aozora-final-device-ui-hardening'),'final cross-device UI hardening block is missing');
 ok(html.includes('phone-reader-body.phone-reader-vertical'),'smartphone vertical reader CSS is missing');
+ok(html.includes('reader-flow.reader-vertical-flow'),'vertical reader flow wrapper CSS is missing');
+ok(app.includes("flow.className='reader-flow'+(body.classList.contains('v')?' reader-vertical-flow':'')"),'desktop reader flow wrapper is missing');
+ok(app.includes("flow.className='reader-flow'+(state.readerVertical?' reader-vertical-flow':'')"),'handheld reader flow wrapper is missing');
 ok(html.includes('--phone-sub:#d0d6de!important'),'dark smartphone contrast palette is missing');
 ok(html.includes('html[data-device="desktop"] #reader.open.mode-focus .r-bar'),'desktop mode-focus UI lockdown is missing');
 ok(app.includes('function getVerticalScrollMetrics'),'desktop vertical scroll metric helper missing');
 ok(app.includes('function scrollDesktopVerticalBy'),'desktop vertical scroll helper missing');
 ok(app.includes('function bindDesktopVerticalWheel'),'desktop vertical wheel binding missing');
 ok(app.includes("b.style.setProperty('touch-action',state.readerVertical?'pan-x':'pan-y','important')"),'handheld vertical touch-axis fix missing');
-ok(html.includes('app.js?v=reader-axis-scrollfix-v20261005-34'),'vertical scroll cache bust missing');
+ok(app.includes("if(handheld||buffer.byteLength<=4*1024*1024)"),'handheld parser still depends on Reader Worker');
+ok(app.includes('b.scrollLeft=Math.max(0,m.max-p*m.max);'),'handheld vertical fraction uses stable LTR coordinates');
+ok(app.includes("const left=b.classList.contains('v')?Math.max(0,m.max-target):target"),'desktop vertical page position does not use stable LTR coordinates');
+ok(app.includes("b.scrollLeft=Math.max(0,Math.min(m.max,b.scrollLeft-d))"),'desktop vertical wheel direction is unstable');
+ok(app.includes("body.classList.remove('paper-turning-next','paper-turning-prev')"),'page turn still transforms article body');
+ok(html.includes('app.js?v=reader-structural-reader-v20261005-35'),'vertical reader structural cache bust missing');
 
 
 ok(app.includes("cur==='auto'?'sepia':cur==='sepia'?'dark':'auto'"),'smartphone theme cycle contains invalid theme value');
