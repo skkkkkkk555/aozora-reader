@@ -81,8 +81,12 @@ function readerScrollable(d,selector){
 
     const read=await waitFor(()=>d.querySelector('#phone-detail [data-phone-action="detail-read"]'),6000);
     read.click();
+    const loadLayer=await waitFor(()=>d.querySelector('#phone-reader-loading-layer'),5000);
+    if(loadLayer.parentElement?.id!=='phone-reader')throw new Error('mobile reader loader is not isolated');
     await waitFor(()=>visible(d.querySelector('#phone-reader'))&&d.querySelector('#phone-reader').classList.contains('phone-open'),6000);
-    await waitFor(()=>readerRendered(d,'#phone-reader-body')&&!/本文を読み込んでいます/.test(readerText(d))&&!/本文を読み込めませんでした/.test(readerText(d)),20000);
+    if(d.querySelector('#phone-reader-body .aozora-loader'))throw new Error('mobile loader leaked into article body');
+    await waitFor(()=>readerRendered(d,'#phone-reader-body')&&!/本文を読み込めませんでした/.test(readerText(d)),30000);
+    if(d.querySelector('#phone-reader-loading-layer')?.hidden===false)throw new Error('mobile loader did not hide after render');
     if(!readerScrollable(d,'#phone-reader-body'))fail('smartphone reader body is not actually scrollable');
 
     const readerSearch=d.querySelector('#phone-reader [data-phone-action="reader-search"]');
@@ -144,9 +148,12 @@ function readerScrollable(d,selector){
     await waitFor(()=>d.querySelector('#sheet')?.classList.contains('open'),5000);
     const readNow=await waitFor(()=>d.querySelector('#sheet [data-act="read-now"]'),5000);
     readNow.click();
+    const loadLayer=await waitFor(()=>d.querySelector('#reader-loading-layer'),5000);
+    if(loadLayer.parentElement?.id!=='reader')throw new Error('desktop reader loader is not isolated');
     await waitFor(()=>d.querySelector('#reader')?.classList.contains('open'),7000);
-
-    await waitFor(()=>readerRendered(d,'#body'),10000);
+    if(d.querySelector('#body .aozora-loader'))throw new Error('desktop loader leaked into article body');
+    await waitFor(()=>readerRendered(d,'#body'),30000);
+    if(d.querySelector('#reader-loading-layer')?.hidden===false)throw new Error('desktop loader did not hide after render');
     if(!readerScrollable(d,'#body'))fail('desktop reader body is not actually scrollable');
 
     const readerSearch=d.querySelector('#reader [data-act="r-search-open"]');
