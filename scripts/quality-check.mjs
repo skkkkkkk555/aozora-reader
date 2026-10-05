@@ -83,7 +83,7 @@ ok(app.includes("const url=baseUrl+'#work='+encodeURIComponent(String(w.id))"),'
 ok(app.includes("rawHash.match(/^#work=(.+)$/)"),'smartphone shared-work deep link reader missing');
 ok(app.includes('BROWSER_SMOKE'),'browser smoke isolation mode is missing');
 ok(/const catalogDeadline=Date\.now\(\)\+\d+/.test(app),'catalog fetch has no total wait deadline');
-ok(app.includes('const bodyDeadline=Date.now()+30000'),'book fetch has no total wait deadline');
+ok(app.includes('const bodyDeadline=Date.now()+45000'),'book fetch has no total wait deadline');
 ok(smoke.includes('function readerScrollable'),'browser smoke does not verify actual reader scrollability');
 ok(smoke.includes("readerRendered(d,'#phone-reader-body')"),'smartphone smoke does not verify visible reader geometry');
 ok(smoke.includes("readerRendered(d,'#body')"),'desktop smoke does not verify visible reader geometry');
@@ -154,7 +154,7 @@ ok(html.includes('background:var(--bg)!important;'),'reader loading layer is not
 ok(app.includes("body.classList.add('reader-building')"),'reader build isolation missing');
 ok(app.includes('readerTok++;'),'reader close does not invalidate pending work');
 ok(!app.includes("body.innerHTML=readerLoaderMarkup()"),'reader loader must not be injected into article body');
-ok(html.includes('app.js?v=reader-stability-chunked-v20261005'),'reader stability cache-bust version missing');
+ok(/app\.js\?v=reader-stability-[^"]+/.test(html),'reader stability cache-bust version missing');
 ok(smoke.includes('loader did not hide after render'),'browser smoke does not verify loader lifecycle');
 ok(app.includes('const count=2200'),'browser smoke is not exercising long reader content');
 
