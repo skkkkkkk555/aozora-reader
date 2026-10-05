@@ -1268,7 +1268,7 @@ function renderFeatItem(){
   if(featQuotes.has(w.id)) $('feat-q').textContent=featQuotes.get(w.id);
   else {
     $('feat-q').textContent='冒頭を取得中…';
-    fetchHead(w).then(q=>{ featQuotes.set(w.id,q); if(featList[featIdx]?.id===w.id) $('feat-q').textContent=q; });
+    void fetchHead(w).then(q=>{ featQuotes.set(w.id,q); if(featList[featIdx]?.id===w.id) $('feat-q').textContent=q; }).catch(err=>{console.debug('feature quote fetch skipped',err);});
   }
 }
 
@@ -1604,9 +1604,13 @@ function openBookDetail(w){
       <div id="b-quote" style="padding:16px; background:var(--card-sub); border-radius:var(--radius-sm); font-size:var(--fs-b); line-height:1.6; color:var(--sub)">冒頭を読み込んでいます…</div>
     </div>`;
   sheet(w.t, html);
-  fetchHead(w).then(q=>{
+  void fetchHead(w).then(q=>{
     const el=$('b-quote');
     if(el){el.textContent=q;el.classList.remove('book-quote-loading');el.setAttribute('aria-busy','false');}
+  }).catch(err=>{
+    const el=$('b-quote');
+    if(el){el.textContent='冒頭を取得できませんでした。本文を開いてお試しください。';el.classList.remove('book-quote-loading');el.setAttribute('aria-busy','false');}
+    console.debug('book quote fetch skipped',err);
   });
 }
 
@@ -1970,6 +1974,7 @@ function updateWakeButton(){
 function setReaderChromeVisible(show){
   const reader=$('reader'),top=$('r-top'),dock=$('r-dock'),bottom=$('r-bottom-info');
   if(!reader||!top||!dock||!bottom)return;
+  if(document.documentElement.dataset.device==='desktop')show=true;
   if(reader.classList.contains('mode-focus')){
     [top,dock,bottom].forEach(el=>el.classList.toggle('show-temp',!!show));
     reader.classList.toggle('chrome-hidden',!show);
@@ -1981,6 +1986,7 @@ function setReaderChromeVisible(show){
 function toggleReaderChrome(){
   const reader=$('reader');
   if(!reader)return;
+  if(document.documentElement.dataset.device==='desktop'){setReaderChromeVisible(true);return;}
   const hidden=reader.classList.contains('chrome-hidden');
   setReaderChromeVisible(hidden);
 }
@@ -2417,7 +2423,7 @@ function playPaperTurn(direction){
   },380);
 }
 
-async function closeReader(fromPop=false){
+async function closeReaderInternal(fromPop=false){
   closeOneLineMode();
   cancelReaderRender();
   cancelReaderParser();
@@ -2440,6 +2446,13 @@ async function closeReader(fromPop=false){
   curDoc=null;
   curWork=null;
   return true;
+}
+function closeReader(fromPop=false){
+  return closeReaderInternal(fromPop).catch(err=>{
+    recordRuntimeError('reader-close',err);
+    console.error('Unhandled reader close failure:',err);
+    return false;
+  });
 }
 
 let progressRaf=null;
@@ -3143,7 +3156,8 @@ document.addEventListener('change',e=>{
   toast('読書速度を設定しました');
 });
 
-document.addEventListener('click',async(e)=>{
+document.addEventListener('click',e=>{
+  void (async()=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
   const act=b.dataset.act;
 
@@ -3541,8 +3555,10 @@ document.addEventListener('click',async(e)=>{
   else if(act==='cat-intro') openCatalogIntro();
   else if(act==='cat-auto') fetchCatalog();
   else if(act==='cache-clear'){
-    const db=await idb.d; db.transaction('docs','readwrite').objectStore('docs').clear();
-    savedKeys.clear(); toast('キャッシュを消去しました');
+    const db=await idb.d;
+    if(!db){toast('キャッシュを消去できませんでした');return;}
+    try{db.transaction('docs','readwrite').objectStore('docs').clear();savedKeys.clear();toast('キャッシュを消去しました');}
+    catch(err){console.warn('cache clear failed',err);toast('キャッシュを消去できませんでした');}
   }
   else if(act==='data-export'){
     try{
@@ -3557,6 +3573,9 @@ document.addEventListener('click',async(e)=>{
     if(undoFn) undoFn();
     $('toast').classList.remove('open');
   }
+  })().catch(err=>{
+    recordRuntimeError('click-handler',err);
+  });
 });
 
 function applySettings(){
@@ -4786,8 +4805,8 @@ window.addEventListener('DOMContentLoaded',()=>{
         closePhoneSheet();if(h)h.scrollIntoView({block:'center',behavior:'smooth'});return;
       }
       if(act==='reader-ai'){closePhoneSheet();if(typeof openAiChat==='function')openAiChat('この作品のあらすじと読みどころを要約してください。');return}
-      if(act==='reader-share'){closePhoneSheet();sharePhoneWork();return}
-      if(act==='detail-share'){closePhoneSheet();sharePhoneWork();return}
+      if(act==='reader-share'){closePhoneSheet();void sharePhoneWork().catch(err=>recordRuntimeError('phone-share',err));return}
+      if(act==='detail-share'){closePhoneSheet();void sharePhoneWork().catch(err=>recordRuntimeError('phone-share',err));return}
       if(act==='detail-fav-author'){
         const a=wa(state.work);
         if(a){
@@ -4803,7 +4822,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(act==='reader-font'){cycleFont();return}
       if(act==='reader-line'){cycleLine();return}
       if(act==='reader-theme'){closePhoneSheet();cycleTheme();return}
-      if(act==='reader-wake'){closePhoneSheet();toggleWake();return}
+      if(act==='reader-wake'){closePhoneSheet();void toggleWake().catch(err=>recordRuntimeError('phone-toggle-wake',err));return}
     }
     if(act==='settings'){showScreen('settings');return}
     if(act==='search'){showScreen('search');requestAnimationFrame(()=>$p('#phone-search-input')?.focus());return}
@@ -4840,7 +4859,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='detail-read'){
       const w=state.work;
       if(!w)return;
-      openReader(w,true);
+      void openReader(w,true).catch(err=>recordRuntimeError('phone-reader-open',err));
       return;
     }
     if(act==='detail-more'){
@@ -4887,7 +4906,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='reader-font'){cycleFont();return}
     if(act==='reader-line'){cycleLine();return}
     if(act==='reader-theme'){cycleTheme();return}
-    if(act==='reader-wake'){toggleWake();return}
+    if(act==='reader-wake'){void toggleWake().catch(err=>recordRuntimeError('phone-toggle-wake',err));return}
   }
 
   let lastPhoneTabTap=0;
@@ -4964,7 +4983,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       e.stopPropagation();
       phonePointerHandledEl=el;
       phonePointerHandledUntil=Date.now()+650;
-      openReader(state.work,true);
+      void openReader(state.work,true).catch(err=>recordRuntimeError('phone-reader-open',err));
       return;
     }
     e.preventDefault();
