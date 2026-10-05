@@ -66,22 +66,32 @@ function readerScrollable(d,selector){
   const device=d.documentElement.dataset.device;
 
   if(mode==='live'){
-    const read=await waitFor(()=>d.querySelector('[data-act="nav"][data-v="v-search"]'),5000);
-    read.click();
-    const input=await waitFor(()=>d.querySelector('#q-input'),5000);
-    input.value='吾輩は猫である';
-    input.dispatchEvent(new Event('input',{bubbles:true}));
-    const result=await waitFor(()=>d.querySelector('#search-tiles [data-act="open-book"]'),15000);
-    result.click();
-    const readNow=await waitFor(()=>d.querySelector('#sheet [data-act="read-now"]'),5000);
-    readNow.click();
-    await waitFor(()=>d.querySelector('#reader')?.classList.contains('open'),7000);
-    await waitFor(()=>readerRendered(d,'#body')&&!/本文を読み込めませんでした/.test(readerText(d)),45000);
-    if(!readerScrollable(d,'#body'))fail('live reader body is not actually scrollable');
-    const before=d.querySelector('#body').scrollTop;
-    d.querySelector('#body').scrollTop=Math.min(600,before+600);
-    await sleep(300);
-    if(d.querySelector('#body').scrollTop<=before)fail('live reader body did not scroll');
+    const titles=['吾輩は猫である','こころ','羅生門','走れメロス','銀河鉄道の夜'];
+    const readOne=async(title)=>{
+      const nav=await waitFor(()=>d.querySelector('[data-act="nav"][data-v="v-search"]'),5000);
+      nav.click();
+      const input=await waitFor(()=>d.querySelector('#q-input'),5000);
+      input.value='';
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+      input.value=title;
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+      const result=await waitFor(()=>d.querySelector('#search-tiles [data-act="open-book"]'),15000);
+      result.click();
+      const readNow=await waitFor(()=>d.querySelector('#sheet [data-act="read-now"]'),5000);
+      readNow.click();
+      await waitFor(()=>d.querySelector('#reader')?.classList.contains('open'),7000);
+      await waitFor(()=>readerRendered(d,'#body')&&!/本文を読み込めませんでした/.test(readerText(d)),45000);
+      const body=d.querySelector('#body');
+      if(!readerScrollable(d,'#body'))fail('live reader body is not actually scrollable: '+title);
+      const before=body.scrollTop;
+      body.scrollTop=Math.min(600,before+600);
+      await sleep(300);
+      if(body.scrollTop<=before)fail('live reader body did not scroll: '+title);
+      const back=await waitFor(()=>d.querySelector('[data-act="r-back"]'),4000);
+      back.click();
+      await waitFor(()=>!d.querySelector('#reader')?.classList.contains('open'),7000);
+    };
+    for(const title of titles)await readOne(title);
     document.title='LIVE_SMOKE_OK';
     document.body.textContent='LIVE_SMOKE_OK';
     return;
