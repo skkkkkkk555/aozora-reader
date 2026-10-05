@@ -288,7 +288,7 @@ const normalizeOllamaUrl=(value='')=>{
 const canUseOllama=()=>st.ollamaEnabled&&!st.offline&&isSafeOllamaUrl(st.oUrl);
 const BROWSER_SMOKE=/(?:[?&])browser-smoke(?:=|&|$)/.test(location.search);
 const LIVE_BROWSER_SMOKE=/(?:[?&])browser-smoke-live(?:=|&|$)/.test(location.search);
-const READER_ASSET_VERSION='20261005-02';
+const READER_ASSET_VERSION='20261005-03';
 const safeEl = id => document.getElementById(id) || null;
 async function hydrateSavedKeys(){
   const keys=await idb.keys('docs');
@@ -1633,7 +1633,7 @@ async function fetchBody(w){
     const plain='これは長文スモークテスト用の本文です。ローダー隔離、段階的描画、ページ化、スクロール、戻る操作を検証します。';
     const count=2200;
     const paragraphs=Array.from({length:count},(_,i)=>'<p>'+plain+' テスト段落'+(i+1)+'です。長い青空文庫作品を想定した十分な本文量で、メインスレッドを占有し続けない描画を検証します。</p>').join('');
-    const text=Array.from({length:count},(_,i)=>plain+' テスト段落'+(i+1)+'です。長い青空文庫作品を想定した十分な本文量で、メインスレッドを占有し続けない描画を検証します。').join('\n');
+    const text=Array.from({length:count},(_,i)=>plain+' テスト段落'+(i+1)+'です。長い青空文庫作品を想定した十分な本文量で、メインスレッドを占有し続けない描画を検証します。').join('\\n');
     return {html:'<h2 data-hid="h-1">スモークテスト本文</h2>'+paragraphs,plain:text};
   }
   if(typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))throw new Error('invalid-book-path');
@@ -1645,36 +1645,50 @@ async function fetchBody(w){
   if(st.offline) throw new Error('オフラインです');
   const urls=buildBodyUrlCandidates(w);
   let buf=null, notFoundCount=0, attempted=0;
-  // 本文取得は「同じ作品を複数経路」で確認する。1経路のCORS/一時障害で作品を死蔵しない。
-  const bodyDeadline=Date.now()+45000;
+  const failures=[];
+  // 小さな冒頭取得と同じCDN群を使いつつ、本文だけで失敗しやすい「9秒打ち切り」を廃止。
+  // タブレット/低速回線では本文全体の受信に時間がかかるため、作品ごとに最大90秒まで段階的に試す。
+  const bodyDeadline=Date.now()+90000;
   for(const u of urls){
     if(Date.now()>=bodyDeadline)break;
     attempted++;
     try{
-      const remain=Math.max(1500,Math.min(9000,bodyDeadline-Date.now()));
+      const remain=Math.max(5000,Math.min(20000,bodyDeadline-Date.now()));
       const res=await secureFetch(u,{signal:sig(remain)});
-      if(res.status===404){notFoundCount++;continue;}
-      if(!res.ok)continue;
+      if(res.status===404){notFoundCount++;failures.push('404 '+new URL(u).hostname);continue;}
+      if(!res.ok){failures.push('HTTP '+res.status+' '+new URL(u).hostname);continue;}
       const b=await readResponseBytes(res,SEC.maxBookBytes);
       if(b&&b.byteLength>=200){buf=b;break;}
+      failures.push('empty '+new URL(u).hostname);
     }catch(err){
+      const host=(()=>{try{return new URL(u).hostname}catch{return u}})();
+      failures.push((err?.message||'fetch-failed')+' '+host);
       console.debug('book source failed',u,err);
     }
   }
   if(!buf){
-    // すべての経路で404だった場合だけ「存在しない作品」と判断する。
-    // CORS/タイムアウト等の通信失敗では作品をcatalogから除外しない。
     if(attempted>0 && notFoundCount===attempted){
-      dead.add(w.id); filterWorks(); save(); throw {dead:true};
+      dead.add(w.id); filterWorks(); save(); throw {dead:true,code:'all-sources-404'};
     }
-    throw new Error('通信エラーが発生しました。本文の配信元を切り替えて再試行してください。');
+    const e=new Error('本文配信元への接続に失敗しました');
+    e.code='body-fetch-failed';
+    e.sources=failures.slice(0,8);
+    throw e;
   }
-  const parsed=await parseAozoraAsync(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength));
-  const html=parsed.html,plain=parsed.plain;
-  const doc={html,plain,safe:2};
-  await idb.set('docs',w.id,doc);
-  savedKeys.add(w.id);
-  return doc;
+  try{
+    const parsed=await parseAozoraAsync(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength));
+    const html=parsed.html,plain=parsed.plain;
+    if(!plain||plain.trim().length<20)throw Object.assign(new Error('本文解析結果が空です'),{code:'empty-parser-result'});
+    const doc={html,plain,safe:2};
+    await idb.set('docs',w.id,doc);
+    savedKeys.add(w.id);
+    return doc;
+  }catch(err){
+    if(err?.code)throw err;
+    const e=new Error(err?.message||'本文解析に失敗しました');
+    e.code='body-parse-failed';
+    throw e;
+  }
 }
 
 let readerParseSeq=0;
@@ -1688,19 +1702,37 @@ function parseAozoraAsync(buffer){
   return new Promise((resolve,reject)=>{
     cancelReaderParser();
     const id=++readerParseSeq;
-    let settled=false,worker=null;
-    const finish=(fn,val)=>{if(settled)return;settled=true;try{worker?.terminate()}catch{}if(activeReaderParserWorker===worker)activeReaderParserWorker=null;fn(val)};
+    let settled=false,worker=null,timer=0;
+    const fallbackLimit=8*1024*1024;
+    const finish=(fn,val)=>{if(settled)return;settled=true;clearTimeout(timer);try{worker?.terminate()}catch{}if(activeReaderParserWorker===worker)activeReaderParserWorker=null;fn(val)};
+    const fallbackOrReject=(err)=>{
+      // 古いWebView/タブレットでWorkerだけ失敗する場合に、8MB以下なら従来パーサーへ退避。
+      if(buffer.byteLength<=fallbackLimit){
+        try{
+          const raw=new TextDecoder('shift_jis').decode(buffer);
+          const parsed=parseAozora(raw,true);
+          if(parsed?.plain?.trim().length>=20){finish(resolve,{html:parsed.html,plain:parsed.plain,safe:2});return;}
+        }catch(fallbackErr){err=fallbackErr||err;}
+      }
+      const e=new Error(err?.message||'本文解析に失敗しました');
+      e.code='reader-parser-failed';
+      finish(reject,e);
+    };
+    const timeoutMs=Math.max(20000,Math.min(60000,12000+Math.round(buffer.byteLength/80000)));
+    timer=setTimeout(()=>fallbackOrReject(new Error('本文解析がタイムアウトしました')),timeoutMs);
     try{
       worker=new Worker('./reader-worker.js?v='+READER_ASSET_VERSION);
       activeReaderParserWorker=worker;
       worker.onmessage=e=>{
         const d=e.data||{};if(d.id!==id)return;
         if(d.ok&&typeof d.html==='string'&&typeof d.plain==='string')finish(resolve,{html:d.html,plain:d.plain,safe:2});
-        else finish(reject,new Error(d.error||'本文解析に失敗しました'));
+        else fallbackOrReject(new Error(d.error||'本文解析に失敗しました'));
       };
-      worker.onerror=e=>finish(reject,new Error(e.message||'本文解析ワーカーを起動できませんでした'));
-      worker.postMessage({id,buffer},[buffer]);
-    }catch(e){finish(reject,e)}
+      worker.onerror=e=>fallbackOrReject(new Error(e.message||'本文解析ワーカーを起動できませんでした'));
+      // 元バッファはフォールバック用に残し、Workerには複製を転送する。
+      const workerBuffer=buffer.slice(0);
+      worker.postMessage({id,buffer:workerBuffer},[workerBuffer]);
+    }catch(e){fallbackOrReject(e)}
   });
 }
 
@@ -2097,18 +2129,33 @@ async function renderReaderBody(isCurrent){
   body.setAttribute('aria-busy','true');
   body.classList.add('reader-building','paper-paged');
   body.classList.toggle('v',st.v!==false);
+  body.classList.remove('reader-plain-fallback');
+  body.style.removeProperty('white-space');
   body.innerHTML='';
-  const chunks=splitReaderHtml(curDoc.html);
-  for(let i=0;i<chunks.length;i++){
+  try{
+    const chunks=splitReaderHtml(curDoc.html);
+    for(let i=0;i<chunks.length;i++){
+      if(seq!==readerRenderSeq||!isCurrent())return false;
+      body.insertAdjacentHTML('beforeend',chunks[i]);
+      if(i<chunks.length-1)await readerRenderYield();
+    }
     if(seq!==readerRenderSeq||!isCurrent())return false;
-    body.insertAdjacentHTML('beforeend',chunks[i]);
-    if(i<chunks.length-1)await readerRenderYield();
+    await new Promise(requestAnimationFrame);
+    if(seq!==readerRenderSeq||!isCurrent())return false;
+    body.classList.remove('reader-building');
+    return true;
+  }catch(err){
+    // DOMへの巨大HTML挿入が古いブラウザで失敗しても、プレーン本文へ退避して読書自体は継続する。
+    console.warn('Reader HTML render failed; falling back to plain text',err);
+    if(seq!==readerRenderSeq||!isCurrent())return false;
+    body.innerHTML='';
+    body.classList.remove('paper-paged','v');
+    body.classList.add('reader-plain-fallback');
+    body.style.whiteSpace='pre-wrap';
+    body.textContent=curDoc.plain||'';
+    body.classList.remove('reader-building');
+    return true;
   }
-  if(seq!==readerRenderSeq||!isCurrent())return false;
-  await new Promise(requestAnimationFrame);
-  if(seq!==readerRenderSeq||!isCurrent())return false;
-  body.classList.remove('reader-building');
-  return true;
 }
 
 async function renderPhoneReaderBody(body,html,isCurrent){
@@ -2116,18 +2163,31 @@ async function renderPhoneReaderBody(body,html,isCurrent){
   const seq=++readerRenderSeq;
   body.setAttribute('aria-busy','true');
   body.classList.add('reader-building');
+  body.classList.remove('reader-plain-fallback');
+  body.style.removeProperty('white-space');
   body.innerHTML='';
-  const chunks=splitReaderHtml(html);
-  for(let i=0;i<chunks.length;i++){
+  try{
+    const chunks=splitReaderHtml(html);
+    for(let i=0;i<chunks.length;i++){
+      if(seq!==readerRenderSeq||!isCurrent())return false;
+      body.insertAdjacentHTML('beforeend',chunks[i]);
+      if(i<chunks.length-1)await readerRenderYield();
+    }
     if(seq!==readerRenderSeq||!isCurrent())return false;
-    body.insertAdjacentHTML('beforeend',chunks[i]);
-    if(i<chunks.length-1)await readerRenderYield();
+    await new Promise(requestAnimationFrame);
+    if(seq!==readerRenderSeq||!isCurrent())return false;
+    body.classList.remove('reader-building');
+    return true;
+  }catch(err){
+    console.warn('Phone reader HTML render failed; falling back to plain text',err);
+    if(seq!==readerRenderSeq||!isCurrent())return false;
+    body.innerHTML='';
+    body.classList.add('reader-plain-fallback');
+    body.style.whiteSpace='pre-wrap';
+    body.textContent=String(html||'').replace(/<[^>]*>/g,'');
+    body.classList.remove('reader-building');
+    return true;
   }
-  if(seq!==readerRenderSeq||!isCurrent())return false;
-  await new Promise(requestAnimationFrame);
-  if(seq!==readerRenderSeq||!isCurrent())return false;
-  body.classList.remove('reader-building');
-  return true;
 }
 
 function getReaderPageMetrics(){
