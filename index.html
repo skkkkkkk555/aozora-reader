@@ -7114,6 +7114,113 @@ html[data-device="smartphone"] .r-dock{min-height:0!important}
 
 
 
+/* ===== Final bookmark/read interaction correction ===== */
+#home-bookmarks-section{
+  display:block!important;
+  width:100%!important;
+  font-size:20px!important;
+  font-weight:750!important;
+  margin:24px 0 10px!important;
+}
+.home-bookmark-list{
+  display:flex!important;
+  flex-direction:column!important;
+  width:100%!important;
+  gap:14px!important;
+  margin:0 0 22px!important;
+}
+.home-bookmark-card{
+  display:block!important;
+  width:100%!important;
+  min-height:168px!important;
+  height:auto!important;
+  flex:0 0 auto!important;
+  overflow:hidden!important;
+  border-radius:22px!important;
+  box-sizing:border-box!important;
+  background:var(--card)!important;
+  border:1px solid var(--line)!important;
+}
+.home-bookmark-main{
+  display:grid!important;
+  grid-template-columns:48px minmax(0,1fr)!important;
+  align-items:center!important;
+  width:100%!important;
+  min-height:104px!important;
+  height:auto!important;
+  padding:20px!important;
+  gap:15px!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+.home-bookmark-icon{
+  width:48px!important;
+  height:48px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:15px!important;
+  font-size:24px!important;
+  background:var(--card-sub)!important;
+}
+.home-bookmark-text{
+  min-width:0!important;
+  max-width:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:7px!important;
+  align-items:flex-start!important;
+  overflow:hidden!important;
+}
+.home-bookmark-text strong{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  font-size:18px!important;
+  line-height:1.35!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.home-bookmark-text small{
+  display:block!important;
+  max-width:100%!important;
+  font-size:12px!important;
+  line-height:1.4!important;
+  color:var(--sub)!important;
+}
+.home-bookmark-points{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  width:100%!important;
+  gap:9px!important;
+  padding:0 16px 16px!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+}
+.home-bookmark-point{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:56px!important;
+  height:auto!important;
+  box-sizing:border-box!important;
+  padding:8px 8px!important;
+  border-radius:14px!important;
+  gap:2px!important;
+}
+.home-bookmark-point span{font-size:13px!important;font-weight:800!important}
+.home-bookmark-point em{font-size:12px!important;font-style:normal!important}
+@media(max-width:520px){
+  .home-bookmark-card{min-height:164px!important;border-radius:20px!important}
+  .home-bookmark-main{grid-template-columns:44px minmax(0,1fr)!important;min-height:98px!important;padding:17px!important}
+  .home-bookmark-icon{width:44px!important;height:44px!important;border-radius:14px!important}
+  .home-bookmark-points{grid-template-columns:repeat(2,minmax(0,1fr))!important;padding:0 13px 13px!important}
+  .home-bookmark-point{min-height:54px!important}
+}
+
 /* ===== Final reader/block UI correction ===== */
 #reader .r-dock{
   grid-template-columns:repeat(3,minmax(0,1fr))!important;
@@ -7764,6 +7871,6 @@ html[data-device="smartphone"] .phone-reader-ui-toggle:active{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=ios-deep-20261005-readfix14"></script>
+<script src="./app.js?v=ios-deep-20261005-readfix15"></script>
 </body>
 </html>
