@@ -5199,7 +5199,10 @@ window.addEventListener('DOMContentLoaded',()=>{
     try{
       document.getElementById('app-boot')?.classList.add('done');
       const content=$p('#phone-content');
-      if(content&&!content.textContent.trim())showScreen(state.screen||'home');
+      // 初期化監視は「まだ何も操作されていない」時だけ画面を補完する。
+      // 詳細/読書画面を開いた直後に非同期監視がホームへ戻す事故を防ぐ。
+      const routed=!!state.reader||!!state.work||!!history.state?.phoneLayer;
+      if(!routed&&content&&!content.textContent.trim())showScreen(state.screen||'home');
     }catch(err){console.warn('Phone boot watchdog:',err)}
   },900);
 
@@ -5246,14 +5249,24 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!isPhone()||state.reader)return;
     state.readerFs=Number(st?.fs)||19;
     state.readerLh=Number(st?.lh)||2.05;
+
+    // カタログ更新は現在の画面を壊さず、必要な一覧だけ再描画する。
+    if(state.work){
+      const current=getWork(state.work.id);
+      if(current){state.work=current;openDetail(current,'forward',true);}
+      return;
+    }
+
     const rawHash=String(location.hash||'');
     const match=rawHash.match(/^#work=(.+)$/);
     if(match){
       let id='';
       try{id=decodeURIComponent(match[1]);}catch{}
       const w=id?getWork(id):null;
-      if(w){openDetail(w);return;}
+      if(w){openDetail(w,'forward',true);return;}
     }
+
+    if(history.state?.phoneLayer)return;
     showScreen(state.screen||'home');
   };
   window.__aozoraPhoneRefresh=refreshPhoneFromCatalog;
@@ -5265,6 +5278,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   const retryPhoneCatalog=()=>{
     if(!isPhone()||state.reader||phoneCatalogRetry>=12)return;
     phoneCatalogRetry++;
+    // ユーザーが操作した後は、カタログ待ち処理で画面を再ルーティングしない。
+    if(state.work||history.state?.phoneLayer)return;
     if(works().length){refreshPhoneFromCatalog();return;}
     setTimeout(retryPhoneCatalog,250);
   };
