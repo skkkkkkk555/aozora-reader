@@ -8827,6 +8827,170 @@ html[data-device="smartphone"] #phone-reader-body:not(.phone-reader-vertical){
   touch-action:pan-y!important;
 }
 </style>
+
+<style id="aozora-reader-root-final-fix">
+/* ===== Authoritative reader geometry 2026-10-05 =====
+   Previous layers intentionally remain for compatibility; these rules are the
+   final geometry contract. The scroll container is always the viewport-sized
+   flex child, while the writing surface is its direct child. */
+html[data-device="desktop"] #reader.open{
+  display:flex!important;
+  flex-direction:column!important;
+  min-width:0!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+html[data-device="desktop"] #reader.open #body.paper-paged{
+  position:relative!important;
+  flex:1 1 0%!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  height:0!important;
+  max-width:none!important;
+  max-height:none!important;
+  box-sizing:border-box!important;
+  contain:none!important;
+  scroll-snap-type:none!important;
+}
+html[data-device="desktop"] #reader.open #body.paper-paged:not(.v){
+  writing-mode:horizontal-tb!important;
+  direction:ltr!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  touch-action:auto!important;
+  overscroll-behavior:contain!important;
+}
+html[data-device="desktop"] #reader.open #body.paper-paged:not(.v) > .reader-flow{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  min-height:100%!important;
+  height:auto!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+  box-sizing:border-box!important;
+}
+html[data-device="desktop"] #reader.open #body.paper-paged.v{
+  writing-mode:horizontal-tb!important;
+  direction:ltr!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  touch-action:pan-x!important;
+  overscroll-behavior-x:contain!important;
+  overscroll-behavior-y:none!important;
+}
+html[data-device="desktop"] #reader.open #body.paper-paged.v > .reader-flow.reader-vertical-flow{
+  display:block!important;
+  writing-mode:vertical-rl!important;
+  direction:ltr!important;
+  width:max-content!important;
+  min-width:max-content!important;
+  max-width:none!important;
+  height:100%!important;
+  min-height:100%!important;
+  padding:28px 32px 32px!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+  box-sizing:border-box!important;
+}
+
+html[data-device="smartphone"] #phone-reader.phone-open{
+  display:flex!important;
+  flex-direction:column!important;
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-height:0!important;
+  max-width:100vw!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+html[data-device="smartphone"] #phone-reader.phone-open .phone-reader-header{
+  flex:none!important;
+}
+html[data-device="smartphone"] #phone-reader.phone-open .phone-reader-toolbar{
+  flex:none!important;
+}
+html[data-device="smartphone"] #phone-reader.phone-open .phone-reader-progress{
+  flex:none!important;
+}
+html[data-device="smartphone"] #phone-reader.phone-open #phone-reader-body{
+  position:relative!important;
+  flex:1 1 0%!important;
+  width:100%!important;
+  height:0!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:none!important;
+  max-height:none!important;
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  box-sizing:border-box!important;
+  contain:none!important;
+  color:inherit!important;
+}
+html[data-device="smartphone"] #phone-reader.phone-open #phone-reader-body:not(.phone-reader-vertical){
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  touch-action:pan-y!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+}
+html[data-device="smartphone"] #phone-reader.phone-open #phone-reader-body:not(.phone-reader-vertical) > .reader-flow{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:max-content!important;
+  max-width:none!important;
+  height:auto!important;
+  margin:0!important;
+  padding:0!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+html[data-device="smartphone"] #phone-reader.phone-open #phone-reader-body.phone-reader-vertical{
+  writing-mode:horizontal-tb!important;
+  direction:ltr!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  touch-action:pan-x!important;
+  overscroll-behavior-x:contain!important;
+  overscroll-behavior-y:none!important;
+}
+html[data-device="smartphone"] #phone-reader.phone-open #phone-reader-body.phone-reader-vertical > .reader-flow.reader-vertical-flow{
+  display:block!important;
+  writing-mode:vertical-rl!important;
+  direction:ltr!important;
+  width:max-content!important;
+  min-width:max-content!important;
+  max-width:none!important;
+  height:100%!important;
+  min-height:100%!important;
+  padding:28px 23px 118px!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+  box-sizing:border-box!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+/* The progress indicator is presentation only; it must never become a scroll
+   ancestor or intercept article gestures. */
+html[data-device="smartphone"] #phone-reader.phone-open .phone-reader-progress,
+html[data-device="smartphone"] #phone-reader.phone-open .phone-reader-ui-toggle{
+  pointer-events:auto!important;
+}
+html[data-device="smartphone"] #phone-reader.phone-open .phone-reader-progress{
+  pointer-events:none!important;
+}
+</style>
 </head>
 <body>
 <!-- Dedicated smartphone application shell -->
@@ -9674,6 +9838,6 @@ html[data-device="desktop"] #reader.open #body.v{
 }
 </style>
 <button id="phone-global-back" type="button" aria-label="戻る" title="戻る"><span aria-hidden="true">‹</span></button>
-<script src="./app.js?v=reader-mobile-zero-bug-v20261005-39"></script>
+<script src="./app.js?v=reader-mobile-zero-bug-v20261005-40"></script>
 </body>
 </html>
