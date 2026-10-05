@@ -6226,6 +6226,433 @@ html[data-device="smartphone"] .phone-reader-header-actions .phone-icon-button:l
 @media(prefers-reduced-motion:reduce){
   .boot-particles i,.boot-card::before,.boot-card::after{animation:none!important}
 }
+
+/* ===== Reader controls + loading experience v4 ===== */
+/* 細長い操作バーをやめ、各操作を独立した「押せる面」にする */
+#reader .r-dock{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  align-items:stretch;
+  gap:6px;
+  min-height:72px;
+  padding:7px;
+  border-radius:20px;
+  overflow:visible;
+}
+#reader .r-dock-btn{
+  min-width:0!important;
+  min-height:58px!important;
+  padding:7px 6px!important;
+  border:1px solid transparent;
+  border-radius:14px!important;
+  gap:5px;
+  font-size:12px;
+  font-weight:650;
+  white-space:nowrap;
+  color:var(--sub);
+  background:transparent;
+  position:relative;
+  overflow:hidden;
+  transition:
+    transform 180ms cubic-bezier(.16,1,.3,1),
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 220ms ease,
+    color 180ms ease;
+}
+#reader .r-dock-btn .icon{
+  width:25px!important;
+  height:25px!important;
+  stroke-width:1.8;
+  transition:transform 220ms cubic-bezier(.16,1,.3,1),stroke-width 180ms ease;
+}
+#reader .r-dock-btn::before{
+  content:"";
+  position:absolute;
+  inset:1px;
+  border-radius:13px;
+  background:linear-gradient(135deg,rgba(255,255,255,.28),transparent 42%);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 180ms ease;
+}
+#reader .r-dock-btn:hover,
+#reader .r-dock-btn:focus-visible{
+  color:var(--apple-blue,#007aff);
+  background:rgba(0,122,255,.075);
+  border-color:rgba(0,122,255,.10);
+  box-shadow:0 5px 14px rgba(0,0,0,.055);
+  transform:translateY(-2px);
+}
+#reader .r-dock-btn:hover::before,
+#reader .r-dock-btn:focus-visible::before{opacity:1}
+#reader .r-dock-btn:hover .icon{transform:translateY(-1px) scale(1.06)}
+#reader .r-dock-btn:active{
+  transform:scale(.94)!important;
+  background:rgba(0,122,255,.13);
+  box-shadow:none;
+}
+#reader .r-dock-btn:active .icon{transform:scale(.90)}
+html[data-theme="dark"] #reader .r-dock-btn{
+  border-color:transparent;
+}
+html[data-theme="dark"] #reader .r-dock-btn:hover,
+html[data-theme="dark"] #reader .r-dock-btn:focus-visible{
+  background:rgba(10,132,255,.14);
+  border-color:rgba(100,181,255,.14);
+}
+
+.home-bookmark-card{
+  border-radius:20px;
+  box-shadow:0 8px 24px rgba(20,20,28,.07);
+}
+.home-bookmark-main{
+  min-height:82px!important;
+  padding:15px 16px!important;
+  gap:12px!important;
+}
+.home-bookmark-icon{
+  width:36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  background:rgba(0,122,255,.10);
+  color:var(--apple-blue,#007aff);
+  font-size:20px;
+}
+.home-bookmark-text{gap:5px}
+.home-bookmark-text strong{font-size:16px}
+.home-bookmark-text small{font-size:12px}
+.home-bookmark-points{
+  gap:8px;
+  padding:0 13px 13px;
+}
+.home-bookmark-point{
+  min-height:44px!important;
+  padding:0 12px!important;
+  border-radius:13px!important;
+  font-size:12px!important;
+}
+.home-bookmark-point span{font-size:12px}
+.home-bookmark-point em{font-size:11px}
+
+/* 起動アニメーション：単純なスピナーではなく、発光・軌道・進捗を一体化 */
+#app-boot{
+  background:
+    radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--ac) 13%,transparent),transparent 25%),
+    radial-gradient(circle at 18% 80%,rgba(0,122,255,.055),transparent 28%),
+    color-mix(in srgb,var(--bg) 94%,#fff 6%);
+}
+#app-boot::before{
+  animation:bootAtmospherePro 9s ease-in-out infinite alternate!important;
+  background:
+    radial-gradient(circle at 20% 28%,rgba(0,122,255,.08),transparent 22%),
+    radial-gradient(circle at 78% 72%,rgba(112,82,255,.08),transparent 24%),
+    radial-gradient(circle at 52% 50%,color-mix(in srgb,var(--ac) 8%,transparent),transparent 38%);
+}
+#app-boot::after{
+  opacity:.24;
+  background:
+    radial-gradient(circle at 50% 50%,transparent 0 34%,rgba(255,255,255,.035) 34.2%,transparent 34.6%),
+    radial-gradient(circle at 50% 50%,transparent 0 49%,rgba(255,255,255,.025) 49.2%,transparent 49.6%);
+  mix-blend-mode:normal;
+}
+.boot-orbit{opacity:.42!important;border-color:color-mix(in srgb,var(--ac) 18%,transparent)!important}
+.boot-orbit-a{animation:bootOrbitAPro 13s linear infinite!important}
+.boot-orbit-b{animation:bootOrbitBPro 19s linear infinite!important}
+.boot-particles i{animation:bootParticlePro 3.6s cubic-bezier(.16,1,.3,1) calc(var(--i)*90ms) infinite!important}
+.boot-noise{opacity:.012!important}
+.boot-card{
+  width:min(410px,calc(100vw - 34px))!important;
+  padding:30px 30px 25px!important;
+  border-radius:28px!important;
+  background:color-mix(in srgb,var(--card) 86%,transparent)!important;
+  box-shadow:0 28px 90px rgba(20,20,28,.18),inset 0 1px 0 rgba(255,255,255,.65)!important;
+  backdrop-filter:blur(30px) saturate(1.32)!important;
+  -webkit-backdrop-filter:blur(30px) saturate(1.32)!important;
+  animation:bootCardInPro 720ms cubic-bezier(.16,1,.3,1) both!important;
+}
+.boot-glow{
+  inset:-50%;
+  filter:blur(24px);
+  opacity:.75;
+  animation:bootGlowPro 8s linear infinite!important;
+}
+.boot-mark{
+  width:72px!important;height:72px!important;
+  margin:0 auto 18px!important;
+  border-radius:24px!important;
+  background:
+    radial-gradient(circle at 32% 28%,rgba(255,255,255,.48),transparent 24%),
+    linear-gradient(145deg,color-mix(in srgb,var(--ac) 88%,#fff 12%),color-mix(in srgb,var(--ac) 72%,#000 28%))!important;
+  box-shadow:
+    0 15px 34px color-mix(in srgb,var(--ac) 28%,transparent),
+    0 0 0 1px rgba(255,255,255,.22) inset,
+    0 0 50px color-mix(in srgb,var(--ac) 15%,transparent)!important;
+  animation:bootMarkInPro 860ms cubic-bezier(.16,1,.3,1) both,bootMarkFloatPro 4s ease-in-out 1s infinite!important;
+}
+.boot-mark::before{
+  inset:-10px!important;
+  border:1px solid color-mix(in srgb,var(--ac) 34%,transparent)!important;
+  border-right-color:transparent!important;
+  border-bottom-color:color-mix(in srgb,var(--ac) 10%,transparent)!important;
+  border-radius:30px!important;
+  animation:bootRingPro 2.6s cubic-bezier(.16,1,.3,1) infinite!important;
+}
+.boot-mark::after{
+  inset:3px!important;
+  border-radius:21px!important;
+  background:
+    radial-gradient(circle at 68% 25%,rgba(255,255,255,.24),transparent 20%),
+    linear-gradient(150deg,rgba(255,255,255,.14),transparent 55%)!important;
+  box-shadow:inset 0 -10px 22px rgba(0,0,0,.09);
+}
+.boot-mark span{
+  text-shadow:0 2px 8px rgba(0,0,0,.18);
+  transform:translateZ(10px);
+}
+.boot-progress-meta{
+  margin-top:20px!important;
+  font-size:12px!important;
+}
+.boot-progress-meta strong{
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(120,120,128,.09);
+  font-size:12px!important;
+}
+.boot-track{
+  height:8px!important;
+  margin-top:9px!important;
+  border:0!important;
+  border-radius:999px!important;
+  background:rgba(120,120,128,.12)!important;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.08),0 1px 0 rgba(255,255,255,.3)!important;
+}
+.boot-fill{
+  border-radius:999px!important;
+  background:
+    linear-gradient(90deg,var(--ac),color-mix(in srgb,var(--ac) 72%,#fff 28%))!important;
+  box-shadow:0 0 18px color-mix(in srgb,var(--ac) 30%,transparent)!important;
+  overflow:hidden;
+}
+.boot-fill::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  width:34%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.68),transparent);
+  transform:translateX(-180%);
+  animation:bootFillSweep 1.55s cubic-bezier(.16,1,.3,1) infinite!important;
+}
+.boot-sheen{display:none!important}
+.boot-signal{
+  height:16px!important;
+  margin-top:15px!important;
+  gap:5px!important;
+}
+.boot-signal i{
+  width:5px!important;
+  background:var(--ac)!important;
+  box-shadow:0 0 10px color-mix(in srgb,var(--ac) 26%,transparent);
+  animation:bootSignalPro 1.25s cubic-bezier(.16,1,.3,1) infinite!important;
+}
+.boot-signal i:nth-child(1){height:5px;animation-delay:0ms!important}
+.boot-signal i:nth-child(2){height:9px;animation-delay:90ms!important}
+.boot-signal i:nth-child(3){height:14px;animation-delay:180ms!important}
+.boot-signal i:nth-child(4){height:9px;animation-delay:270ms!important}
+.boot-signal i:nth-child(5){height:5px;animation-delay:360ms!important}
+
+@keyframes bootAtmospherePro{
+  0%{transform:translate3d(-2%,-1%,0) scale(1)}
+  50%{transform:translate3d(1%,1%,0) scale(1.025)}
+  100%{transform:translate3d(2%,0,0) scale(1.05)}
+}
+@keyframes bootOrbitAPro{
+  from{transform:translate(-50%,-50%) rotate(0deg)}
+  to{transform:translate(-50%,-50%) rotate(360deg)}
+}
+@keyframes bootOrbitBPro{
+  from{transform:translate(-50%,-50%) rotate(55deg)}
+  to{transform:translate(-50%,-50%) rotate(-305deg)}
+}
+@keyframes bootParticlePro{
+  0%,100%{opacity:0;transform:translate3d(0,14px,0) scale(.45)}
+  25%{opacity:.55}
+  60%{opacity:.9;transform:translate3d(calc((var(--i) - 4)*11px),-34px,35px) scale(1.05)}
+  84%{opacity:.08}
+}
+@keyframes bootCardInPro{
+  0%{opacity:0;transform:translateY(22px) scale(.95);filter:blur(8px)}
+  65%{opacity:1;filter:blur(0)}
+  100%{opacity:1;transform:none}
+}
+@keyframes bootMarkInPro{
+  0%{opacity:0;transform:scale(.55) rotate(-9deg)}
+  65%{opacity:1;transform:scale(1.07) rotate(2deg)}
+  100%{opacity:1;transform:none}
+}
+@keyframes bootMarkFloatPro{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  50%{transform:translateY(-3px) rotate(.6deg)}
+}
+@keyframes bootRingPro{
+  0%{transform:rotate(0deg) scale(.88);opacity:.15}
+  45%{opacity:.85}
+  100%{transform:rotate(360deg) scale(1.12);opacity:.05}
+}
+@keyframes bootGlowPro{to{transform:rotate(360deg)}}
+@keyframes bootFillSweep{
+  0%,22%{transform:translateX(-180%);opacity:0}
+  44%{opacity:.9}
+  70%,100%{transform:translateX(430%);opacity:0}
+}
+@keyframes bootSignalPro{
+  0%,100%{transform:scaleY(.42);opacity:.42}
+  50%{transform:scaleY(1.08);opacity:1}
+}
+
+/* 読書本文ローダー：回転するだけのスピナーから、二重リング＋呼吸する芯へ */
+.reader-loading-orb{
+  width:68px!important;height:68px!important;
+  border:0!important;
+  position:relative;
+  border-radius:50%;
+  background:
+    conic-gradient(from 0deg,transparent 0 12%,var(--ac) 18%,transparent 34% 58%,color-mix(in srgb,var(--ac) 70%,#fff 30%) 66%,transparent 78% 100%);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb,var(--ac) 16%,transparent),
+    0 12px 36px color-mix(in srgb,var(--ac) 18%,transparent);
+  animation:readerLoaderOrbitPro 2.2s linear infinite!important;
+}
+.reader-loading-orb::before{
+  content:"";
+  position:absolute;
+  inset:7px;
+  border-radius:50%;
+  background:var(--bg);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ac) 13%,transparent);
+}
+.reader-loading-orb::after{
+  content:"";
+  position:absolute;
+  inset:19px;
+  border-radius:50%;
+  background:radial-gradient(circle at 38% 32%,rgba(255,255,255,.65),var(--ac) 45%,color-mix(in srgb,var(--ac) 55%,#000 45%) 100%);
+  box-shadow:0 0 20px color-mix(in srgb,var(--ac) 30%,transparent);
+  animation:readerLoaderCorePro 1.8s ease-in-out infinite;
+}
+.reader-loading-title{
+  margin-top:20px!important;
+  letter-spacing:-.025em;
+  animation:readerLoadingTextPro 480ms cubic-bezier(.16,1,.3,1) both;
+}
+.reader-loading-sub{
+  animation:readerLoadingTextPro 540ms cubic-bezier(.16,1,.3,1) 70ms both;
+}
+.reader-loading-bar{
+  height:7px!important;
+  margin-top:20px!important;
+  border:0;
+  background:rgba(120,120,128,.11);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.06);
+}
+.reader-loading-bar span{
+  width:38%!important;
+  background:linear-gradient(90deg,transparent,var(--ac),transparent)!important;
+  box-shadow:0 0 14px color-mix(in srgb,var(--ac) 24%,transparent);
+  animation:readerLoaderSweepPro 1.35s cubic-bezier(.16,1,.3,1) infinite!important;
+}
+@keyframes readerLoaderOrbitPro{to{transform:rotate(360deg)}}
+@keyframes readerLoaderCorePro{
+  0%,100%{transform:scale(.86);opacity:.78}
+  50%{transform:scale(1.05);opacity:1}
+}
+@keyframes readerLoadingTextPro{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:none}
+}
+@keyframes readerLoaderSweepPro{
+  0%{transform:translateX(-170%)}
+  100%{transform:translateX(430%)}
+}
+
+/* 専用スマホ読書UIも同じ思想に寄せる */
+html[data-device="smartphone"] .phone-reader-toolbar{
+  height:72px!important;
+  bottom:calc(66px + env(safe-area-inset-bottom))!important;
+  padding:5px!important;
+  gap:5px!important;
+  border-radius:18px!important;
+  box-shadow:0 12px 34px rgba(0,0,0,.15)!important;
+}
+html[data-device="smartphone"] .phone-reader-tool{
+  min-height:60px!important;
+  border:1px solid rgba(60,60,67,.09)!important;
+  border-radius:13px!important;
+  background:rgba(255,255,255,.68)!important;
+  gap:4px!important;
+  transition:transform .18s cubic-bezier(.16,1,.3,1),background .18s ease,box-shadow .18s ease!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-reader-tool{
+  background:rgba(55,55,58,.72)!important;
+  border-color:rgba(255,255,255,.08)!important;
+}
+html[data-device="smartphone"] .phone-reader-tool:active{
+  transform:scale(.93)!important;
+  background:rgba(0,122,255,.16)!important;
+}
+html[data-device="smartphone"] .phone-tool-icon{
+  font-size:21px!important;
+  line-height:1;
+}
+html[data-device="smartphone"] .phone-reader-tool small{
+  font-size:10px!important;
+  font-weight:650;
+}
+html[data-device="smartphone"] .phone-reader-body{
+  padding-bottom:154px!important;
+}
+html[data-device="smartphone"] .r-dock{min-height:0!important}
+@media(max-width:899px){
+  #reader .r-dock{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    min-height:124px;
+    padding:7px;
+    gap:6px;
+  }
+  #reader .r-dock-btn{
+    min-height:52px!important;
+    padding:6px 5px!important;
+    border-radius:13px!important;
+  }
+  #reader .r-dock-btn .icon{width:24px!important;height:24px!important}
+  #r-paper-hint{bottom:calc(166px + env(safe-area-inset-bottom))!important}
+}
+@media(max-width:520px){
+  #reader .r-dock{
+    min-height:122px;
+    gap:5px;
+    padding:6px;
+  }
+  #reader .r-dock-btn{
+    min-height:51px!important;
+    font-size:11px!important;
+  }
+  #reader .r-dock-btn .icon{width:23px!important;height:23px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  #app-boot::before,.boot-orbit-a,.boot-orbit-b,.boot-particles i,.boot-card,.boot-mark,.boot-mark::before,.boot-glow,
+  .boot-fill::after,.boot-signal i,.reader-loading-orb,.reader-loading-orb::after,.reader-loading-title,.reader-loading-sub,.reader-loading-bar span{
+    animation:none!important;
+  }
+}
+.low-power #app-boot::before,.low-power .boot-orbit-a,.low-power .boot-orbit-b,.low-power .boot-particles i,.low-power .boot-glow,
+.low-power .boot-fill::after,.low-power .boot-signal i,.low-power .reader-loading-orb::after,.low-power .reader-loading-bar span{
+  animation:none!important;
+}
+
 </style>
 </head>
 <body>
