@@ -287,6 +287,7 @@ const normalizeOllamaUrl=(value='')=>{
 };
 const canUseOllama=()=>st.ollamaEnabled&&!st.offline&&isSafeOllamaUrl(st.oUrl);
 const BROWSER_SMOKE=/(?:[?&])browser-smoke(?:=|&|$)/.test(location.search);
+const LIVE_BROWSER_SMOKE=/(?:[?&])browser-smoke-live(?:=|&|$)/.test(location.search);
 const safeEl = id => document.getElementById(id) || null;
 async function hydrateSavedKeys(){
   const keys=await idb.keys('docs');
@@ -1592,7 +1593,7 @@ function buildBodyUrlCandidates(w){
 
 async function fetchBody(w){
   if(!w||!isPublicWork(w))throw new Error('protected-work');
-  if(BROWSER_SMOKE){
+  if(BROWSER_SMOKE&&!LIVE_BROWSER_SMOKE){
     const plain='これは長文スモークテスト用の本文です。ローダー隔離、段階的描画、ページ化、スクロール、戻る操作を検証します。';
     const count=2200;
     const paragraphs=Array.from({length:count},(_,i)=>'<p>'+plain+' テスト段落'+(i+1)+'です。長い青空文庫作品を想定した十分な本文量で、メインスレッドを占有し続けない描画を検証します。</p>').join('');
