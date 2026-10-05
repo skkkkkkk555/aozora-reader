@@ -191,6 +191,18 @@ function assertDesktopReaderChrome(d,label){
     assertNoRuntimeErrors(d,'mobile after reader render');
     clearRuntimeErrors(d);
 
+    // Mobile/tablet vertical reader regression: the option must be reachable from the reader menu.
+    const readerMoreForVertical=await waitFor(()=>d.querySelector('#phone-reader [data-phone-action="reader-more"]'),4000);
+    readerMoreForVertical.click();
+    await waitFor(()=>d.querySelector('#phone-sheet [data-phone-action="reader-vertical"]'),5000);
+    d.querySelector('#phone-sheet [data-phone-action="reader-vertical"]').click();
+    await sleep(120);
+    if(!d.querySelector('#phone-reader-body')?.classList.contains('phone-reader-vertical'))fail('smartphone vertical reader did not activate');
+    if(d.querySelector('#phone-reader')?.classList.contains('reader-chrome-hidden'))fail('smartphone vertical reader lost chrome');
+    await waitFor(()=>d.querySelector('#phone-reader .phone-reader-ui-toggle')&&visible(d.querySelector('#phone-reader .phone-reader-ui-toggle')),4000);
+    d.querySelector('#phone-reader [data-phone-action="reader-more"]')?.click();
+    if(d.querySelector('#phone-reader-body')?.classList.contains('phone-reader-vertical')===false)fail('smartphone vertical reader toggled off unexpectedly');
+
     const readerSearch=d.querySelector('#phone-reader [data-phone-action="reader-search"]');
     if(!readerSearch)fail('smartphone reader search action missing');
     readerSearch.click();
@@ -204,6 +216,9 @@ function assertDesktopReaderChrome(d,label){
     await waitFor(()=>d.querySelector('#phone-reader-search')?.hidden,4000);
     assertNoRuntimeErrors(d,'mobile after reader search close');
     clearRuntimeErrors(d);
+
+    const globalBack=d.querySelector('#phone-global-back');
+    if(!globalBack||!visible(globalBack))fail('smartphone global back button is not visible in reader');
 
     const readerBack=await waitFor(()=>d.querySelector('#phone-reader [data-phone-action="reader-back"]'),4000);
     clearRuntimeErrors(d);
