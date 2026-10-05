@@ -164,6 +164,16 @@ function assertDesktopReaderChrome(d,label){
     sheetClose.click();
     await waitFor(()=>!d.querySelector('#phone-sheet')?.classList.contains('open'),5000);
 
+    const detailGlobalBack=d.querySelector('#phone-global-back');
+    if(!detailGlobalBack||!visible(detailGlobalBack))fail('smartphone global back is not visible on detail');
+    detailGlobalBack.click();
+    await sleep(100);
+    await waitFor(()=>!visible(d.querySelector('#phone-detail')),4000);
+    // 再び同じ作品を開き、続くreader検証へ戻る。
+    const reopen=await waitFor(()=>d.querySelector('#phone-content [data-phone-work]'),5000);
+    reopen.click();
+    await waitFor(()=>visible(d.querySelector('#phone-detail')),5000);
+
     const read=await waitFor(()=>d.querySelector('#phone-detail [data-phone-action="detail-read"]'),6000);
     clearRuntimeErrors(d);
     read.click();
@@ -234,6 +244,16 @@ function assertDesktopReaderChrome(d,label){
     const globalBack=d.querySelector('#phone-global-back');
     if(!globalBack||!visible(globalBack))fail('smartphone global back button is not visible in reader');
 
+    const readerGlobalBack=d.querySelector('#phone-global-back');
+    if(!readerGlobalBack||!visible(readerGlobalBack))fail('smartphone global back is not visible in reader');
+    readerGlobalBack.click();
+    await sleep(100);
+    await waitFor(()=>!d.querySelector('#phone-reader')?.classList.contains('phone-open'),5000);
+    await waitFor(()=>visible(d.querySelector('#phone-detail')),4000);
+    // readerを再度開いて、個別の戻るボタン経路も検証する。
+    d.querySelector('#phone-detail [data-phone-action="detail-read"]').click();
+    await waitFor(()=>visible(d.querySelector('#phone-reader'))&&d.querySelector('#phone-reader').classList.contains('phone-open'),5000);
+    await waitFor(()=>readerRendered(d,'#phone-reader-body'),20000);
     const readerBack=await waitFor(()=>d.querySelector('#phone-reader [data-phone-action="reader-back"]'),4000);
     clearRuntimeErrors(d);
     readerBack.click();
