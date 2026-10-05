@@ -2313,7 +2313,8 @@ async function renderReaderBody(isCurrent){
   if(!curDoc||!body)return false;
   const seq=++readerRenderSeq;
   body.setAttribute('aria-busy','true');
-  body.classList.add('reader-building','paper-paged');
+  body.classList.add('reader-building');
+  body.classList.add('paper-paged');
   body.classList.toggle('v',st.v!==false);
   body.classList.remove('reader-plain-fallback');
   body.style.removeProperty('white-space');
@@ -4867,6 +4868,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   function closePhoneSheet(fromHistory=false){
     const sheet=$p('#phone-sheet'),scrim=$p('#phone-sheet-scrim');
     if(!sheet||!scrim)return;
+    // シートの閉じる操作は専用に即時処理し、Android WebView等でclick合成が遅れても確実に閉じる。
     state.sheetOpen=false;
     sheet.classList.remove('open');
     scrim.classList.remove('open');
@@ -5122,6 +5124,17 @@ window.addEventListener('DOMContentLoaded',()=>{
     phoneActivateElement(el,e.detail===0?false:false);
   };
   document.addEventListener('click',phoneEvent,{capture:true});
+
+  // 閉じるボタンは pointerup でも即時処理して、遅延した合成clickに依存しない。
+  const phoneSheetCloseImmediate=e=>{
+    if(!isPhone()||e.pointerType!=='touch')return;
+    const el=e.target.closest?.('#phone-sheet [data-phone-action="sheet-close"],#phone-sheet-scrim[data-phone-action="sheet-close"]');
+    if(!el)return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    closePhoneSheet();
+  };
+  document.addEventListener('pointerup',phoneSheetCloseImmediate,{capture:true,passive:false});
 
   // iOS風エッジ戻るだけは独立実装。ボタン上のタップには一切干渉しない。
   const phoneRoot=$p('#phone-app');
