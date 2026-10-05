@@ -4306,6 +4306,11 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='detail-done'){if(done.has(state.work.id))done.delete(state.work.id);else done.add(state.work.id);save();openDetail(state.work);return}
     if(act==='reader-back'){closeReader();return}
     if(act==='reader-retry'){openReader(state.work,state.readerFromDetail);return}
+    if(act==='reader-ui-toggle'){
+      const reader=$p('#phone-reader');
+      if(reader)reader.classList.remove('reader-chrome-hidden');
+      return;
+    }
     if(act==='bookmark'){addBookmark();return}
     if(act==='note'){addMemo();return}
     if(act==='highlight'){addHighlight();return}
