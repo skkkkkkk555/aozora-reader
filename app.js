@@ -288,6 +288,7 @@ const normalizeOllamaUrl=(value='')=>{
 const canUseOllama=()=>st.ollamaEnabled&&!st.offline&&isSafeOllamaUrl(st.oUrl);
 const BROWSER_SMOKE=/(?:[?&])browser-smoke(?:=|&|$)/.test(location.search);
 const LIVE_BROWSER_SMOKE=/(?:[?&])browser-smoke-live(?:=|&|$)/.test(location.search);
+const READER_ASSET_VERSION='20261005-02';
 const safeEl = id => document.getElementById(id) || null;
 async function hydrateSavedKeys(){
   const keys=await idb.keys('docs');
@@ -613,8 +614,28 @@ window.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openSearchPage(); }
 });
 
-const CATALOG_CACHE_KEY='cat-rights-v5';
-const LEGACY_CATALOG_CACHE_KEY='cat-rights-v4';
+const normalizeBookPath=raw=>{
+  let value=String(raw??'').trim();
+  if(!value)return '';
+  try{
+    const u=new URL(value);
+    if(u.protocol==='https:'&&u.hostname==='www.aozora.gr.jp')value=u.pathname.replace(/^\/+/, '');
+  }catch{}
+  value=value.replace(/^\/+|\s+$/g,'');
+  if(!value||value.includes('..')||value.includes('\\'))return '';
+  // 古いカタログにZIP URL/ZIPパスが残っていても、aozorahackの現在の
+  // 「zip名/zip名.txt」配置へ実行時に修復する。
+  if(/\.zip$/i.test(value)){
+    value=value.replace(/\.zip$/i,'');
+    const slash=value.lastIndexOf('/');
+    const leaf=slash>=0?value.slice(slash+1):value;
+    value=value+'/'+leaf+'.txt';
+  }
+  return /^[A-Za-z0-9._\/-]+$/.test(value)?value:'';
+};
+const CATALOG_CACHE_KEY='cat-rights-v6';
+const LEGACY_CATALOG_CACHE_KEY='cat-rights-v5';
+const LEGACY_CATALOG_CACHE_KEY_OLD='cat-rights-v4';
 const RIGHTS_CACHE_KEY='rights-allowlist-v1';
 const RIGHTS_MANIFEST='./rights-allowlist.json';
 const CATALOG_TARGET='https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip';
@@ -703,6 +724,13 @@ async function loadCachedCatalog(){
     await idb.set('k',CATALOG_CACHE_KEY,safeCatalog);
     return safeCatalog;
   }
+  // v4以前の利用者も安全に移行する。
+  c=await idb.get('k',LEGACY_CATALOG_CACHE_KEY_OLD);
+  safeCatalog=sanitizeCatalogRecords(c);
+  if(safeCatalog.length){
+    await idb.set('k',CATALOG_CACHE_KEY,safeCatalog);
+    return safeCatalog;
+  }
   // さらに旧自動/手動取り込みキーも安全に移行する。
   c=await idb.get('k','cat');
   safeCatalog=sanitizeCatalogRecords(c);
@@ -754,6 +782,30 @@ async function checkCatalog(){
     filterWorks();renderHome();return;
   }
 
+  // オンライン時はまずGitHub Pages自身の最新catalog.jsonを取得する。
+  // これを先に行うことで、以前の版で保存された古い本文URLを優先して使わない。
+  // 取得不能時だけ端末キャッシュ→外部配信元へフォールバックする。
+  if(navigator.onLine!==false){
+    for(let attempt=0;attempt<2;attempt++){
+      try{
+        const res=await secureFetch('./catalog.json?catalog-refresh='+Date.now(),{signal:sig(15000),cache:'no-store'});
+        if(!res.ok)throw new Error('catalog-http-'+res.status);
+        const data=await res.json();
+        const parsed=sanitizeCatalogRecords(data);
+        if(parsed.length>=100){
+          allWorks=parsed;
+          await idb.set('k',CATALOG_CACHE_KEY,parsed);
+          filterWorks();renderHome();
+          return;
+        }
+        throw new Error('catalog-invalid-or-empty');
+      }catch(err){
+        console.debug('fresh same-origin catalog attempt failed',attempt+1,err);
+        if(attempt<1)await new Promise(resolve=>setTimeout(resolve,500));
+      }
+    }
+  }
+
   const safeCatalog=await loadCachedCatalog();
   if(safeCatalog.length){
     allWorks=safeCatalog;
@@ -763,27 +815,8 @@ async function checkCatalog(){
     return;
   }
 
-  // 初回はリポジトリに同梱した catalog.json を最優先で読む。
-  // GitHub Pages上では外部配信元よりこちらが安定するため、短いタイムアウトで
-  // 一度失敗しただけで「手動読み込み」に落とさない。
-  for(let attempt=0;attempt<3;attempt++){
-    try{
-      const res=await secureFetch('./catalog.json',{signal:sig(15000),cache:attempt===0?'default':'no-store'});
-      if(!res.ok)throw new Error('catalog-http-'+res.status);
-      const data=await res.json();
-      const parsed=sanitizeCatalogRecords(data);
-      if(parsed.length>=100){
-        allWorks=parsed;
-        await idb.set('k',CATALOG_CACHE_KEY,parsed);
-        filterWorks();renderHome();
-        return;
-      }
-      throw new Error('catalog-invalid-or-empty');
-    }catch(err){
-      console.debug('same-origin catalog attempt failed',attempt+1,err);
-      if(attempt<2)await new Promise(resolve=>setTimeout(resolve,400*(attempt+1)));
-    }
-  }
+  // 最新catalog.jsonを取得できない初回だけ、外部配信元からカタログを再構築する。
+  void fetchCatalog({background:true,notifyOnFail:true});
 
   // 同梱カタログが一時的に取得できない場合だけ、外部配信元を順番に試す。
   // ここでも45秒ではなく最大2分確保し、スマホ回線等の遅延で誤って失敗扱いしない。
@@ -1655,7 +1688,7 @@ function parseAozoraAsync(buffer){
     let settled=false,worker=null;
     const finish=(fn,val)=>{if(settled)return;settled=true;try{worker?.terminate()}catch{}if(activeReaderParserWorker===worker)activeReaderParserWorker=null;fn(val)};
     try{
-      worker=new Worker('./reader-worker.js');
+      worker=new Worker('./reader-worker.js?v='+READER_ASSET_VERSION);
       activeReaderParserWorker=worker;
       worker.onmessage=e=>{
         const d=e.data||{};if(d.id!==id)return;
