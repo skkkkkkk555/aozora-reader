@@ -69,6 +69,7 @@ const refreshSmartphoneUI = ()=>{
   // タッチ対応判定はAndroid WebView等で0になることがあるため、端末判定には使用しない。
   const isSmartphone = !!mobileUA && shortestSide <= 899;
   document.documentElement.classList.toggle('smartphone-ui', isSmartphone);
+  // Reader UI復帰ボタンは読書レイヤーの外側に常駐させる。
   document.documentElement.dataset.device = isSmartphone ? 'smartphone' : 'desktop';
   return isSmartphone;
 };
@@ -98,6 +99,7 @@ function enforceDesktopReaderChrome(){
   }
   const toggle=document.getElementById('r-ui-toggle');
   if(toggle){
+    toggle.hidden=false;
     toggle.style.setProperty('display','flex','important');
     toggle.style.setProperty('visibility','visible','important');
     toggle.style.setProperty('opacity','1','important');
@@ -2091,6 +2093,7 @@ async function openReaderInternal(w, fromDetail=false, bookmarkF=null){
   $('r-title').textContent=w.t;
   setReaderLoading(true);
   $('reader').classList.add('open','paper-reader');
+  document.documentElement.dataset.readerOpen='1';
   $('reader').classList.remove('chrome-hidden','mode-focus');
   $('reader').dataset.readerUiMode='pc-stable';
   setReaderChromeVisible(true);
@@ -2539,6 +2542,7 @@ async function closeReaderInternal(fromPop=false){
   }
   desktopReaderContentReady=false;
   $('reader').classList.remove('open','paper-reader','paper-first-open','reader-is-loading');
+  delete document.documentElement.dataset.readerOpen;
   $('reader').classList.remove('reader-night','mode-focus');
   setLayerLoading($('reader-loading-layer'),false);
   if(window.speechSynthesis)speechSynthesis.cancel();
@@ -3832,15 +3836,60 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!r||!r.classList.contains('open'))return;
     r.classList.remove('chrome-hidden','mode-focus');
     els.forEach(el=>{
+      el.hidden=false;
+      el.removeAttribute('aria-hidden');
       el.classList.remove('hide');
       el.classList.add('show-temp');
-      el.style.cssText += ';display:'+(el.id==='r-dock'?'grid':'flex')+';visibility:visible;opacity:1;pointer-events:auto;transform:none;';
+      el.style.setProperty('display',el.id==='r-dock'?'grid':'flex','important');
+      el.style.setProperty('visibility','visible','important');
+      el.style.setProperty('opacity','1','important');
+      el.style.setProperty('pointer-events','auto','important');
+      el.style.setProperty('transform','none','important');
     });
-    b.style.display='flex';
-    b.style.visibility='visible';
-    b.style.opacity='1';
+    b.hidden=false;
+    b.style.setProperty('display','flex','important');
+    b.style.setProperty('visibility','visible','important');
+    b.style.setProperty('opacity','1','important');
+    b.style.setProperty('pointer-events','auto','important');
+    b.style.setProperty('z-index','2147483647','important');
+    enforceDesktopReaderChrome();
   };
   b.addEventListener('click',restore,{capture:true});
+});
+window.addEventListener('DOMContentLoaded',()=>{
+  const restoreButton=$('r-ui-toggle');
+  if(restoreButton&&!restoreButton.dataset.absoluteBound){
+    restoreButton.dataset.absoluteBound='1';
+    const restoreNow=(e)=>{
+      if(document.documentElement.dataset.device!=='desktop')return;
+      const r=$('reader');
+      if(!r?.classList.contains('open'))return;
+      e?.preventDefault();
+      e?.stopImmediatePropagation();
+      r.classList.remove('chrome-hidden','mode-focus');
+      for(const id of ['r-top','r-dock','r-bottom-info']){
+        const el=$(id); if(!el)continue;
+        el.hidden=false;
+        el.classList.remove('hide');
+        el.classList.add('show-temp');
+        el.style.setProperty('display',id==='r-dock'?'grid':'flex','important');
+        el.style.setProperty('visibility','visible','important');
+        el.style.setProperty('opacity','1','important');
+        el.style.setProperty('pointer-events','auto','important');
+        el.style.setProperty('transform','none','important');
+      }
+      restoreButton.hidden=false;
+      restoreButton.style.setProperty('display','flex','important');
+      restoreButton.style.setProperty('visibility','visible','important');
+      restoreButton.style.setProperty('opacity','1','important');
+      restoreButton.style.setProperty('pointer-events','auto','important');
+      restoreButton.style.setProperty('z-index','2147483647','important');
+      enforceDesktopReaderChrome();
+    };
+    restoreButton.addEventListener('pointerup',restoreNow,{capture:true});
+    restoreButton.addEventListener('click',restoreNow,{capture:true});
+    restoreButton.addEventListener('touchend',restoreNow,{capture:true,passive:false});
+  }
 });
 window.addEventListener('DOMContentLoaded',()=>{
   void (async()=>{
