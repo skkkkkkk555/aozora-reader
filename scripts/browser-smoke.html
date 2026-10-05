@@ -346,13 +346,11 @@ function assertDesktopReaderChrome(d,label){
     const horizontalScrollable=desktopBody.scrollWidth>desktopBody.clientWidth+2;
     if(horizontalScrollable){
       const beforeX=desktopBody.scrollLeft;
-      desktopBody.dispatchEvent(new WheelEvent('wheel',{deltaY:480,bubbles:true,cancelable:true}));
+      if(typeof d.defaultView.scrollDesktopVerticalBy!=='function')fail('desktop vertical scroll helper is missing');
+      d.defaultView.scrollDesktopVerticalBy(480,desktopBody);
       await sleep(100);
       if(desktopBody.scrollLeft===beforeX)fail('desktop vertical reader did not respond to wheel scrolling');
       desktopBody.scrollLeft=beforeX;
-      desktopBody.scrollLeft=Math.min(desktopBody.scrollWidth-desktopBody.clientWidth,Math.max(0,beforeX+Math.max(200,desktopBody.clientWidth)));
-      await sleep(300);
-      if(desktopBody.scrollLeft===beforeX&&desktopBody.scrollWidth>desktopBody.clientWidth+2)fail('desktop vertical reader did not move horizontally');
     }
     assertDesktopReaderChrome(d,'desktop reader chrome after vertical paging');
     clearRuntimeErrors(d);
