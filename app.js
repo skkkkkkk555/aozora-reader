@@ -4698,16 +4698,22 @@ window.addEventListener('DOMContentLoaded',()=>{
     cancelReaderParser();
     if(phoneReaderContentReady)saveReaderProgress();
     const b=currentReaderBody();
-    if(!fromHistory&&history.state?.phoneLayer==='phone-reader'){
-      history.back();
-      return;
-    }
     if(b)b.onscroll=null;
     setPhoneReaderLoading(false);
     const w=state.work;
-    state.reader=false;state.readerDoc=null;
-    if(w&&state.readerFromDetail){openDetail(w,'back',true);}
-    else{state.work=null;state.readerFromDetail=false;showScreen(state.screen,'back');}
+    const fromDetail=!!state.readerFromDetail;
+    state.reader=false;
+    state.readerDoc=null;
+    state.readerFromDetail=false;
+    // 読者操作の「戻る」は履歴遷移を待たず、その場で必ず前画面へ戻す。
+    // 履歴も現在の前画面に同期させるので二重遷移しない。
+    const nextLayer=fromDetail?'phone-detail':null;
+    const nextState={...(history.state||{})};
+    if(nextLayer){nextState.phoneLayer=nextLayer;delete nextState.phoneParent;}
+    else{delete nextState.phoneLayer;delete nextState.phoneParent;}
+    history.replaceState(nextState,'',location.href);
+    if(fromDetail&&w)openDetail(w,'back',true);
+    else{state.work=null;showScreen(state.screen,'back');}
     void releaseScreenWakeLock();
   }
 
@@ -5142,18 +5148,6 @@ window.addEventListener('DOMContentLoaded',()=>{
       phoneActivateElement(el,true);
     },{capture:true,passive:false});
   }
-
-  // シートの閉じる操作は専用に即時処理し、Android WebView等でclick合成が遅れても確実に閉じる。
-  document.addEventListener('pointerup',e=>{
-    if(!isPhone()||e.pointerType!=='touch')return;
-    const closeEl=e.target.closest?.('#phone-sheet [data-phone-action="sheet-close"],#phone-sheet-scrim[data-phone-action="sheet-close"]');
-    if(!closeEl||!state.sheetOpen)return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    phonePointerHandledEl=closeEl;
-    phonePointerHandledUntil=Date.now()+650;
-    closePhoneSheet();
-  },{capture:true,passive:false});
 
   const phoneEvent=e=>{
     if(!isPhone()||e.type!=='click')return;
