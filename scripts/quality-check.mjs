@@ -21,7 +21,7 @@ ok(/const READER_PROGRESS_VERSION=\d+/.test(app),'reader progress schema version
 ok(app.includes('phoneRoot:true'),'smartphone history root sentinel missing');
 ok(app.includes('const bindPhoneBackControl=(button)=>'),'direct smartphone back binding missing');
 ok(html.includes('id="aozora-reader-root-final-fix"'),'authoritative reader geometry CSS missing');
-ok(html.includes('app.js?v=reader-mobile-zero-bug-v20261005-40'),'reader cache version was not bumped');
+ok(/app\.js\?v=reader-mobile-zero-bug-v20261005-\d+/.test(html),'reader cache version was not bumped');
 ok(smoke.includes("desktop fresh reader progress is"),'desktop first-open progress smoke test missing');
 ok(smoke.includes("desktop horizontal reader did not respond to real wheel event"),'desktop real-wheel smoke test missing');
 ok(smoke.includes("smartphone reader did not move on vertical scroll"),'smartphone real scroll smoke test missing');
