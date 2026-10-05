@@ -39,7 +39,7 @@ for(const [id,count] of idCounts)ok(count===1,`duplicate id: ${id}`);
 for(const id of ['phone-app','phone-content','phone-detail','phone-reader','phone-reader-body','phone-reader-progress','phone-sheet','phone-sheet-body','phone-sheet-scrim'])ok(new RegExp(`id=["']${id}["']`).test(html),`smartphone shell id missing: ${id}`);
 ok(inlineScripts.length===0,'inline script remains and may be blocked by CSP');
 ok(html.includes('touch-action:pan-y!important'),'smartphone reader body does not allow vertical touch scrolling');
-ok(html.includes('app.js?v=ios-deep-20261005-auto-catalog3'),'app.js cache-bust was not refreshed');
+ok(html.includes('app.js?v=ios-deep-20261005-auto-catalog4'),'app.js cache-bust was not refreshed');
 ok(app.includes("reader.classList.add('phone-open')"),'smartphone reader open class lifecycle missing');
 ok(html.includes('.phone-reader.phone-open{display:flex!important}'),'smartphone reader display rule missing');
 ok(app.includes('__aozoraPhoneOpenSheet=openPhoneSheet'),'global sheet bridge missing');
@@ -92,7 +92,7 @@ ok(license.includes('MIT License'),'LICENSE.md is missing MIT License');
 ok(license.includes('catalog.json'),'LICENSE.md does not separate catalog.json licensing');
 ok(readme.includes('CC BY 4.0'),'README.md is missing CC BY 4.0 information');
 ok(html.includes('青空文庫リーダー（非公式）'),'index.html title is missing unofficial designation');
-ok(app.includes("if(Number(raw.c)!==1||Number(raw.r)!==1)continue;"),'catalog sanitizer does not remove unverified works before catalog exposure');
+ok(app.includes('rightsAllowlist.has(rawId.padStart(6,\'0\'))'),'catalog sanitizer does not enforce persisted rights allowlist');
 ok(app.includes('rightsReady&&rightsAllowlist.has')||app.includes('rightsReady && rightsAllowlist.has'),'reader public-work guard does not require copyright allowlist verification');
 let rightsIds=[];try{rightsIds=JSON.parse(rightsManifest)}catch{}
 ok(Array.isArray(rightsIds)&&rightsIds.length>1000&&rightsIds.length<30000,'rights allowlist size is invalid');
@@ -100,6 +100,11 @@ ok(Array.isArray(rightsIds)&&rightsIds.every(id=>/^\d{6}$/.test(String(id))),'ri
 ok(!Array.isArray(rightsIds)||!rightsIds.includes('061517'),'known excluded work is present in rights allowlist');
 ok(app.includes("const CATALOG_CACHE_KEY='cat-rights-v5'"),'persistent catalog cache key is missing');
 ok(app.includes('refreshCatalogInBackground'),'background catalog refresh helper is missing');
+ok(app.includes('scheduleCatalogRefresh'),'scheduled catalog refresh is missing');
+ok(app.includes("await idb.set('k',CATALOG_CACHE_KEY,allWorks)"),'catalog import does not persist to the canonical cache key');
+ok(app.includes("c=await idb.get('k','cat')"),'legacy manual catalog cache migration is missing');
+ok(app.includes("if(!background&&cBar)cBar.style.width='70%'"),'background catalog parsing still touches missing progress UI');
+
 ok(app.includes('scheduleCatalogRefresh'),'scheduled catalog refresh is missing');
 ok(!html.includes('data-act="chip-toggle" data-k="c"'),'copyright filter chip is still exposed');
 ok(!html.includes('>著作権切れ</button>'),'copyright filter label is still exposed');
