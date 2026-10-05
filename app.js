@@ -995,7 +995,7 @@ function renderHome(){
 
   // オンボーディング
   const ob=[];
-  if(!allWorks.length) ob.push('① カタログの導入');
+  if(!allWorks.length) ob.push('① 作品カタログを自動準備中…');
   if(st.ollamaEnabled && !st.offline && !aiConn.ok && canUseOllama()) ob.push('② AI設定 (任意)');
   if(!done.size) ob.push('③ はじめての1冊を読む');
   if(ob.length){ $('blk-onboard').style.display='flex'; $('onboard-items').innerHTML=ob.map(s=>`<div>○ ${s}</div>`).join(''); }
@@ -4363,9 +4363,9 @@ window.addEventListener('DOMContentLoaded',()=>{
         $p('#phone-content')?.insertAdjacentHTML('afterbegin','<div class="phone-card phone-empty">青空文庫を準備しています…<br><span style="font-size:12px">データの読み込みを続けています。</span></div>');
       }catch{}
     }
-    // スマホUIは共通初期化の完了を待たない。
+    // スマホUIは先に操作可能にしつつ、起動演出は短時間だけ維持する。
     try{
-      document.getElementById('app-boot')?.classList.add('done');
+      window.setTimeout(()=>document.getElementById('app-boot')?.classList.add('done'),620);
     }catch{}
   }
 
