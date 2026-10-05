@@ -389,6 +389,7 @@ const load=async()=>{
       try{d=sanitizePersistedState({st:JSON.parse(savedSettingsRaw)});}catch{}
     }
     if(d){
+      const progressMigrated=Number(d.readerProgressVersion)!==READER_PROGRESS_VERSION;
       fav=new Set(safeStateArray(d.fav)); want=new Set(safeStateArray(d.want)); done=new Set(safeStateArray(d.done));
       favAuthors=new Set(safeStateArray(d.favAuthors,SEC_STATE.maxAuthors));
       dead=new Set(safeStateArray(d.dead));
@@ -404,7 +405,7 @@ const load=async()=>{
           const sd=sanitizePersistedState({st:JSON.parse(savedSettingsRaw)});
           if(sd?.st)st=Object.assign(st,sd.st);
         }catch{}
-      }
+      if(progressMigrated)save();
     }
   } catch (err) {
     console.warn('load failed; resetting state', err);
