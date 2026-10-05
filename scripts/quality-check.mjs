@@ -68,6 +68,12 @@ ok(html.includes('aozora-final-device-ui-hardening'),'final cross-device UI hard
 ok(html.includes('phone-reader-body.phone-reader-vertical'),'smartphone vertical reader CSS is missing');
 ok(html.includes('--phone-sub:#d0d6de!important'),'dark smartphone contrast palette is missing');
 ok(html.includes('html[data-device="desktop"] #reader.open.mode-focus .r-bar'),'desktop mode-focus UI lockdown is missing');
+ok(app.includes('function getVerticalScrollMetrics'),'desktop vertical scroll metric helper missing');
+ok(app.includes('function scrollDesktopVerticalBy'),'desktop vertical scroll helper missing');
+ok(app.includes('function bindDesktopVerticalWheel'),'desktop vertical wheel binding missing');
+ok(app.includes("b.style.setProperty('touch-action',state.readerVertical?'pan-x':'pan-y','important')"),'handheld vertical touch-axis fix missing');
+ok(html.includes('app.js?v=reader-axis-scrollfix-v20261005-34'),'vertical scroll cache bust missing');
+
 
 ok(app.includes("cur==='auto'?'sepia':cur==='sepia'?'dark':'auto'"),'smartphone theme cycle contains invalid theme value');
 ok(app.includes("const isAnyReaderOpen=()=>"),'PC/smartphone shared reader tracking missing');
