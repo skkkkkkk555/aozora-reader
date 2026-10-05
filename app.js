@@ -372,11 +372,31 @@ function renderInsightBar(){
   safeText('insight-shelf-sub', totalBooks ? `${totalBooks}冊を記録` : 'まだ始めていません');
 }
 
+window.__aozoraRuntimeErrors=window.__aozoraRuntimeErrors||[];
+const recordRuntimeError=(kind,value)=>{
+  const reason=value instanceof Error?value:null;
+  const item={
+    kind,
+    message:String(reason?.message||value?.message||value||'unknown'),
+    name:String(reason?.name||value?.name||kind),
+    stack:String(reason?.stack||'').slice(0,5000),
+    time:new Date().toISOString()
+  };
+  window.__aozoraRuntimeErrors.push(item);
+  if(window.__aozoraRuntimeErrors.length>20)window.__aozoraRuntimeErrors.shift();
+  try{localStorage.setItem('aozora_last_runtime_errors',JSON.stringify(window.__aozoraRuntimeErrors));}catch{}
+  console.warn('Aozora runtime error',item);
+  return item;
+};
 window.addEventListener('error',(event)=>{
-  console.warn('Captured app error:',event.message);
+  const item=recordRuntimeError('error',event.error||event.message);
+  if(!event.defaultPrevented&&window.__aozoraRuntimeErrorCounted!==item)window.__aozoraRuntimeErrorCounted=item;
 });
-window.addEventListener('unhandledrejection',()=>{
-  showBanner('一部の機能でエラーが発生しました。ページを再読み込みすると改善する場合があります。');
+window.addEventListener('unhandledrejection',(event)=>{
+  const item=recordRuntimeError('unhandledrejection',event.reason);
+  event.preventDefault();
+  // 旧版の「再読み込みしてください」だけでは原因が分からないため、診断情報を保持した上で通知。
+  showBanner('一部の機能でエラーが発生しました。診断情報を確認してください。');
 });
 
 /* ==================== 2. レンダリング共通 ==================== */
