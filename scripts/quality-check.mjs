@@ -106,7 +106,7 @@ ok(smoke.includes('toastRect.width>320'),'mobile smoke does not verify compact t
 ok(app.includes("const left=b.classList.contains('v')?Math.max(0,m.max-target):target"),'desktop vertical page position does not use stable LTR coordinates');
 ok(app.includes("b.scrollLeft=Math.max(0,Math.min(m.max,b.scrollLeft-d))"),'desktop vertical wheel direction is unstable');
 ok(app.includes("body.classList.remove('paper-turning-next','paper-turning-prev')"),'page turn still transforms article body');
-ok(/app\\.js\\?v=reader-mobile-zero-bug-v20261005-\\d+/.test(html),'mobile zero-bug cache bust missing');
+ok(/app\.js\?v=reader-mobile-zero-bug-v20261005-\d+/.test(html),'mobile zero-bug cache bust missing');
 ok(html.includes('id="phone-global-back"'),'smartphone global back control missing');
 ok(html.includes('aozora-actual-device-fix'),'actual-device control hardening missing');
 ok(html.includes('.phone-icon-button .phone-svg'),'smartphone icon size hardening missing');
