@@ -294,7 +294,7 @@ const normalizeOllamaUrl=(value='')=>{
 const canUseOllama=()=>st.ollamaEnabled&&!st.offline&&isSafeOllamaUrl(st.oUrl);
 const BROWSER_SMOKE=/(?:[?&])browser-smoke(?:=|&|$)/.test(location.search);
 const LIVE_BROWSER_SMOKE=/(?:[?&])browser-smoke-live(?:=|&|$)/.test(location.search);
-const READER_ASSET_VERSION='20261005-03';
+const READER_ASSET_VERSION='20261005-04';
 const safeEl = id => document.getElementById(id) || null;
 async function hydrateSavedKeys(){
   const keys=await idb.keys('docs');
@@ -1649,42 +1649,103 @@ async function fetchBody(w){
     try{await idb.del('docs',w.id);}catch{}
   }
   if(st.offline) throw new Error('オフラインです');
+
   const urls=buildBodyUrlCandidates(w);
-  let buf=null, notFoundCount=0, attempted=0;
+  let buf=null,notFoundCount=0,attempted=0;
   const failures=[];
-  // 小さな冒頭取得と同じCDN群を使いつつ、本文だけで失敗しやすい「9秒打ち切り」を廃止。
-  // タブレット/低速回線では本文全体の受信に時間がかかるため、作品ごとに最大90秒まで段階的に試す。
   const bodyDeadline=Date.now()+90000;
+
+  const appendRangeBody=async(res,chunks,totalExpected)=>{
+    const b=await readResponseBytes(res,SEC.maxBookBytes);
+    if(!b||b.byteLength===0)throw new Error('empty-response');
+    chunks.push(new Uint8Array(b));
+    const total=chunks.reduce((n,x)=>n+x.byteLength,0);
+    if(total>SEC.maxBookBytes)throw new Error('response-too-large');
+    return total===totalExpected;
+  };
+
+  const fetchFromOneSource=async(u)=>{
+    const host=(()=>{try{return new URL(u).hostname}catch{return u}})();
+    const chunkSize=4*1024*1024;
+    const firstRemain=Math.max(5000,Math.min(20000,bodyDeadline-Date.now()));
+    // Range取得を最初から使う。全文を一度にarrayBufferへ載せる方式は古い端末で失敗しやすい。
+    const first=await secureFetch(u,{headers:{'Range':`bytes=0-${chunkSize-1}`},signal:sig(firstRemain)});
+    if(first.status===404)return {status:404,host};
+    if(!first.ok)throw new Error('HTTP-'+first.status);
+
+    const contentRange=first.headers.get('content-range')||'';
+    const m=contentRange.match(/^bytes\s+(\d+)-(\d+)\/(\d+|\*)$/i);
+
+    // サーバーがRangeを無視して200を返した場合は通常の全文受信へ。
+    if(first.status!==206||!m){
+      const b=await readResponseBytes(first,SEC.maxBookBytes);
+      if(!b||b.byteLength<200)throw new Error('empty-response');
+      return {buffer:b,host};
+    }
+
+    let startByte=Number(m[1]),endByte=Number(m[2]),total=m[3]==='*'?null:Number(m[3]);
+    if(startByte!==0||endByte<startByte)throw new Error('invalid-content-range');
+    const chunks=[];
+    await appendRangeBody(first,chunks,total!==null?Math.min(total,endByte-startByte+1):null);
+    let received=endByte+1;
+
+    if(total!==null&&received>=total){
+      const out=new Uint8Array(received);let off=0;for(const c of chunks){out.set(c,off);off+=c.byteLength;}
+      return {buffer:out.buffer,host};
+    }
+
+    while(Date.now()<bodyDeadline){
+      const remain=Math.max(5000,Math.min(20000,bodyDeadline-Date.now()));
+      const end=Math.min((total??SEC.maxBookBytes)-1,received+chunkSize-1);
+      const res=await secureFetch(u,{headers:{'Range':`bytes=${received}-${end}`},signal:sig(remain)});
+      if(res.status===404)return {status:404,host};
+      if(!res.ok)throw new Error('HTTP-'+res.status);
+      const cr=res.headers.get('content-range')||'';
+      const mm=cr.match(/^bytes\s+(\d+)-(\d+)\/(\d+|\*)$/i);
+      if(res.status!==206||!mm)throw new Error('range-not-supported-midstream');
+      const rs=Number(mm[1]),re=Number(mm[2]);
+      if(rs!==received||re<rs)throw new Error('invalid-content-range');
+      await appendRangeBody(res,chunks,null);
+      received=re+1;
+      if(total!==null&&received>=total)break;
+      if(received>=SEC.maxBookBytes)throw new Error('response-too-large');
+    }
+
+    if(total===null)throw new Error('range-total-unknown');
+    if(received!==total)throw new Error('range-incomplete');
+    const out=new Uint8Array(received);let off=0;for(const c of chunks){out.set(c,off);off+=c.byteLength;}
+    return {buffer:out.buffer,host};
+  };
+
   for(const u of urls){
     if(Date.now()>=bodyDeadline)break;
     attempted++;
     try{
-      const remain=Math.max(5000,Math.min(20000,bodyDeadline-Date.now()));
-      const res=await secureFetch(u,{signal:sig(remain)});
-      if(res.status===404){notFoundCount++;failures.push('404 '+new URL(u).hostname);continue;}
-      if(!res.ok){failures.push('HTTP '+res.status+' '+new URL(u).hostname);continue;}
-      const b=await readResponseBytes(res,SEC.maxBookBytes);
-      if(b&&b.byteLength>=200){buf=b;break;}
-      failures.push('empty '+new URL(u).hostname);
+      const got=await fetchFromOneSource(u);
+      if(got?.status===404){notFoundCount++;failures.push('404 '+got.host);continue;}
+      if(got?.buffer){buf=got.buffer;break;}
     }catch(err){
       const host=(()=>{try{return new URL(u).hostname}catch{return u}})();
-      failures.push((err?.message||'fetch-failed')+' '+host);
+      const reason=String(err?.message||'fetch-failed');
+      failures.push(reason+' '+host);
       console.debug('book source failed',u,err);
     }
   }
+
   if(!buf){
-    if(attempted>0 && notFoundCount===attempted){
-      dead.add(w.id); filterWorks(); save(); throw {dead:true,code:'all-sources-404'};
+    if(attempted>0&&notFoundCount===attempted){
+      dead.add(w.id);filterWorks();save();throw {dead:true,code:'all-sources-404'};
     }
     const e=new Error('本文配信元への接続に失敗しました');
-    e.code='body-fetch-failed';
-    e.sources=failures.slice(0,8);
-    throw e;
+    e.code='body-fetch-failed';e.stage='fetch';e.sources=failures.slice(0,8);throw e;
   }
+
   try{
-    const parsed=await parseAozoraAsync(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength));
+    const parsed=await parseAozoraAsync(buf.slice(0));
     const html=parsed.html,plain=parsed.plain;
-    if(!plain||plain.trim().length<20)throw Object.assign(new Error('本文解析結果が空です'),{code:'empty-parser-result'});
+    if(!plain||plain.trim().length<20){
+      const e=new Error('本文解析結果が空です');e.code='empty-parser-result';e.stage='parse';throw e;
+    }
     const doc={html,plain,safe:2};
     await idb.set('docs',w.id,doc);
     savedKeys.add(w.id);
@@ -1692,11 +1753,9 @@ async function fetchBody(w){
   }catch(err){
     if(err?.code)throw err;
     const e=new Error(err?.message||'本文解析に失敗しました');
-    e.code='body-parse-failed';
-    throw e;
+    e.code='body-parse-failed';e.stage='parse';throw e;
   }
 }
-
 let readerParseSeq=0;
 let activeReaderParserWorker=null;
 function cancelReaderParser(){
@@ -1709,10 +1768,9 @@ function parseAozoraAsync(buffer){
     cancelReaderParser();
     const id=++readerParseSeq;
     let settled=false,worker=null,timer=0;
-    const fallbackLimit=8*1024*1024;
+    const fallbackLimit=12*1024*1024;
     const finish=(fn,val)=>{if(settled)return;settled=true;clearTimeout(timer);try{worker?.terminate()}catch{}if(activeReaderParserWorker===worker)activeReaderParserWorker=null;fn(val)};
     const fallbackOrReject=(err)=>{
-      // 古いWebView/タブレットでWorkerだけ失敗する場合に、8MB以下なら従来パーサーへ退避。
       if(buffer.byteLength<=fallbackLimit){
         try{
           const raw=new TextDecoder('shift_jis').decode(buffer);
@@ -1721,27 +1779,38 @@ function parseAozoraAsync(buffer){
         }catch(fallbackErr){err=fallbackErr||err;}
       }
       const e=new Error(err?.message||'本文解析に失敗しました');
-      e.code='reader-parser-failed';
+      e.code='reader-parser-failed';e.stage='parse';
       finish(reject,e);
     };
-    const timeoutMs=Math.max(20000,Math.min(60000,12000+Math.round(buffer.byteLength/80000)));
+    const timeoutMs=Math.max(30000,Math.min(90000,18000+Math.round(buffer.byteLength/100000)));
     timer=setTimeout(()=>fallbackOrReject(new Error('本文解析がタイムアウトしました')),timeoutMs);
     try{
+      // 4MB以下はWorker依存を避け、通常パーサーを優先する。
+      // 低スペック/古いWebViewではWorker初期化自体が不安定なため。
+      if(buffer.byteLength<=4*1024*1024){
+        setTimeout(()=>{
+          try{
+            const raw=new TextDecoder('shift_jis').decode(buffer);
+            const parsed=parseAozora(raw,true);
+            if(parsed?.plain?.trim().length>=20)finish(resolve,{html:parsed.html,plain:parsed.plain,safe:2});
+            else fallbackOrReject(new Error('本文解析結果が空です'));
+          }catch(err){fallbackOrReject(err)}
+        },0);
+        return;
+      }
       worker=new Worker('./reader-worker.js?v='+READER_ASSET_VERSION);
       activeReaderParserWorker=worker;
       worker.onmessage=e=>{
         const d=e.data||{};if(d.id!==id)return;
         if(d.ok&&typeof d.html==='string'&&typeof d.plain==='string')finish(resolve,{html:d.html,plain:d.plain,safe:2});
-        else fallbackOrReject(new Error(d.error||'本文解析に失敗しました'));
+        else fallbackOrReject(new Error(d.error||'本文解析ワーカーでエラーが発生しました'));
       };
       worker.onerror=e=>fallbackOrReject(new Error(e.message||'本文解析ワーカーを起動できませんでした'));
-      // 元バッファはフォールバック用に残し、Workerには複製を転送する。
       const workerBuffer=buffer.slice(0);
       worker.postMessage({id,buffer:workerBuffer},[workerBuffer]);
     }catch(e){fallbackOrReject(e)}
   });
 }
-
 let midashiSeq=0;
 function parseAozora(raw,withPlain=false){
   midashiSeq=0;
@@ -2002,13 +2071,19 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
     if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
     if(e.dead)toast('取得できない作品のため除外しました');
     else{
-      $('body').innerHTML='<div class="reader-error-state"><div class="reader-error-icon">!</div><div class="reader-error-title">本文を読み込めませんでした</div><div class="reader-error-text">通信状態を確認して、もう一度お試しください。</div><button class="primary" data-act="r-retry" style="margin-top:16px">再試行</button></div>';
+      $('body').innerHTML='<div class="reader-error-state"><div class="reader-error-icon">!</div><div class="reader-error-title">本文を読み込めませんでした</div><div class="reader-error-text">本文の取得または解析に失敗しました。再試行してください。</div>'+readerDiagnosticHtml(e)+'<button class="primary" data-act="r-retry" style="margin-top:16px">再試行</button></div>';
       $('body').setAttribute('aria-busy','false');
     }
   }
 }
 
 
+function readerDiagnosticHtml(err){
+  const code=escAttr(String(err?.code||'unknown'));
+  const stage=esc(String(err?.stage||'unknown'));
+  const sources=Array.isArray(err?.sources)?err.sources.map(x=>esc(String(x))).join('<br>'):'';
+  return '<details class="reader-error-diagnostic"><summary>診断情報を表示</summary><div><b>段階:</b> '+stage+'<br><b>コード:</b> '+code+(sources?'<br><b>試行:</b><br>'+sources:'')+'</div></details>';
+}
 function readerLoaderMarkup(){
   return '<div class="reader-loading aozora-loader" role="status" aria-live="polite">'+
     '<div class="abl-rig">'+
@@ -4423,7 +4498,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     }catch(err){
       phoneReaderContentReady=false;
       setPhoneReaderLoading(false);
-      body.innerHTML='<div class="phone-empty"><b>本文を読み込めませんでした</b><br><span style="font-size:12px">通信状態または作品の公開先を確認してください。</span><button class="phone-primary" data-phone-action="reader-retry" style="margin-top:18px">もう一度読み込む</button></div>';
+      body.innerHTML='<div class="phone-empty"><b>本文を読み込めませんでした</b><br><span style="font-size:12px">本文の取得または解析に失敗しました。再試行してください。</span>'+readerDiagnosticHtml(err)+'<button class="phone-primary" data-phone-action="reader-retry" style="margin-top:18px">もう一度読み込む</button></div>';
       body.setAttribute('aria-busy','false');
     }
   }
