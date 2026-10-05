@@ -3743,20 +3743,27 @@ function initHomeHeroMotion(){
 }
 
 /* PC読書UIは後続処理から隠されても即座に復元する。 */
+let desktopChromeGuardBusy=false;
 const desktopReaderChromeGuard=new MutationObserver(()=>{
-  if(document.documentElement.dataset.device!=='desktop')return;
+  if(desktopChromeGuardBusy||document.documentElement.dataset.device!=='desktop')return;
   const reader=$('reader');
   if(!reader?.classList.contains('open'))return;
   const els=[$('r-top'),$('r-dock'),$('r-bottom-info')].filter(Boolean);
-  reader.classList.remove('chrome-hidden');
+  let changed=false;
+  if(reader.classList.contains('chrome-hidden')){reader.classList.remove('chrome-hidden');changed=true;}
   els.forEach(el=>{
-    el.classList.remove('hide');
-    el.style.setProperty('display',el.id==='r-dock'?'grid':'flex','important');
-    el.style.setProperty('visibility','visible','important');
-    el.style.setProperty('opacity','1','important');
-    el.style.setProperty('pointer-events','auto','important');
-    el.style.setProperty('transform','none','important');
+    const display=el.id==='r-dock'?'grid':'flex';
+    if(el.classList.contains('hide')){el.classList.remove('hide');changed=true;}
+    if(getComputedStyle(el).display==='none'){el.style.setProperty('display',display,'important');changed=true;}
+    if(el.style.getPropertyValue('visibility')!=='visible'){el.style.setProperty('visibility','visible','important');changed=true;}
+    if(el.style.getPropertyValue('opacity')!=='1'){el.style.setProperty('opacity','1','important');changed=true;}
+    if(el.style.getPropertyValue('pointer-events')!=='auto'){el.style.setProperty('pointer-events','auto','important');changed=true;}
+    if(el.style.getPropertyValue('transform')!=='none'){el.style.setProperty('transform','none','important');changed=true;}
   });
+  if(changed){
+    desktopChromeGuardBusy=true;
+    queueMicrotask(()=>{desktopChromeGuardBusy=false});
+  }
 });
 window.addEventListener('DOMContentLoaded',()=>{
   const reader=$('reader');
