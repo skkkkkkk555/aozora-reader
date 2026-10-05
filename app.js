@@ -4001,7 +4001,7 @@ window.addEventListener('DOMContentLoaded',()=>{
         '<button class="'+(done.has(w.id)?'active':'')+'" data-phone-action="detail-done">読了</button>'+
       '</div>'+
       '<div class="phone-detail-description">'+escP(w.desc||w.description||'青空文庫の公開作品です。本文を読みながら、栞・メモ・蛍光ペン・朗読などを利用できます。')+'</div>'+
-      '<button class="phone-primary" data-phone-action="detail-read">'+(p>0&&p<97?'続きから読む':'この作品を読む')+'</button>'+
+      '<button class="phone-primary" data-phone-action="detail-read" data-act="read-now">'+(p>0&&p<97?'続きから読む':'この作品を読む')+'</button>'+
       '<button class="phone-secondary" data-phone-action="detail-author">この作家の作品を見る</button>';
   }
 
@@ -4331,7 +4331,12 @@ window.addEventListener('DOMContentLoaded',()=>{
       fn();
       return;
     }
-    if(act==='detail-read'){openReader(state.work,true);return}
+    if(act==='detail-read'){
+      const w=state.work;
+      if(!w)return;
+      openReader(w,true);
+      return;
+    }
     if(act==='detail-more'){
       const w=state.work;if(!w)return;
       openPhoneSheet('作品の操作',
@@ -4448,6 +4453,14 @@ window.addEventListener('DOMContentLoaded',()=>{
 
     const el=e.target.closest?.('#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]');
     if(!el)return;
+    if(el.dataset.phoneAction==='detail-read' && state.work){
+      e.preventDefault();
+      e.stopPropagation();
+      phonePointerHandledEl=el;
+      phonePointerHandledUntil=Date.now()+650;
+      openReader(state.work,true);
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     phonePointerHandledEl=el;
