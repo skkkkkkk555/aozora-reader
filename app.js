@@ -3659,7 +3659,8 @@ function initHomeHeroMotion(){
   });
 }
 
-window.addEventListener('DOMContentLoaded',async()=>{
+window.addEventListener('DOMContentLoaded',()=>{
+  void (async()=>{
   const phoneMode=()=>document.documentElement.dataset.device==='smartphone';
   const safeStage=(p,t)=>{try{setBootStage(p,t)}catch{}};
   const safeStep=async(fn,label)=>{
@@ -3748,6 +3749,10 @@ window.addEventListener('DOMContentLoaded',async()=>{
       }catch{}
     });
   }
+  })().catch(err=>{
+    recordRuntimeError('startup-handler',err);
+    console.error('Unhandled startup failure:',err);
+  });
 });
 
 /* ================= Mobile UX / Focus Timer v4 ================= */
