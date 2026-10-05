@@ -8516,6 +8516,67 @@ html[data-theme="dark"][data-device="smartphone"] #phone-global-back{
   border-color:rgba(255,255,255,.24)!important;
 }
 </style>
+
+<style id="aozora-reader-axis-final-fix">
+/* ===== Reader axis final fix 2026-10-05 ===== */
+
+/* Vertical reading must use the viewport as the scroll container, never max-content. */
+html[data-device="desktop"] #reader.open #body.v,
+html[data-device="smartphone"] .phone-reader-body.phone-reader-vertical{
+  writing-mode:vertical-rl!important;
+  text-orientation:mixed!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:100%!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  box-sizing:border-box!important;
+  scroll-snap-type:none!important;
+  overscroll-behavior-x:contain!important;
+  overscroll-behavior-y:none!important;
+}
+html[data-device="smartphone"] .phone-reader-body.phone-reader-vertical{
+  touch-action:pan-x!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
+
+/* Handheld text is deliberately always visible; rich enhancement must never hide the plain body. */
+html[data-device="smartphone"] .phone-reader-body{
+  display:block!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  visibility:visible!important;
+  opacity:1!important;
+  color:var(--phone-text,#1c1c1e)!important;
+}
+html[data-device="smartphone"] .phone-reader-body.reader-building{
+  visibility:visible!important;
+  opacity:1!important;
+}
+html[data-theme="dark"][data-device="smartphone"] .phone-reader-body{
+  color:#f6f8fb!important;
+}
+
+/* Mouse wheel/trackpad on desktop should move the vertical axis instead of doing nothing. */
+html[data-device="desktop"] #reader.open #body.v{
+  cursor:default!important;
+}
+
+/* Ensure plain fallback text has no zero-size or clipping rule from older CSS. */
+html[data-device="smartphone"] .phone-reader-body.reader-plain-fallback{
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+}
+</style>
 </head>
 <body>
 <!-- Dedicated smartphone application shell -->
@@ -9213,6 +9274,6 @@ html[data-theme="dark"][data-device="smartphone"] #phone-global-back{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-handheld-ui-v20261005-31"></script>
+<script src="./app.js?v=reader-axis-final-v20261005-32"></script>
 </body>
 </html>
