@@ -2274,19 +2274,22 @@ function ensureReaderBodyVisible(){
   b.style.pointerEvents='auto';
   b.removeAttribute('aria-busy');
 }
-function ensureReaderBodyText(){
-  const b=$('body');
-  if(!b||!curDoc)return false;
+function ensureReaderBodyText(target=$('body'),doc=curDoc){
+  const b=target;
+  if(!b||!doc)return false;
   const text=(b.textContent||'').replace(/\s+/g,'').trim();
-  const plain=String(curDoc.plain||'').replace(/\s+/g,'').trim();
+  const plain=String(doc.plain||'').replace(/\s+/g,'').trim();
   if(text.length>=20)return true;
   if(plain.length<1)return false;
   b.innerHTML='';
   b.classList.remove('paper-paged','v','reader-building');
   b.classList.add('reader-plain-fallback');
   b.style.whiteSpace='pre-wrap';
-  b.textContent=curDoc.plain;
-  ensureReaderBodyVisible();
+  b.textContent=String(doc.plain||'');
+  b.style.visibility='visible';
+  b.style.opacity='1';
+  b.style.pointerEvents='auto';
+  b.removeAttribute('aria-busy');
   return true;
 }
 
