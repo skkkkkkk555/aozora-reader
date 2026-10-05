@@ -1758,6 +1758,24 @@ function updateWakeButton(){
   if(b.lastChild&&b.lastChild.nodeType===3)b.lastChild.nodeValue=wakeLock?'画面維持中':'画面維持';
 }
 
+function setReaderChromeVisible(show){
+  const reader=$('reader'),top=$('r-top'),dock=$('r-dock'),bottom=$('r-bottom-info');
+  if(!reader||!top||!dock||!bottom)return;
+  if(reader.classList.contains('mode-focus')){
+    [top,dock,bottom].forEach(el=>el.classList.toggle('show-temp',!!show));
+    reader.classList.toggle('chrome-hidden',!show);
+    return;
+  }
+  [top,dock,bottom].forEach(el=>el.classList.toggle('hide',!show));
+  reader.classList.toggle('chrome-hidden',!show);
+}
+function toggleReaderChrome(){
+  const reader=$('reader');
+  if(!reader)return;
+  const hidden=reader.classList.contains('chrome-hidden');
+  setReaderChromeVisible(hidden);
+}
+
 let lastUserActivityTime=Date.now();
 let inBookSearchResults=[], inBookSearchIdx=0;
 
@@ -1777,6 +1795,8 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
   $('r-title').textContent=w.t;
   setReaderLoading(true);
   $('reader').classList.add('open','paper-reader');
+  $('reader').classList.remove('chrome-hidden');
+  setReaderChromeVisible(true);
   $('reader').classList.add('paper-first-open');
   pushLayer('reader');
 
@@ -2017,18 +2037,8 @@ $('body').onclick=(e)=>{
   if(!b.classList.contains('paper-paged')) return;
   const w=innerWidth,x=e.clientX;
 
-  if($('reader').classList.contains('mode-focus')){
-    const topBar=$('r-top'),dock=$('r-dock'),botBar=$('r-bottom-info');
-    topBar.classList.toggle('show-temp');
-    dock.classList.toggle('show-temp');
-    botBar.classList.toggle('show-temp');
-    return;
-  }
-
-  if(x>w*0.35 && x<w*0.65){
-    $('r-top').classList.toggle('hide');
-    $('r-dock').classList.toggle('hide');
-    $('r-bottom-info').classList.toggle('hide');
+  if(x>w*0.35 && x<w*0.65 && !$('reader').classList.contains('mode-focus')){
+    toggleReaderChrome();
     return;
   }
 
@@ -2839,6 +2849,7 @@ document.addEventListener('click',async(e)=>{
   }
   else if(act==='r-vt'){ st.v=st.v===false; applyReaderConfig(); updateProgress(); save(); }
   else if(act==='r-mode-sheet'){ openModeSelectSheet(); }
+  else if(act==='r-ui-toggle'){ toggleReaderChrome(); }
   else if(act==='set-read-mode'){
     st.rMode=b.dataset.m;
     applyReaderMode();
