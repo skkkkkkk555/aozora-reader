@@ -691,10 +691,14 @@ async function fetchCatalog(){
   if(bar)bar.style.width='20%';
   try{
     let buf=null, csvText=null;
-    for(let i=0;i<URLS.length;i++){
+    // 配信元を順番に試すが、1回のカタログ取得全体にも上限を設ける。
+    // どの配信元も応答しない環境で、初期設定が長時間固まらないようにする。
+    const catalogDeadline=Date.now()+45000;
+    for(let i=0;i<URLS.length&&Date.now()<catalogDeadline;i++){
       if(log)log.textContent=`配信元へ接続中… (${i+1}/${URLS.length})`;
       try{
-        const res=await secureFetch(URLS[i],{signal:sig(30000)});
+        const remain=Math.max(1000,Math.min(30000,catalogDeadline-Date.now()));
+        const res=await secureFetch(URLS[i],{signal:sig(remain)});
         if(!res.ok)continue;
         const b=await readResponseBytes(res,SEC.maxCatalogBytes);
         if(!b||!b.byteLength)continue;
@@ -1439,9 +1443,13 @@ async function fetchBody(w){
     `https://corsproxy.io/?url=`+encodeURIComponent(`https://www.aozora.gr.jp/${w.x}`)
   ];
   let buf=null, is404=true;
+  // 本文取得も複数候補を試すが、作品1冊あたりの総待機時間に上限を設ける。
+  const bodyDeadline=Date.now()+30000;
   for(const u of urls){
+    if(Date.now()>=bodyDeadline)break;
     try {
-      const res=await secureFetch(u,{signal:sig(10000)});
+      const remain=Math.max(1000,Math.min(10000,bodyDeadline-Date.now()));
+      const res=await secureFetch(u,{signal:sig(remain)});
       if(res.status===404) continue;
       is404=false;
       if(res.ok){ const b=await readResponseBytes(res,SEC.maxBookBytes); if(b&&b.byteLength>=200){buf=b;break;} }
