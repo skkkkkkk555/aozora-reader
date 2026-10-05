@@ -2566,7 +2566,12 @@ function setReaderPage(index,animate=true){
   const maxTravel=axis==='x'?Math.max(0,b.scrollWidth-b.clientWidth):Math.max(0,b.scrollHeight-b.clientHeight);
   const target=Math.min(maxTravel,clamped*step);
   if(animate)playPaperTurn(clamped>getReaderPageIndex()?'next':'prev');
-  b.scrollTo(axis==='x'?{left:b.classList.contains('v')?-target:target,top:0,behavior:'auto'}:{left:0,top:target,behavior:'auto'});
+  if(axis==='x'){
+    const m=getVerticalScrollMetrics(b);
+    b.scrollTo({left:b.classList.contains('v')?m.sign*target:target,top:0,behavior:'auto'});
+  }else{
+    b.scrollTo({left:0,top:target,behavior:'auto'});
+  }
   updateProgress(true);
 }
 function playPaperTurn(direction){
