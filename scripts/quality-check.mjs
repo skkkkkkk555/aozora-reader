@@ -237,3 +237,5 @@ if(fail.length){
 }
 console.log('QUALITY CHECK PASSED');
 console.log(`actions=${acts.length} handled=${handled.length} appBytes=${Buffer.byteLength(app)} htmlBytes=${Buffer.byteLength(html)}`);
+
+// Verification-only commit: run the complete regression workflow on the exact current reader state.
