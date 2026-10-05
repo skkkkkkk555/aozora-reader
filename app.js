@@ -1691,6 +1691,8 @@ let readerLoadingWorkId='';
    取得失敗時のエラー画面を「100%読了」として保存しない。 */
 let desktopReaderContentReady=false;
 let phoneReaderContentReady=false;
+// 初期描画中の一時的なscrollLeft=0を「読了位置」として保存しない。
+let readerPositionReady=false;
 function buildBodyUrlCandidates(w){
   if(!w||typeof w.x!=='string')return [];
   const path=String(w.x).replace(/^\/+|\s+$/g,'');
@@ -2116,6 +2118,7 @@ async function openReaderInternal(w, fromDetail=false, bookmarkF=null){
   lastUserActivityTime=Date.now();
   lastProgressPct=-1;
   lastProgressSave=0;
+  readerPositionReady=false;
   if(progressRaf!==null){cancelAnimationFrame(progressRaf);progressRaf=null;}
   const tId=++readerTok;
   desktopReaderContentReady=false;
@@ -2142,6 +2145,7 @@ async function openReaderInternal(w, fromDetail=false, bookmarkF=null){
     applyReaderConfig(null);
     enforceDesktopReaderChrome();
     enforceDesktopVerticalReaderLayout();
+    enforceDesktopHorizontalReaderLayout();
     ensureReaderBodyText();
     ensureReaderBodyVisible();
 
@@ -2160,14 +2164,18 @@ async function openReaderInternal(w, fromDetail=false, bookmarkF=null){
             b.scrollTop=0;
           }
         }
+        // 初期位置を確定してから、初めて進捗計算を許可する。
+        readerPositionReady=true;
         safeText('r-prog','0%');
         const slider=$('r-slider');
-        if(slider)slider.value='0';
+        if(slider){slider.max=String(Math.max(1,getReaderPageCount()-1));slider.value='0';}
         safeText('r-page-lbl','0% · 読書準備完了');
+        updateProgress(true);
       }else{
         const page=getReaderPageCount();
         const idx=Math.max(0,Math.min(page-1,Math.round(f*Math.max(0,page-1))));
         setReaderPage(idx,false);
+        readerPositionReady=true;
         updateProgress(true);
       }
       window.setTimeout(()=>$('reader').classList.remove('paper-first-open'),900);
@@ -2258,6 +2266,7 @@ function setLayerLoading(layer,show){
 function resetDesktopReaderBody(){
   const body=$('body');
   if(!body)return;
+  readerPositionReady=false;
   // 新しい作品を開くたび、前の作品のスクロール位置を完全に破棄する。
   // 特に横書きでは残ったscrollTopが「最終ページから開始」する原因になる。
   body.scrollTop=0;
@@ -2390,18 +2399,25 @@ function ensureDesktopReaderFlow(){
   const flow=body.querySelector(':scope > .reader-flow');
   if(!flow)return;
   flow.style.setProperty('box-sizing','border-box','important');
+  flow.style.setProperty('display','block','important');
+  flow.style.setProperty('max-width','none','important');
+  flow.style.setProperty('min-width','0','important');
   if(body.classList.contains('v')){
     const h=Math.max(1,body.clientHeight);
     flow.style.setProperty('writing-mode','vertical-rl','important');
+    flow.style.setProperty('direction','ltr','important');
     flow.style.setProperty('width','max-content','important');
     flow.style.setProperty('height',h+'px','important');
     flow.style.setProperty('min-height',h+'px','important');
     flow.style.setProperty('padding','28px 32px 32px','important');
+    flow.style.setProperty('white-space','pre-wrap','important');
+    flow.style.setProperty('overflow-wrap','anywhere','important');
   }else{
     flow.style.setProperty('writing-mode','horizontal-tb','important');
+    flow.style.setProperty('direction','ltr','important');
     flow.style.setProperty('width','100%','important');
+    flow.style.setProperty('min-height','100%','important');
     flow.style.removeProperty('height');
-    flow.style.removeProperty('min-height');
     flow.style.removeProperty('padding');
   }
 }
@@ -2651,6 +2667,7 @@ async function closeReaderInternal(fromPop=false){
     try{updateProgress(true);}catch{}
   }
   desktopReaderContentReady=false;
+  readerPositionReady=false;
   $('reader').classList.remove('open','paper-reader','paper-first-open','reader-is-loading');
   delete document.documentElement.dataset.readerOpen;
   $('reader').classList.remove('reader-night','mode-focus');
@@ -2679,7 +2696,7 @@ let lastProgressPct=-1;
 let lastProgressSave=0;
 
 function updateProgress(force=false){
-  if(!curWork || !desktopReaderContentReady) return;
+  if(!curWork || !desktopReaderContentReady || !readerPositionReady) return;
   const b=$('body');
   if(b?.getAttribute('aria-busy')==='true'||b?.classList.contains('reader-building'))return;
   const count=getReaderPageCount();
@@ -2929,6 +2946,47 @@ function enforceDesktopVerticalReaderLayout(){
   b.style.setProperty('overflow-y','hidden','important');
   b.style.setProperty('position','relative','important');
   b.style.setProperty('z-index','1','important');
+  const flow=b.querySelector(':scope > .reader-flow.reader-vertical-flow');
+  if(flow){
+    const h=Math.max(1,b.clientHeight);
+    flow.style.setProperty('writing-mode','vertical-rl','important');
+    flow.style.setProperty('direction','ltr','important');
+    flow.style.setProperty('display','block','important');
+    flow.style.setProperty('width','max-content','important');
+    flow.style.setProperty('height',h+'px','important');
+    flow.style.setProperty('min-height',h+'px','important');
+    flow.style.setProperty('max-width','none','important');
+    flow.style.setProperty('white-space','pre-wrap','important');
+  }
+  // scroll geometry must exist before any progress or page calculation is trusted.
+  void b.scrollWidth;
+  void b.clientWidth;
+  enforceDesktopReaderChrome();
+}
+
+function enforceDesktopHorizontalReaderLayout(){
+  if(document.documentElement.dataset.device!=='desktop')return;
+  const reader=$('reader'),b=$('body');
+  if(!reader?.classList.contains('open')||!b||b.classList.contains('v'))return;
+  b.style.setProperty('writing-mode','horizontal-tb','important');
+  b.style.setProperty('direction','ltr','important');
+  b.style.setProperty('flex','1 1 auto','important');
+  b.style.setProperty('min-width','0','important');
+  b.style.setProperty('min-height','0','important');
+  b.style.setProperty('width','100%','important');
+  b.style.setProperty('height','auto','important');
+  b.style.setProperty('overflow-x','hidden','important');
+  b.style.setProperty('overflow-y','auto','important');
+  b.style.setProperty('position','relative','important');
+  const flow=b.querySelector(':scope > .reader-flow');
+  if(flow){
+    flow.style.setProperty('writing-mode','horizontal-tb','important');
+    flow.style.setProperty('width','100%','important');
+    flow.style.setProperty('min-height','100%','important');
+    flow.style.removeProperty('height');
+    flow.style.removeProperty('padding');
+  }
+  void b.scrollHeight;
   enforceDesktopReaderChrome();
 }
 
@@ -2950,6 +3008,7 @@ function applyReaderConfig(preserveOverride=undefined){
   if(document.documentElement.dataset.device==='desktop'&&open){
     setReaderChromeVisible(true);
     if(st.v!==false)enforceDesktopVerticalReaderLayout();
+    else enforceDesktopHorizontalReaderLayout();
   }
 
   // 初回表示では、本文DOMの直後にscrollWidthを読むと大きな作品でレイアウト計算が固まりやすい。
