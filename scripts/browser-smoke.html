@@ -63,7 +63,7 @@ function assertDesktopReaderChrome(d,label){
   }
 }
 (async()=>{
-  const live=mode==='live';
+  const live=mode==='live'||mode==='live-mobile';
   frame.src='../reader-latest.html?browser-smoke='+Date.now()+(live?'&browser-smoke-live=1':'');
   await new Promise((resolve,reject)=>{
     let timer=0;
@@ -130,7 +130,14 @@ function assertDesktopReaderChrome(d,label){
     return;
   }
 
-  if(mode==='mobile'){
+  if(mode==='mobile'||mode==='live-mobile'){
+    if(mode==='live-mobile'){
+      const probe='https://cdn.jsdelivr.net/gh/aozorahack/aozorabunko_text@master/cards/000148/files/789_ruby_5639/789_ruby_5639.txt';
+      const probeRes=await fetch(probe,{cache:'no-store'});
+      if(!probeRes.ok)fail('jsDelivr Aozora source unavailable: HTTP '+probeRes.status);
+      const probeText=await probeRes.text();
+      if(probeText.length<200)fail('jsDelivr Aozora source returned too little data');
+    }
     if(device!=='smartphone')fail('smartphone detection failed: '+device);
 
     const homeBook=await waitFor(()=>d.querySelector('#phone-content [data-phone-work]'),18000);
@@ -236,6 +243,11 @@ function assertDesktopReaderChrome(d,label){
     const settingsSheetClose=await waitFor(()=>d.querySelector('#phone-sheet [data-phone-action="sheet-close"]'),4000);
     settingsSheetClose.click();
     await waitFor(()=>!d.querySelector('#phone-sheet')?.classList.contains('open'),5000);
+    if(mode==='live-mobile'){
+      document.title='LIVE_MOBILE_SMOKE_OK';
+      document.body.textContent='LIVE_MOBILE_SMOKE_OK';
+      return;
+    }
   }else{
     if(device==='smartphone')fail('desktop detection unexpectedly smartphone');
 
