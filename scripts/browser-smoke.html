@@ -8,6 +8,7 @@ const qs=new URLSearchParams(location.search);
 const mode=qs.get('mode')||'desktop';
 // テスト全体を有限時間で終了させる。個別waitForの合計が膨らんでも90秒を超えてハングしない。
 const TEST_TIMEOUT=90000;
+const frame=document.getElementById('app-frame');
 const TEST_DEADLINE=Date.now()+TEST_TIMEOUT;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,Math.min(ms,Math.max(0,TEST_DEADLINE-Date.now()))));
 const remaining=()=>Math.max(0,TEST_DEADLINE-Date.now());
