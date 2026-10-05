@@ -238,3 +238,5 @@ if(fail.length){
 }
 console.log('QUALITY CHECK PASSED');
 console.log(`actions=${acts.length} handled=${handled.length} appBytes=${Buffer.byteLength(app)} htmlBytes=${Buffer.byteLength(html)}`);
+
+// Verification-only marker for the post-migration reader regression suite.
