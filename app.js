@@ -63,10 +63,12 @@ const $=i=>document.getElementById(i);
 /* ================= Smartphone UI auto-detection ================= */
 const refreshSmartphoneUI = ()=>{
   const ua = String(navigator.userAgent || '');
+  const appleTabletDesktopUA = /Macintosh/i.test(ua) && Number(navigator.maxTouchPoints||0)>1;
   const mobileUA = navigator.userAgentData?.mobile === true ||
-    /Android|iPhone|iPad|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini|Mobile Safari/i.test(ua);
+    /Android|iPhone|iPad|iPod|Windows Phone|IEMobile|BlackBerry|Opera Mini|Mobile Safari/i.test(ua) ||
+    appleTabletDesktopUA;
   const shortestSide = Math.min(window.innerWidth || 0, window.innerHeight || 0);
-  const androidOrAppleHandheld = /Android|iPhone|iPad|iPod/i.test(ua);
+  const androidOrAppleHandheld = /Android|iPhone|iPad|iPod/i.test(ua) || appleTabletDesktopUA;
   const touchWindows = /Windows/i.test(ua) && Number(navigator.maxTouchPoints||0)>0 && shortestSide<=1200;
   const isSmartphone = !!mobileUA && (androidOrAppleHandheld || shortestSide<=899 || touchWindows);
   document.documentElement.classList.toggle('smartphone-ui', isSmartphone);
