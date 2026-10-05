@@ -84,6 +84,8 @@ function readerScrollable(d,selector){
     const loadLayer=await waitFor(()=>d.querySelector('#phone-reader-loading-layer'),5000);
     if(loadLayer.parentElement?.id!=='phone-reader')throw new Error('mobile reader loader is not isolated');
     await waitFor(()=>visible(d.querySelector('#phone-reader'))&&d.querySelector('#phone-reader').classList.contains('phone-open'),6000);
+    const phoneReaderOpacity=d.defaultView.getComputedStyle(d.querySelector('#phone-reader')).opacity;
+    if(Number(phoneReaderOpacity)<0.99)throw new Error('smartphone reader still fades during transition');
     if(d.querySelector('#phone-reader-body .aozora-loader'))throw new Error('mobile loader leaked into article body');
     await waitFor(()=>readerRendered(d,'#phone-reader-body')&&!/本文を読み込めませんでした/.test(readerText(d)),30000);
     if(d.querySelector('#phone-reader-loading-layer')?.hidden===false)throw new Error('mobile loader did not hide after render');
@@ -151,6 +153,8 @@ function readerScrollable(d,selector){
     const loadLayer=await waitFor(()=>d.querySelector('#reader-loading-layer'),5000);
     if(loadLayer.parentElement?.id!=='reader')throw new Error('desktop reader loader is not isolated');
     await waitFor(()=>d.querySelector('#reader')?.classList.contains('open'),7000);
+    const readerOpacity=d.defaultView.getComputedStyle(d.querySelector('#reader')).opacity;
+    if(Number(readerOpacity)<0.99)throw new Error('desktop reader still fades over the previous UI');
     if(d.querySelector('#body .aozora-loader'))throw new Error('desktop loader leaked into article body');
     await waitFor(()=>readerRendered(d,'#body'),30000);
     if(d.querySelector('#reader-loading-layer')?.hidden===false)throw new Error('desktop loader did not hide after render');
