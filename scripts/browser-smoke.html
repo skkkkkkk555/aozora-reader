@@ -191,6 +191,11 @@ function assertDesktopReaderChrome(d,label){
     await waitFor(()=>readerRendered(d,'#phone-reader-body')&&!/本文を読み込めませんでした/.test(readerText(d)),30000);
     if(d.querySelector('#phone-reader-loading-layer')?.hidden===false)throw new Error('mobile loader did not hide after render');
     if(!readerScrollable(d,'#phone-reader-body'))fail('smartphone reader body is not actually scrollable');
+    const mobileBody=d.querySelector('#phone-reader-body');
+    const mobileBeforeY=mobileBody.scrollTop;
+    mobileBody.scrollTop=Math.min(600,mobileBeforeY+600);
+    await sleep(80);
+    if(mobileBody.scrollTop<=mobileBeforeY)fail('smartphone reader did not move on vertical scroll');
     const mobileUiRestore=d.querySelector('#phone-reader .phone-reader-ui-toggle');
     if(!mobileUiRestore||!visible(mobileUiRestore))fail('smartphone reader UI restore button is not visible');
     if(!/UI表示/.test(textOf(mobileUiRestore)))fail('smartphone reader UI restore button label missing');
@@ -253,6 +258,7 @@ function assertDesktopReaderChrome(d,label){
     await waitFor(()=>d.querySelector('#phone-reader')?.classList.contains('phone-open'),5000);
     await waitFor(()=>readerRendered(d,'#phone-reader-body'),20000);
     // Android実機の戻るを history.back() で再現。読書→作品詳細へ戻れることを検証する。
+    if(history.state?.phoneLayer!=='phone-reader')fail('smartphone Android-back route state is missing');
     d.defaultView.history.back();
     await waitFor(()=>!d.querySelector('#phone-reader')?.classList.contains('phone-open'),5000);
     await waitFor(()=>visible(d.querySelector('#phone-detail')),4000);
@@ -425,6 +431,10 @@ function assertDesktopReaderChrome(d,label){
     await sleep(250);
     if(desktopBody.classList.contains('v'))fail('desktop vertical reader did not return to horizontal mode');
     assertDesktopReaderChrome(d,'desktop reader chrome after vertical toggle off');
+    const beforeWheelY=desktopBody.scrollTop;
+    desktopBody.dispatchEvent(new WheelEvent('wheel',{deltaY:620,bubbles:true,cancelable:true}));
+    await sleep(120);
+    if(desktopBody.scrollTop<=beforeWheelY)fail('desktop horizontal reader did not respond to real wheel event');
     clearRuntimeErrors(d);
 
     const readerSearch=d.querySelector('#reader [data-act="r-search-open"]');
