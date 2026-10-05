@@ -5037,24 +5037,44 @@ window.addEventListener('DOMContentLoaded',()=>{
       state.readerDoc=doc;
       curDoc=doc;
 
-      // まず本文だけを即時表示。ローディング画面をここで閉じるので、
-      // リッチHTMLの生成が遅くてもユーザーは読み始められる。
-      body.innerHTML='';
+      // スマホではプレーン本文を唯一の必須表示経路に固定する。
+      // 装飾HTMLや非表示DOMの状態に本文表示を依存させない。
+      const plain=String(doc.plain||'');
+      if(plain.replace(/\s+/g,'').trim().length<20){
+        const e=new Error('本文解析結果が空です');e.code='reader-display-empty';e.stage='render';throw e;
+      }
+      body.replaceChildren();
       const flow=document.createElement('div');
       flow.className='reader-flow'+(state.readerVertical?' reader-vertical-flow':'');
-      flow.textContent=String(doc.plain||'');
+      flow.textContent=plain;
+      flow.setAttribute('data-phone-authoritative-text','1');
+      flow.style.setProperty('display','block','important');
+      flow.style.setProperty('visibility','visible','important');
+      flow.style.setProperty('opacity','1','important');
+      flow.style.setProperty('color','inherit','important');
+      flow.style.setProperty('font-size','inherit','important');
+      flow.style.setProperty('line-height','inherit','important');
+      flow.style.setProperty('width','100%','important');
+      flow.style.setProperty('max-width','none','important');
+      flow.style.setProperty('min-width','0','important');
+      flow.style.setProperty('white-space','pre-wrap','important');
+      flow.style.setProperty('overflow-wrap','anywhere','important');
+      flow.style.setProperty('word-break','break-word','important');
       body.appendChild(flow);
       body.classList.remove('reader-building');
       body.classList.add('reader-plain-fallback');
-      body.style.whiteSpace='pre-wrap';
-      body.style.visibility='visible';
-      body.style.opacity='1';
-      body.style.pointerEvents='auto';
-      if(!String(body.textContent||'').trim()){
+      body.style.setProperty('display','block','important');
+      body.style.setProperty('visibility','visible','important');
+      body.style.setProperty('opacity','1','important');
+      body.style.setProperty('pointer-events','auto','important');
+      body.style.setProperty('white-space','pre-wrap','important');
+      body.style.setProperty('overflow-y',state.readerVertical?'hidden':'auto','important');
+      body.setAttribute('aria-busy','false');
+      setPhoneReaderLoading(false);
+      const renderedPlain=String(body.textContent||'').replace(/\s+/g,'').trim();
+      if(renderedPlain.length<20){
         const e=new Error('本文を画面へ表示できませんでした');e.code='reader-display-empty';e.stage='render';throw e;
       }
-      setPhoneReaderLoading(false);
-      body.setAttribute('aria-busy','false');
 
       const richCurrent=()=>state.reader&&String(state.work?.id)===String(w.id)&&$p('#phone-reader')?.classList.contains('phone-open');
       // ハンドヘルドではプレーン本文を正式表示として使用する。
@@ -5540,17 +5560,17 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!button||button.dataset.phoneBackBound==='1')return;
     button.dataset.phoneBackBound='1';
     const go=e=>{
+      // 実タッチはdocument-level pointerupを唯一の経路とし、直後の合成clickを無視する。
+      if(e.type==='click' && Date.now()<Number(window.__aozoraPhoneBackHandledUntil||0))return;
       e.preventDefault();
       e.stopPropagation();
       window.__aozoraPhoneBack?.();
     };
-    button.addEventListener('pointerup',e=>{
-      if(e.pointerType==='touch'||e.pointerType==='pen')go(e);
-    },{passive:false});
     button.addEventListener('click',go);
   };
 
   const handlePhoneBack=()=>{
+    window.__aozoraPhoneBackHandledUntil=Date.now()+700;
     phoneBackHandledUntil=Date.now()+700;
     window.__aozoraPhoneBack?.();
   };
