@@ -650,6 +650,7 @@ function filterWorks(){
   works = allWorks.filter(w => !dead.has(w.id) && isPublicWork(w));
   byId = new Map(works.map(w => [w.id, w]));
   try{window.dispatchEvent(new Event('aozora-phone-data-ready'));}catch{}
+  try{window.__aozoraPhoneRefresh?.();}catch{}
 }
 function openCatalogIntro(){
   const html=`
@@ -4222,7 +4223,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   window.__aozoraPhoneOpenDetail=openDetail;
   window.__aozoraPhoneShowScreen=showScreen;
 
-  window.addEventListener('aozora-phone-data-ready',()=>{
+  const refreshPhoneFromCatalog=()=>{
     if(!isPhone()||state.reader)return;
     state.readerFs=Number(st?.fs)||19;
     state.readerLh=Number(st?.lh)||2.05;
@@ -4235,7 +4236,11 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(w){openDetail(w);return;}
     }
     showScreen(state.screen||'home');
-  });
+  };
+  window.__aozoraPhoneRefresh=refreshPhoneFromCatalog;
+  window.addEventListener('aozora-phone-data-ready',refreshPhoneFromCatalog);
+  // カタログイベントがこのルーター初期化より先に発火していても取りこぼさない。
+  if(allWorks.length)queueMicrotask(refreshPhoneFromCatalog);
   window.addEventListener('popstate',()=>{
     if(!isPhone())return;
     const layer=history.state?.phoneLayer||null;
