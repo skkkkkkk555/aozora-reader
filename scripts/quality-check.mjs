@@ -36,7 +36,7 @@ for(const [id,count] of idCounts)ok(count===1,`duplicate id: ${id}`);
 for(const id of ['phone-app','phone-content','phone-detail','phone-reader','phone-reader-body','phone-reader-progress','phone-sheet','phone-sheet-body','phone-sheet-scrim'])ok(new RegExp(`id=["']${id}["']`).test(html),`smartphone shell id missing: ${id}`);
 ok(inlineScripts.length===0,'inline script remains and may be blocked by CSP');
 ok(html.includes('touch-action:pan-y!important'),'smartphone reader body does not allow vertical touch scrolling');
-ok(html.includes('app.js?v=ios-deep-20261005-4-smoke2'),'app.js cache-bust was not refreshed');
+ok(html.includes('app.js?v=ios-deep-20261005-5'),'app.js cache-bust was not refreshed');
 ok(app.includes("reader.classList.add('phone-open')"),'smartphone reader open class lifecycle missing');
 ok(html.includes('.phone-reader.phone-open{display:flex!important}'),'smartphone reader display rule missing');
 ok(app.includes('__aozoraPhoneOpenSheet=openPhoneSheet'),'global sheet bridge missing');
@@ -73,6 +73,9 @@ ok(app.includes('const isAnyReaderOpen=()=>'),'shared PC/smartphone reader activ
 ok(app.includes("const url=baseUrl+'#work='+encodeURIComponent(String(w.id))"),'smartphone share deep link missing');
 ok(app.includes("rawHash.match(/^#work=(.+)$/)"),'smartphone shared-work deep link reader missing');
 ok(app.includes('BROWSER_SMOKE'),'browser smoke isolation mode is missing');
+ok(app.includes('const catalogDeadline=Date.now()+45000'),'catalog fetch has no total wait deadline');
+ok(app.includes('const bodyDeadline=Date.now()+30000'),'book fetch has no total wait deadline');
+ok(app.includes('readerScrollable'),'browser smoke does not verify actual reader scrollability');
 ok(app.includes("currentView==='v-search'"),'desktop search does not recover after catalog initialization');
 ok(app.includes('retryPhoneCatalog'),'smartphone catalog boot retry is missing');
 ok(notice.includes('CC BY 4.0'),'NOTICE.md is missing CC BY 4.0 attribution');
