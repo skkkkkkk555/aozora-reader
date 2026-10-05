@@ -291,6 +291,19 @@ const PAL=['#23445d','#2e5b70','#3b5249','#5c3d46','#6e4a2e','#4a4e69','#3d5a80'
 const colorOf=s=>{let h=0;for(let i=0;i<s.length;i++){h=(h<<5)-h+s.charCodeAt(i);h|=0}return PAL[Math.abs(h)%PAL.length]};
 const sig=(ms)=>{const c=new AbortController();setTimeout(()=>c.abort(new DOMException('Timeout','TimeoutError')),ms);return c.signal};
 
+function decodeAozoraText(buffer){
+  const bytes=buffer instanceof ArrayBuffer?new Uint8Array(buffer):buffer instanceof Uint8Array?buffer:new Uint8Array();
+  if(!bytes.length)return '';
+  const candidates=[];
+  for(const enc of ['shift_jis','utf-8']){
+    try{
+      const text=new TextDecoder(enc,{fatal:false}).decode(bytes);
+      const score=(text.match(/\uFFFD/g)||[]).length*100+(text.match(/\u0000/g)||[]).length*20;
+      candidates.push({text,score});
+    }catch{}
+  }
+  return (candidates.sort((a,b)=>a.score-b.score)[0]?.text)||'';
+}
 function decodeHtmlEntities(str){
   const txt = document.createElement('textarea');
   txt.innerHTML = str;
@@ -1664,7 +1677,7 @@ async function fetchHead(w){
       if(!res.ok)continue;
       const b=await readResponseBytes(res,SEC.maxResponseHeadBytes);
       if(!b)continue;
-      const t=new TextDecoder('shift_jis').decode(b);
+      const t=decodeAozoraText(b);
       const q=parseAozora(t,true).plain.slice(0,90);
       if(q.trim())return q;
     }catch{}
@@ -1848,7 +1861,7 @@ function parseAozoraAsync(buffer){
     const fallbackOrReject=(err)=>{
       if(buffer.byteLength<=fallbackLimit){
         try{
-          const raw=new TextDecoder('shift_jis').decode(buffer);
+          const raw=decodeAozoraText(buffer);
           const parsed=parseAozora(raw,true);
           if(parsed?.plain?.trim().length>=20){finish(resolve,{html:parsed.html,plain:parsed.plain,safe:2});return;}
         }catch(fallbackErr){err=fallbackErr||err;}
@@ -1865,7 +1878,7 @@ function parseAozoraAsync(buffer){
       if(handheld||buffer.byteLength<=4*1024*1024){
         setTimeout(()=>{
           try{
-            const raw=new TextDecoder('shift_jis').decode(buffer);
+            const raw=decodeAozoraText(buffer);
             const parsed=parseAozora(raw,true);
             if(parsed?.plain?.trim().length>=20)finish(resolve,{html:parsed.html,plain:parsed.plain,safe:2});
             else fallbackOrReject(new Error('本文解析結果が空です'));
@@ -4837,35 +4850,30 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
   }
 
-  function showScreen(name,direction='forward'){
+  function showScreen(name,direction='forward',fromHistory=false){
     if(!isPhone())return;
     closePhoneSheet();
     state.work=null;
     state.readerFromDetail=false;
-    const baseState={...(history.state||{})};
-    delete baseState.phoneLayer;
-    delete baseState.phoneParent;
-    // 共有リンク用の #work=... は通常画面へ戻った時に解除する。
-    // 残したままだと非同期カタログ更新が同じ詳細画面を再度開く。
-    const cleanUrl=new URL(location.href);
-    if(/^#work=/.test(cleanUrl.hash))cleanUrl.hash='';
-    history.replaceState(baseState,'',cleanUrl.href);
     const previous=state.screen;
     const tabNames=['home','search','shelf','records','settings'];
     const fromIndex=tabNames.indexOf(previous),toIndex=tabNames.indexOf(name);
     const routeDirection=direction==='back'
       ?'back'
       :(toIndex>=0&&fromIndex>=0&&toIndex<fromIndex?'back':'forward');
+
+    if(!fromHistory && direction!=='back' && previous!==name){
+      history.pushState({
+        ...(history.state||{}),
+        phoneLayer:'phone-main',
+        phoneScreen:name
+      },'',location.href);
+    }
+
     state.screen=name;
     syncScreens('main',routeDirection);
     $$p('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===name));
-    const fn={
-      home:renderHome,
-      search:renderSearch,
-      shelf:renderShelf,
-      records:renderRecords,
-      settings:renderSettings
-    }[name]||renderHome;
+    const fn={home:renderHome,search:renderSearch,shelf:renderShelf,records:renderRecords,settings:renderSettings}[name]||renderHome;
     fn();
     const content=$p('#phone-content');
     if(content){
@@ -4875,7 +4883,6 @@ window.addEventListener('DOMContentLoaded',()=>{
       bindPhoneHeaderScroll();
     }
   }
-
   function openDetail(w,direction='forward',fromHistory=false){
     if(!w)return;
     state.work=w;
@@ -5586,6 +5593,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   function initPhone(){
     if(!isPhone())return;
+    try{history.scrollRestoration='manual'}catch{}
     try{
       syncPhoneVisibility();
       bindPhoneHeaderScroll();
@@ -5689,7 +5697,21 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(state.work&&!state.reader&&layer!=='phone-detail'){
       state.work=null;
       state.readerFromDetail=false;
-      showScreen(state.screen||'home','back');
+    }
+    if(layer==='phone-main'){
+      const next=['home','search','shelf','records','settings'].includes(history.state?.phoneScreen)
+        ?history.state.phoneScreen:'home';
+      state.work=null;
+      state.reader=false;
+      state.readerFromDetail=false;
+      showScreen(next,'back',true);
+      return;
+    }
+    if(layer===null){
+      state.work=null;
+      state.reader=false;
+      state.readerFromDetail=false;
+      showScreen('home','back',true);
     }
   });
   window.addEventListener('resize',()=>{if(isPhone()&&!state.reader)syncPhoneVisibility()},{passive:true});
