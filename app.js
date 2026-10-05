@@ -2545,6 +2545,11 @@ document.addEventListener('click',async(e)=>{
   else if(act==='q-clear') { $('q-input').value=''; searchState.query=''; applySearch(true); }
   else if(act==='scroll-top') $('v-search').scrollTo({top:0,behavior:'smooth'});
   else if(act==='clear-scope') { searchState.scope=null; searchState.query=''; $('q-input').value=''; applySearch(true); }
+  else if(act==='chip-toggle' && b.dataset.k==='saved') {
+    searchState.filter.saved=!searchState.filter.saved;
+    b.classList.toggle('active',searchState.filter.saved);
+    applySearch(true);
+  }
   else if(act==='chip-time') {
     const t=b.dataset.t;
     if(searchState.filter.time===t){
@@ -4377,7 +4382,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     }
     // スマホUIは先に操作可能にしつつ、起動演出は短時間だけ維持する。
     try{
-      window.setTimeout(()=>document.getElementById('app-boot')?.classList.add('done'),620);
+      window.setTimeout(()=>document.getElementById('app-boot')?.classList.add('done'),900);
     }catch{}
   }
 
