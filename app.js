@@ -2348,46 +2348,55 @@ async function renderPhoneReaderBody(body,html,isCurrent){
   if(!body)return false;
   const seq=++readerRenderSeq;
   body.setAttribute('aria-busy','true');
-  body.classList.add('reader-building');
-  body.classList.remove('reader-plain-fallback');
-  body.style.removeProperty('white-space');
-  body.innerHTML='';
-  let revealed=false;
-  const revealWhenReady=()=>{
-    if(revealed)return;
-    const text=String(body.textContent||'').replace(/\s+/g,'').trim();
-    if(text.length>=20){
-      // 長い作品でも全件描画完了まで本文を真っ白にしない。
-      body.classList.remove('reader-building');
-      body.style.visibility='visible';
-      revealed=true;
-    }
-  };
+
+  // 本文はすでにプレーン表示している前提。装飾版は画面外の一時DOMで作る。
+  // そのため、古いWebViewや低速端末でHTML描画に時間がかかっても本文が消えない。
+  const draft=document.createElement('div');
+  draft.className=body.className;
+  draft.style.cssText='position:absolute;left:-100000px;top:0;width:1px;visibility:hidden;';
+  document.body.appendChild(draft);
+
   try{
     const chunks=splitReaderHtml(html);
     for(let i=0;i<chunks.length;i++){
-      if(seq!==readerRenderSeq||!isCurrent())return false;
-      body.insertAdjacentHTML('beforeend',chunks[i]);
-      revealWhenReady();
+      if(seq!==readerRenderSeq||!isCurrent()){draft.remove();return null;}
+      draft.insertAdjacentHTML('beforeend',chunks[i]);
       if(i<chunks.length-1)await readerRenderYield();
     }
-    if(seq!==readerRenderSeq||!isCurrent())return false;
+    if(seq!==readerRenderSeq||!isCurrent()){draft.remove();return null;}
     await new Promise(requestAnimationFrame);
-    if(seq!==readerRenderSeq||!isCurrent())return false;
-    revealWhenReady();
-    body.classList.remove('reader-building');
+    if(seq!==readerRenderSeq||!isCurrent()){draft.remove();return null;}
+
+    const renderedText=String(draft.textContent||'').replace(/\\s+/g,'').trim();
+    if(renderedText.length<20){
+      draft.remove();
+      body.setAttribute('aria-busy','false');
+      return false;
+    }
+
+    // 表示切替は一度だけ。途中の巨大DOMをユーザーに見せない。
+    const frag=document.createDocumentFragment();
+    while(draft.firstChild)frag.appendChild(draft.firstChild);
+    draft.remove();
+    body.innerHTML='';
+    body.appendChild(frag);
+    body.classList.remove('reader-building','reader-plain-fallback');
+    body.style.removeProperty('white-space');
     body.style.visibility='visible';
+    body.style.opacity='1';
+    body.style.pointerEvents='auto';
+    body.setAttribute('aria-busy','false');
     return true;
   }catch(err){
-    console.warn('Phone reader HTML render failed; falling back to plain text',err);
-    if(seq!==readerRenderSeq||!isCurrent())return false;
-    body.innerHTML='';
-    body.classList.add('reader-plain-fallback');
-    body.style.whiteSpace='pre-wrap';
-    body.textContent=String(html||'').replace(/<[^>]*>/g,'');
+    console.warn('Phone reader rich render failed; keeping plain text',err);
+    try{draft.remove();}catch{}
+    if(seq!==readerRenderSeq||!isCurrent())return null;
     body.classList.remove('reader-building');
     body.style.visibility='visible';
-    return true;
+    body.style.opacity='1';
+    body.style.pointerEvents='auto';
+    body.setAttribute('aria-busy','false');
+    return false;
   }
 }
 
@@ -4631,20 +4640,27 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(!state.reader||String(state.work?.id)!==String(w.id))return;
       state.readerDoc=doc;
       curDoc=doc;
-      const rendered=await renderPhoneReaderBody(body,doc.html,()=>state.reader&&String(state.work?.id)===String(w.id)&&$p('#phone-reader')?.classList.contains('phone-open'));
-      if(!rendered)return;
 
-      // HTML描画が完了扱いでも、WebViewによってはDOMが空/不可視になることがある。
-      // その場合は即座にプレーン本文へ退避し、「読めない」状態を残さない。
-      const renderedText=String(body.textContent||'').replace(/\\s+/g,'').trim();
-      const plainText=String(doc.plain||'').replace(/\\s+/g,'').trim();
-      if(renderedText.length<20 && plainText.length>0){
-        body.innerHTML='';
-        body.classList.remove('reader-building');
-        body.classList.add('reader-plain-fallback');
-        body.style.whiteSpace='pre-wrap';
-        body.textContent=String(doc.plain||'');
+      // まず本文だけを即時表示。ローディング画面をここで閉じるので、
+      // リッチHTMLの生成が遅くてもユーザーは読み始められる。
+      body.innerHTML='';
+      body.classList.remove('reader-building');
+      body.classList.add('reader-plain-fallback');
+      body.style.whiteSpace='pre-wrap';
+      body.style.visibility='visible';
+      body.style.opacity='1';
+      body.style.pointerEvents='auto';
+      body.textContent=String(doc.plain||'');
+      if(!String(body.textContent||'').trim()){
+        const e=new Error('本文を画面へ表示できませんでした');e.code='reader-display-empty';e.stage='render';throw e;
       }
+      setPhoneReaderLoading(false);
+      body.setAttribute('aria-busy','false');
+
+      const richCurrent=()=>state.reader&&String(state.work?.id)===String(w.id)&&$p('#phone-reader')?.classList.contains('phone-open');
+      const rendered=await renderPhoneReaderBody(body,doc.html,richCurrent);
+      if(rendered===null)return;
+      // リッチHTML側の検証。失敗時は直前に表示したプレーン本文を維持する。
       if(!ensureReaderBodyText(body,doc)){
         const e=new Error('本文を画面へ表示できませんでした');e.code='reader-display-empty';e.stage='render';throw e;
       }
