@@ -7399,18 +7399,24 @@ html[data-device="smartphone"] .phone-reader-ui-toggle{
   right:0!important;
   top:50%!important;
   transform:translateY(-50%)!important;
-  z-index:120!important;
-  width:36px!important;
-  height:60px!important;
-  min-height:60px!important;
-  padding:0!important;
-  border:0!important;
+  z-index:160!important;
+  width:50px!important;
+  height:64px!important;
+  min-height:64px!important;
+  padding:0 5px!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  border-right:0!important;
   border-radius:17px 0 0 17px!important;
-  background:rgba(28,28,30,.76)!important;
+  background:rgba(28,28,30,.78)!important;
   color:#fff!important;
-  box-shadow:0 5px 18px rgba(0,0,0,.22)!important;
-  display:none!important;
+  box-shadow:0 6px 20px rgba(0,0,0,.24)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:2px!important;
   pointer-events:auto!important;
+  opacity:.94!important;
 }
 html[data-device="smartphone"] .phone-reader.reader-chrome-hidden .phone-reader-ui-toggle{
   display:flex!important;
@@ -7914,7 +7920,7 @@ html[data-device="smartphone"] .phone-sheet-row{
       <button class="phone-icon-button" data-phone-action="reader-search-close" aria-label="閉じる">×</button>
     </div>
     <article id="phone-reader-body" class="phone-reader-body"></article>
-    <button class="phone-reader-ui-toggle" data-phone-action="reader-ui-toggle" aria-label="読書UIを表示">⌃</button>
+    <button class="phone-reader-ui-toggle" data-phone-action="reader-ui-toggle" aria-label="読書UIを表示" title="読書UIを表示"><span style="font-size:18px;line-height:1">⌃</span><span style="font-size:9px;font-weight:800;line-height:1">UI表示</span></button>
     <div class="phone-reader-toolbar">
       <button class="phone-reader-tool" data-phone-action="bookmark"><span class="phone-tool-icon">▱</span><small>栞</small></button>
       <button class="phone-reader-tool" data-phone-action="note"><span class="phone-tool-icon">✎</span><small>メモ</small></button>
@@ -8555,6 +8561,6 @@ html[data-device="smartphone"] .phone-sheet-row{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-text-ui-v20261005-12"></script>
+<script src="./app.js?v=reader-display-fix-v20261005-13"></script>
 </body>
 </html>
