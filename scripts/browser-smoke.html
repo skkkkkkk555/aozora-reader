@@ -36,6 +36,17 @@ function textOf(el){
 function readerText(d){
   return textOf(d.querySelector('#phone-reader-body'))||textOf(d.querySelector('#body'));
 }
+function readerRendered(d,selector){
+  const el=d.querySelector(selector);
+  if(!visible(el))return false;
+  const rect=el.getBoundingClientRect();
+  const cs=el.ownerDocument.defaultView.getComputedStyle(el);
+  return rect.width>0&&rect.height>0&&cs.opacity!=='0'&&textOf(el).length>80;
+}
+function readerScrollable(d,selector){
+  const el=d.querySelector(selector);
+  return !!el&&el.clientHeight>0&&el.scrollHeight>el.clientHeight;
+}
 (async()=>{
   frame.src='../index.html?browser-smoke='+Date.now();
   await new Promise((resolve,reject)=>{
@@ -71,7 +82,8 @@ function readerText(d){
     const read=await waitFor(()=>d.querySelector('#phone-detail [data-phone-action="detail-read"]'),6000);
     read.click();
     await waitFor(()=>visible(d.querySelector('#phone-reader'))&&d.querySelector('#phone-reader').classList.contains('phone-open'),6000);
-    await waitFor(()=>readerText(d).length>80&&!/本文を読み込んでいます/.test(readerText(d))&&!/本文を読み込めませんでした/.test(readerText(d)),20000);
+    await waitFor(()=>readerRendered(d,'#phone-reader-body')&&!/本文を読み込んでいます/.test(readerText(d))&&!/本文を読み込めませんでした/.test(readerText(d)),20000);
+    if(!readerScrollable(d,'#phone-reader-body'))fail('smartphone reader body is not actually scrollable');
 
     const readerSearch=d.querySelector('#phone-reader [data-phone-action="reader-search"]');
     if(!readerSearch)fail('smartphone reader search action missing');
@@ -134,10 +146,8 @@ function readerText(d){
     readNow.click();
     await waitFor(()=>d.querySelector('#reader')?.classList.contains('open'),7000);
 
-    await waitFor(()=>{
-      const text=readerText(d);
-      return text.length>80&&!/本文を読み込んでいます/.test(text)&&!/本文を読み込めませんでした/.test(text);
-    },10000);
+    await waitFor(()=>readerRendered(d,'#body'),10000);
+    if(!readerScrollable(d,'#body'))fail('desktop reader body is not actually scrollable');
 
     const readerSearch=d.querySelector('#reader [data-act="r-search-open"]');
     if(!readerSearch)fail('desktop reader search action missing');
