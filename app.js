@@ -2016,6 +2016,53 @@ function updateProgress(force=false){
   }
 }
 
+/* タッチ端末では合成clickに依存せず、本文タップから読書UIを確実に復帰できるようにする。 */
+(function bindReaderTapRestore(){
+  const body=$('body');
+  if(body&&body.dataset.tapRestoreBound!=='1'){
+    body.dataset.tapRestoreBound='1';
+    let sx=0,sy=0,down=false;
+    body.addEventListener('pointerdown',e=>{
+      if(e.pointerType!=='touch')return;
+      sx=e.clientX;sy=e.clientY;down=true;
+    },{passive:true});
+    body.addEventListener('pointerup',e=>{
+      if(e.pointerType!=='touch'||!down)return;
+      down=false;
+      const moved=Math.hypot(e.clientX-sx,e.clientY-sy);
+      if(moved>14)return;
+      if(e.target.closest?.('button,a,input,select,textarea'))return;
+      const reader=$('reader');
+      if(!reader?.classList.contains('open'))return;
+      const hidden=reader.classList.contains('chrome-hidden');
+      if(hidden){
+        e.preventDefault();
+        setReaderChromeVisible(true);
+      }
+    },{passive:false});
+  }
+  const phoneBody=$('phone-reader-body');
+  if(phoneBody&&phoneBody.dataset.tapRestoreBound!=='1'){
+    phoneBody.dataset.tapRestoreBound='1';
+    let sx=0,sy=0,down=false;
+    phoneBody.addEventListener('pointerdown',e=>{
+      if(e.pointerType!=='touch')return;
+      sx=e.clientX;sy=e.clientY;down=true;
+    },{passive:true});
+    phoneBody.addEventListener('pointerup',e=>{
+      if(e.pointerType!=='touch'||!down)return;
+      down=false;
+      if(Math.hypot(e.clientX-sx,e.clientY-sy)>14)return;
+      const reader=$('phone-reader');
+      if(!reader?.classList.contains('phone-open'))return;
+      if(e.target.closest?.('button,a,input,select,textarea'))return;
+      if(reader.classList.contains('reader-chrome-hidden')){
+        e.preventDefault();
+        reader.classList.remove('reader-chrome-hidden');
+      }
+    },{passive:false});
+  }
+})();
 $('body').onscroll=()=>{
   lastUserActivityTime=Date.now();
   if(progressRaf===null){
