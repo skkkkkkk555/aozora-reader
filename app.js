@@ -4584,6 +4584,12 @@ window.addEventListener('DOMContentLoaded',()=>{
       curDoc=doc;
       const rendered=await renderPhoneReaderBody(body,doc.html,()=>state.reader&&String(state.work?.id)===String(w.id)&&$p('#phone-reader')?.classList.contains('phone-open'));
       if(!rendered)return;
+      if(!ensureReaderBodyText(body,doc)){
+        const e=new Error('本文を画面へ表示できませんでした');e.code='reader-display-empty';e.stage='render';throw e;
+      }
+      body.style.visibility='visible';
+      body.style.opacity='1';
+      body.style.pointerEvents='auto';
       if(!state.reader||String(state.work?.id)!==String(w.id))return;
       phoneReaderContentReady=true;
       setPhoneReaderLoading(false);
