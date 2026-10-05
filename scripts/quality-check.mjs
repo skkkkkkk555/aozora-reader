@@ -68,6 +68,12 @@ ok(!/https:\'&&isSafeOllamaUrl\(u\.href\)/.test(app),'generic HTTPS is still tre
 ok(html.includes(".rich-motion .view.active{animation:none!important}"),'stable view animation override missing');
 ok(app.includes("classList.remove('view-slide-forward','view-slide-backward')"),'view transition cleanup missing');
 ok(app.includes("navigator.wakeLock"),'screen wake-lock feature missing');
+ok(app.includes("new Worker('./reader-worker.js')"),'reader parser worker missing');
+ok(html.includes("worker-src 'self'"),'CSP does not permit the reader parser worker');
+ok(html.includes("app.js?v=reader-worker-scroll-paging-v20261005"),'reader worker cache-bust missing');
+ok(app.includes("function getReaderAxis"),'reader paging axis helper missing');
+ok(app.includes("columns:auto!important"),'reader column layout was not disabled');
+
 ok(app.includes("classList.add('loading-bar-live')"),'loading feedback missing');
 ok(app.includes("hydrateSavedKeys"),'cached-book hydration missing');
 ok(app.includes("dateKeyOf"),'local date helper missing');
