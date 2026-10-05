@@ -610,7 +610,9 @@ window.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openSearchPage(); }
 });
 
-const CATALOG_CACHE_KEY='cat-rights-v4';
+const CATALOG_CACHE_KEY='cat-rights-v5';
+const LEGACY_CATALOG_CACHE_KEY='cat-rights-v4';
+const RIGHTS_CACHE_KEY='rights-allowlist-v1';
 const RIGHTS_MANIFEST='./rights-allowlist.json';
 const CATALOG_TARGET='https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip';
 const URLS=[
@@ -621,50 +623,98 @@ const URLS=[
   'https://api.allorigins.win/raw?url='+encodeURIComponent(CATALOG_TARGET)
 ];
 
-async function loadRightsAllowlist(){
-  if(BROWSER_SMOKE){ rightsAllowlist=new Set(['000789']); rightsReady=true; return true; }
+function validRightsAllowlist(data){
+  if(!Array.isArray(data)||data.length<1000||data.length>30000)return null;
+  const set=new Set();
+  for(const id of data){const v=String(id||'');if(/^\d{6}$/.test(v))set.add(v);}
+  return set.size>=1000?set:null;
+}
+
+async function saveRightsAllowlist(set){
+  try{await idb.set('k',RIGHTS_CACHE_KEY,[...set]);}catch{}
+}
+
+async function refreshRightsAllowlist(){
   try{
     const res=await secureFetch(RIGHTS_MANIFEST+'?'+Date.now(),{signal:sig(8000),cache:'no-store'});
     if(!res.ok)throw new Error('rights-manifest-http-'+res.status);
     const data=await res.json();
-    if(!Array.isArray(data)||data.length<1000||data.length>30000)throw new Error('rights-manifest-invalid');
-    const set=new Set();
-    for(const id of data){ const v=String(id||''); if(/^\d{6}$/.test(v))set.add(v); }
-    if(set.size<1000)throw new Error('rights-manifest-too-small');
-    rightsAllowlist=set; rightsReady=true; return true;
+    const set=validRightsAllowlist(data);
+    if(!set)throw new Error('rights-manifest-invalid');
+    rightsAllowlist=set;
+    rightsReady=true;
+    await saveRightsAllowlist(set);
+    // 最新の権利確認で対象外になった作品を即座にUIから外す。
+    if(allWorks.length){filterWorks();renderHome();}
+    return true;
   }catch(err){
-    rightsAllowlist=new Set(); rightsReady=false;
-    console.warn('rights allowlist unavailable; refusing all works',err);
+    console.warn('rights manifest refresh failed; using persisted verification when available',err);
     return false;
   }
+}
+
+async function loadRightsAllowlist(){
+  if(BROWSER_SMOKE){rightsAllowlist=new Set(['000789']);rightsReady=true;return true;}
+  // 再読み込み時はネットワークを待たず、端末に保存済みの確認済みIDを先に復元する。
+  try{
+    const cached=validRightsAllowlist(await idb.get('k',RIGHTS_CACHE_KEY));
+    if(cached){
+      rightsAllowlist=cached;
+      rightsReady=true;
+      // バックグラウンドで最新状態へ更新。更新失敗でも保存済みデータを消さない。
+      void refreshRightsAllowlist();
+      return true;
+    }
+  }catch(err){console.debug('persisted rights allowlist unavailable',err);}
+  return await refreshRightsAllowlist();
+}
+
+async function requestPersistentStorage(){
+  try{
+    if(!navigator.storage?.persist)return false;
+    if(await navigator.storage.persisted())return true;
+    return await navigator.storage.persist();
+  }catch{return false;}
+}
+
+async function loadCachedCatalog(){
+  let c=await idb.get('k',CATALOG_CACHE_KEY);
+  let safeCatalog=sanitizeCatalogRecords(c);
+  if(safeCatalog.length){
+    if(safeCatalog.length!==c.length)await idb.set('k',CATALOG_CACHE_KEY,safeCatalog);
+    return safeCatalog;
+  }
+  // v4の既存利用者を壊さず、新しい永続キーへ一度だけ移行。
+  c=await idb.get('k',LEGACY_CATALOG_CACHE_KEY);
+  safeCatalog=sanitizeCatalogRecords(c);
+  if(safeCatalog.length){
+    await idb.set('k',CATALOG_CACHE_KEY,safeCatalog);
+    return safeCatalog;
+  }
+  return [];
 }
 
 async function checkCatalog(){
   const rightsOk=await loadRightsAllowlist();
   if(!rightsOk){
-    allWorks=[]; filterWorks(); renderHome();
+    allWorks=[];filterWorks();renderHome();
     showBanner('著作権確認データを取得できないため、作品を表示できません。時間を置いて再試行してください。');
     return;
   }
   if(BROWSER_SMOKE){
-    // 実在する青空文庫の公開作品レコードを固定し、カタログ通信の揺らぎとUIテストを分離する。
     allWorks=[{"id":"000789","t":"吾輩は猫である","a":"夏目 漱石","tk":"わがはいはねこである","ak":"なつめ","d":"1999-09-21","k":1,"c":1,r:1,"ndc":"NDC 913","norm":"吾輩は猫であるわがはいはねこである夏目漱石なつめ","x":"cards/000148/files/789_ruby_5639/789_ruby_5639.txt"}];
-    filterWorks();
-    renderHome();
-    return;
+    filterWorks();renderHome();return;
   }
-  const c=await idb.get('k',CATALOG_CACHE_KEY);
-  const safeCatalog=sanitizeCatalogRecords(c);
+
+  const safeCatalog=await loadCachedCatalog();
   if(safeCatalog.length){
     allWorks=safeCatalog;
-    if(safeCatalog.length!==c.length)await idb.set('k',CATALOG_CACHE_KEY,safeCatalog);
     filterWorks();
     renderHome();
     return;
   }
 
-  // GitHub Pagesと同一オリジンに置いたcatalog.jsonを最優先で利用。
-  // これなら青空文庫側のCORS状態に左右されず、初回起動でも自動収集済みカタログを使える。
+  // GitHub Pagesと同一オリジンに置いたcatalog.jsonを初回データとして永久保存する。
   try{
     const res=await secureFetch('./catalog.json?'+Date.now(),{signal:sig(8000),cache:'no-store'});
     if(res.ok){
@@ -673,15 +723,12 @@ async function checkCatalog(){
       if(parsed.length>=100){
         allWorks=parsed;
         await idb.set('k',CATALOG_CACHE_KEY,parsed);
-        filterWorks();
-        renderHome();
-        return;
+        filterWorks();renderHome();return;
       }
     }
-  }catch(err){ console.debug('same-origin catalog unavailable',err); }
+  }catch(err){console.debug('same-origin catalog unavailable',err);}
 
-  filterWorks();
-  renderHome();
+  filterWorks();renderHome();
   showBanner('作品カタログがまだありません。「設定」からカタログを読み込めます。');
 }
 function filterWorks(){
