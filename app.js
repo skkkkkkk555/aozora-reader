@@ -2371,6 +2371,27 @@ function ensureReaderBodyText(target=$('body'),doc=curDoc){
   return !!String(b.textContent||'').trim();
 }
 
+function ensureDesktopReaderFlow(){
+  const body=$('body');
+  if(!body)return;
+  const flow=body.querySelector(':scope > .reader-flow');
+  if(!flow)return;
+  flow.style.setProperty('box-sizing','border-box','important');
+  if(body.classList.contains('v')){
+    const h=Math.max(1,body.clientHeight);
+    flow.style.setProperty('writing-mode','vertical-rl','important');
+    flow.style.setProperty('width','max-content','important');
+    flow.style.setProperty('height',h+'px','important');
+    flow.style.setProperty('min-height',h+'px','important');
+    flow.style.setProperty('padding','28px 32px 32px','important');
+  }else{
+    flow.style.setProperty('writing-mode','horizontal-tb','important');
+    flow.style.setProperty('width','100%','important');
+    flow.style.removeProperty('height');
+    flow.style.removeProperty('min-height');
+    flow.style.removeProperty('padding');
+  }
+}
 async function renderReaderBody(isCurrent){
   const body=$('body');
   if(!curDoc||!body)return false;
@@ -2395,6 +2416,9 @@ async function renderReaderBody(isCurrent){
     if(seq!==readerRenderSeq||!isCurrent())return false;
     await new Promise(requestAnimationFrame);
     if(seq!==readerRenderSeq||!isCurrent())return false;
+    ensureDesktopReaderFlow();
+    await new Promise(requestAnimationFrame);
+    if(seq!==readerRenderSeq||!isCurrent())return false;
     body.classList.remove('reader-building');
     return true;
   }catch(err){
@@ -2407,6 +2431,8 @@ async function renderReaderBody(isCurrent){
     body.style.whiteSpace='pre-wrap';
     body.textContent=curDoc.plain||'';
     body.classList.remove('reader-building');
+    const flow=body.firstElementChild;
+    if(flow?.classList.contains('reader-flow'))ensureDesktopReaderFlow();
     return true;
   }
 }
@@ -2551,17 +2577,21 @@ function scrollDesktopVerticalBy(delta,b=$('body')){
   return true;
 }
 function bindDesktopVerticalWheel(){
-  const b=$('body');
-  if(!b||b.dataset.verticalWheelBound==='1')return;
+  const b=$('body'),reader=$('reader');
+  if(!b||!reader||b.dataset.verticalWheelBound==='1')return;
   b.dataset.verticalWheelBound='1';
-  b.addEventListener('wheel',e=>{
+  const move=e=>{
     if(document.documentElement.dataset.device!=='desktop')return;
-    const reader=$('reader');
-    if(!reader?.classList.contains('open')||!b.classList.contains('v'))return;
+    if(!reader.classList.contains('open')||!b.classList.contains('v'))return;
     const delta=Math.abs(e.deltaY)>=Math.abs(e.deltaX)?e.deltaY:e.deltaX;
     if(!delta)return;
-    if(scrollDesktopVerticalBy(delta,b))e.preventDefault();
-  },{passive:false});
+    if(scrollDesktopVerticalBy(delta,b)){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+  b.addEventListener('wheel',move,{passive:false});
+  reader.addEventListener('wheel',move,{capture:true,passive:false});
 }
 function setReaderPage(index,animate=true){
   const b=$('body');if(!b)return;
@@ -5420,10 +5450,25 @@ window.addEventListener('DOMContentLoaded',()=>{
   };
 
   const phoneSelector='#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]';
+  let phoneBackHandledUntil=0;
+  const handlePhoneBack=()=>{
+    phoneBackHandledUntil=Date.now()+700;
+    window.__aozoraPhoneBack?.();
+  };
+  document.addEventListener('pointerup',e=>{
+    if(!isPhone()||e.pointerType!=='touch')return;
+    const el=e.target.closest?.('#phone-global-back,#phone-app [data-phone-action="reader-back"],#phone-app [data-phone-action="detail-back"]');
+    if(!el)return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    handlePhoneBack();
+  },{capture:true,passive:false});
 
   // ネイティブclickを一度だけ処理。pointer/touchの合成clickはここに集約される。
   const phoneEvent=e=>{
     if(!isPhone())return;
+    const backEl=e.target.closest?.('#phone-global-back,#phone-app [data-phone-action="reader-back"],#phone-app [data-phone-action="detail-back"]');
+    if(backEl&&Date.now()<phoneBackHandledUntil)return;
     const el=e.target.closest?.(phoneSelector);
     if(!el)return;
     // 入力欄・スライダー等は通常のブラウザ操作を許可。
@@ -5509,10 +5554,17 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!b||b.dataset.bound==='1')return;
     b.dataset.bound='1';
     b.type='button';
+    b.addEventListener('pointerup',e=>{
+      if(e.pointerType!=='touch')return;
+      e.preventDefault();
+      e.stopPropagation();
+      handlePhoneBack();
+    },{passive:false});
     b.addEventListener('click',e=>{
       e.preventDefault();
       e.stopPropagation();
-      window.__aozoraPhoneBack?.();
+      if(Date.now()<phoneBackHandledUntil)return;
+      handlePhoneBack();
     });
   },{once:true});
   const phoneBootWatchdog=setTimeout(()=>{
