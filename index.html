@@ -7032,6 +7032,86 @@ html[data-device="smartphone"] .r-dock{min-height:0!important}
   }
 }
 
+
+
+/* ===== Comfortable block UI sizing ===== */
+#v-home .grid > .blue,
+#v-home .grid > .green,
+#v-home .grid > .orange,
+#v-home .grid > .purple,
+#v-home .grid > .block[data-act="open-rand"],
+#v-home .grid > .block[data-act="tab-shelf-fav"],
+#v-home .grid > .block[data-act="open-fav-authors"],
+#v-home .grid > .block[data-act="tab-shelf-want"],
+#v-home .grid > .block[data-act="tab-shelf-notes"],
+#v-home .grid > .block[data-act="nav-settings"]{
+  min-height:118px!important;
+  padding:20px!important;
+  border-radius:18px!important;
+}
+#v-home .grid > .blue .icon,
+#v-home .grid > .green .icon,
+#v-home .grid > .orange .icon,
+#v-home .grid > .purple .icon{
+  width:30px!important;
+  height:30px!important;
+}
+.home-bookmark-card{
+  min-height:112px!important;
+}
+.home-bookmark-main{
+  min-height:78px!important;
+}
+.home-bookmark-points{
+  padding-bottom:14px!important;
+}
+@media(max-width:899px){
+  #v-home .grid > .blue,
+  #v-home .grid > .green,
+  #v-home .grid > .orange,
+  #v-home .grid > .purple,
+  #v-home .grid > .block[data-act="open-rand"],
+  #v-home .grid > .block[data-act="tab-shelf-fav"],
+  #v-home .grid > .block[data-act="open-fav-authors"],
+  #v-home .grid > .block[data-act="tab-shelf-want"],
+  #v-home .grid > .block[data-act="tab-shelf-notes"],
+  #v-home .grid > .block[data-act="nav-settings"]{
+    min-height:104px!important;
+    padding:18px!important;
+  }
+  .home-bookmark-card{
+    min-height:118px!important;
+  }
+  .home-bookmark-main{
+    min-height:82px!important;
+  }
+}
+@media(max-width:520px){
+  #v-home .grid > .blue,
+  #v-home .grid > .green,
+  #v-home .grid > .orange,
+  #v-home .grid > .purple,
+  #v-home .grid > .block[data-act="open-rand"],
+  #v-home .grid > .block[data-act="tab-shelf-fav"],
+  #v-home .grid > .block[data-act="open-fav-authors"],
+  #v-home .grid > .block[data-act="tab-shelf-want"],
+  #v-home .grid > .block[data-act="tab-shelf-notes"],
+  #v-home .grid > .block[data-act="nav-settings"]{
+    min-height:96px!important;
+  }
+}
+
+/* 縦読み: 1画面に複数行を入れ、1列だけになる状態を防ぐ */
+#body.paper-paged.v{
+  width:100%!important;
+  height:100%!important;
+  column-width:var(--reader-v-column-width,100%)!important;
+  column-gap:0!important;
+  column-fill:auto!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+}
+
 </style>
 </head>
 <body>
