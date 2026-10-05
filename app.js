@@ -2061,6 +2061,8 @@ async function openReaderInternal(w, fromDetail=false, bookmarkF=null){
     desktopReaderContentReady=true;
     setReaderLoading(false);
     applyReaderConfig(null);
+    ensureReaderBodyText();
+    ensureReaderBodyVisible();
 
     const restoreInitialPage=()=>{
       if(tId!==readerTok||curWork?.id!==w.id||!$('reader')?.classList.contains('open'))return;
@@ -2261,6 +2263,31 @@ function splitReaderHtml(html,maxChars=16000){
   if(start<main.length)chunks.push(main.slice(start));
   if(tail)chunks.push(tail);
   return chunks.filter(Boolean);
+}
+
+function ensureReaderBodyVisible(){
+  const b=$('body');
+  if(!b)return;
+  b.classList.remove('reader-building');
+  b.style.visibility='visible';
+  b.style.opacity='1';
+  b.style.pointerEvents='auto';
+  b.removeAttribute('aria-busy');
+}
+function ensureReaderBodyText(){
+  const b=$('body');
+  if(!b||!curDoc)return false;
+  const text=(b.textContent||'').replace(/\s+/g,'').trim();
+  const plain=String(curDoc.plain||'').replace(/\s+/g,'').trim();
+  if(text.length>=20)return true;
+  if(plain.length<1)return false;
+  b.innerHTML='';
+  b.classList.remove('paper-paged','v','reader-building');
+  b.classList.add('reader-plain-fallback');
+  b.style.whiteSpace='pre-wrap';
+  b.textContent=curDoc.plain;
+  ensureReaderBodyVisible();
+  return true;
 }
 
 async function renderReaderBody(isCurrent){
@@ -3354,8 +3381,6 @@ document.addEventListener('click',e=>{
   }
   else if(act==='read-now'){
     e.stopPropagation();
-    closeSheet(true);
-    history.replaceState(null,'',location.href);
     openReader(activeBook, false);
   }
   else if(act==='toggle-want'){
