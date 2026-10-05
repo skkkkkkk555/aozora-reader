@@ -392,7 +392,8 @@ button.sm-btn { min-height: 44px; padding: 0 14px; font-size: var(--fs-s); borde
 
 /* 読書専用画面 & モード (スクロールとUIの重なりを完全防止) */
 #reader { position: fixed; inset: 0; background: var(--bg); z-index: 50; display: none; flex-direction: column; overflow: hidden; }
-#reader.open { display: flex; animation: rIn 220ms var(--ease); }
+#reader.open { display: flex; animation: none!important; opacity:1!important; isolation:isolate; }
+#reader.reader-is-loading{opacity:1!important;background:var(--bg)!important;}
 @keyframes rIn { from { opacity: 0; } to { opacity: 1; } }
 
 #reader.reader-night {
@@ -7653,8 +7654,8 @@ html[data-device="smartphone"] .phone-reader-ui-toggle:active{
   bottom:calc(108px + env(safe-area-inset-bottom));
   z-index:9;display:flex;align-items:center;justify-content:center;
   overflow:hidden;
-  background:color-mix(in srgb,var(--bg) 86%,transparent);
-  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  background:var(--bg)!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
 }
 #reader-loading-layer .reader-loading{width:100%;height:100%;min-height:0!important}
 #reader.reader-is-loading .r-dock,
@@ -7669,8 +7670,8 @@ html[data-device="smartphone"] .phone-reader-ui-toggle:active{
   top:calc(58px + env(safe-area-inset-top));bottom:3px;
   z-index:15;display:flex;align-items:center;justify-content:center;
   overflow:hidden;
-  background:color-mix(in srgb,#fbfaf7 88%,transparent);
-  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  background:var(--bg)!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
 }
 html[data-theme="dark"][data-device="smartphone"] #phone-reader-loading-layer{
   background:color-mix(in srgb,#101010 88%,transparent);
@@ -8285,6 +8286,6 @@ html[data-device="smartphone"] .phone-reader-tool{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-worker-scroll-paging-v20261005"></script>
+<script src="./app.js?v=reader-stability-chunked-v20261005"></script>
 </body>
 </html>
