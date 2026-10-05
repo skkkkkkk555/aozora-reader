@@ -8498,14 +8498,7 @@ html[data-device="smartphone"] .phone-sheet-row{
     </div>
   </div>
 </div>
-<script>
-window.addEventListener('load',()=>{
-  const splash=document.getElementById('aozora-splash');
-  if(!splash)return;
-  setTimeout(()=>splash.classList.add('loaded'),2400);
-  setTimeout(()=>splash.remove(),3400);
-});
-</script>
+<script src="./splash.js?v=20261005-01"></script>
 
 <!-- グローバル通知。PC/スマホの各UIレイヤーより上に配置 -->
 <div id="banner" role="status" aria-live="polite">
