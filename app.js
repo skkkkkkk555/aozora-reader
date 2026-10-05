@@ -4698,6 +4698,14 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   function syncScreens(mode,direction='forward'){
     const content=$p('#phone-content'),tabs=$p('.phone-tabbar'),detail=$p('#phone-detail'),reader=$p('#phone-reader');
+    const globalBack=$p('#phone-global-back');
+    if(globalBack){
+      const showBack=mode==='detail'||mode==='reader';
+      globalBack.hidden=!showBack;
+      globalBack.setAttribute('aria-hidden',showBack?'false':'true');
+      globalBack.style.setProperty('display',showBack?'flex':'none','important');
+      globalBack.style.setProperty('pointer-events',showBack?'auto':'none','important');
+    }
     const layers=[content,detail,reader].filter(Boolean);
     const reduce=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     layers.forEach(el=>{
