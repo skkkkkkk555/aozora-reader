@@ -58,7 +58,7 @@ ok(/\/Android\|iPhone\|iPad\|iPod/.test(app),'handheld detection does not includ
 ok(app.includes("const handheld=document.documentElement.dataset.device==='smartphone'"),'handheld fetch path missing');
 ok(app.includes("headers:{'Accept':'text/plain,*/*'}"),'handheld plain GET fallback missing');
 ok(app.includes('readerVertical:false'),'smartphone vertical reader state missing');
-ok(app.includes("data-phone-action="reader-vertical""),'smartphone vertical reader menu action missing');
+ok(app.includes('data-phone-action="reader-vertical"'),'smartphone vertical reader menu action missing');
 ok(app.includes('function applyPhoneReaderDirection'),'smartphone reader direction helper missing');
 ok(app.includes('function togglePhoneReaderDirection'),'smartphone reader direction toggle missing');
 ok(app.includes('if(state.readerVertical)'),'smartphone vertical progress axis handling missing');
