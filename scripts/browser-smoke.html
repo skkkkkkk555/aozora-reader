@@ -97,11 +97,13 @@ function readerText(d){
   }else{
     if(device==='smartphone')fail('desktop detection unexpectedly smartphone');
 
+    await waitFor(()=>d.body.classList.contains('app-ready'),20000);
     const search=await waitFor(()=>d.querySelector('[data-act="nav"][data-v="v-search"]'),5000);
     search.click();
-    const input=await waitFor(()=>d.querySelector('#q-input'),5000);
-    input.value='夏目漱石';
+    const input=await waitFor(()=>d.querySelector('#q-input')?.oninput,5000);
+    input.value='吾輩は猫である';
     input.dispatchEvent(new Event('input',{bubbles:true}));
+    await sleep(500);
 
     const result=await waitFor(()=>d.querySelector('#search-tiles [data-act="open-book"]'),15000);
     result.click();
