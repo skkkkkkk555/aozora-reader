@@ -4786,9 +4786,13 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(globalBack){
       const showBack=mode==='detail'||mode==='reader';
       globalBack.hidden=!showBack;
+      globalBack.classList.toggle('is-visible',showBack);
       globalBack.setAttribute('aria-hidden',showBack?'false':'true');
       globalBack.style.setProperty('display',showBack?'flex':'none','important');
+      globalBack.style.setProperty('visibility',showBack?'visible':'hidden','important');
+      globalBack.style.setProperty('opacity',showBack?'1':'0','important');
       globalBack.style.setProperty('pointer-events',showBack?'auto':'none','important');
+      globalBack.style.setProperty('z-index','2147483647','important');
     }
     const layers=[content,detail,reader].filter(Boolean);
     const reduce=!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -5491,6 +5495,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.addEventListener('pointerup',phoneSheetCloseImmediate,{capture:true,passive:false});
 
   // iOS風エッジ戻るだけは独立実装。ボタン上のタップには一切干渉しない。
+  // globalBack は phone-app の stacking context 外に置いても動作する。
   const phoneRoot=$p('#phone-app');
   let edgeX=0,edgeY=0,edgeActive=false;
   if(phoneRoot&&phoneRoot.dataset.edgeBackBound!=='1'){
