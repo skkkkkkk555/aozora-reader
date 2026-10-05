@@ -75,6 +75,7 @@ function assertDesktopReaderChrome(d,label){
   const live=mode==='live'||mode==='live-mobile';
   const targetWork=qs.get('target-work')||'';
   frame.src='../reader-latest.html?browser-smoke='+Date.now()+(live?'&browser-smoke-live=1':'')+(targetWork?'#work='+encodeURIComponent(targetWork):'');
+  await new Promise((resolve,reject)=>{
     let timer=0;
     const finish=(fn,value)=>{clearTimeout(timer);frame.removeEventListener('load',onload);frame.removeEventListener('error',onerror);fn(value);};
     const onload=()=>finish(resolve);
