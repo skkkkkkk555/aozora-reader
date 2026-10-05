@@ -73,6 +73,7 @@ ok(app.includes('const isAnyReaderOpen=()=>'),'shared PC/smartphone reader activ
 ok(app.includes("const url=baseUrl+'#work='+encodeURIComponent(String(w.id))"),'smartphone share deep link missing');
 ok(app.includes("rawHash.match(/^#work=(.+)$/)"),'smartphone shared-work deep link reader missing');
 ok(app.includes('BROWSER_SMOKE'),'browser smoke isolation mode is missing');
+ok(app.includes("currentView==='v-search'"),'desktop search does not recover after catalog initialization');
 ok(notice.includes('CC BY 4.0'),'NOTICE.md is missing CC BY 4.0 attribution');
 ok(notice.includes('aozora.gr.jp'),'NOTICE.md is missing Aozora source');
 ok(notice.includes('公式アプリケーションではありません'),'NOTICE.md is missing unofficial-app disclaimer');
