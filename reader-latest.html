@@ -6768,6 +6768,29 @@ html[data-device="smartphone"] .r-dock{min-height:0!important}
 #reader.mode-focus #r-ui-toggle{
   display:flex;
 }
+/* PC版は「UI表示」ボタンを常時表示。本文を読む途中でも必ず操作UIへ戻せる。 */
+html[data-device="desktop"] #r-ui-toggle{
+  display:flex!important;
+  width:auto!important;
+  min-width:82px!important;
+  height:40px!important;
+  min-height:40px!important;
+  right:18px!important;
+  top:auto!important;
+  bottom:76px!important;
+  transform:none!important;
+  padding:0 13px!important;
+  border-radius:999px!important;
+  background:rgba(28,28,30,.72)!important;
+  color:#fff!important;
+  opacity:.92!important;
+  border:1px solid rgba(255,255,255,.22)!important;
+  box-shadow:0 6px 20px rgba(0,0,0,.14)!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  backdrop-filter:blur(14px)!important;
+  -webkit-backdrop-filter:blur(14px)!important;
+}
 #r-ui-toggle:hover,
 #r-ui-toggle:focus-visible{
   opacity:.78;
@@ -8291,7 +8314,7 @@ html[data-device="smartphone"] .phone-sheet-row{
   <div id="reader"><div id="r-scroll-progress" aria-hidden="true"></div>
     <div id="reader-loading-layer" class="reader-loading-layer" hidden aria-hidden="true"></div>
     <button id="btn-exit-focus" data-act="r-exit-focus">集中解除</button>
-    <button id="r-ui-toggle" data-act="r-ui-toggle" aria-label="読書UIを表示" title="読書UIを表示">⌃</button>
+    <button id="r-ui-toggle" data-act="r-ui-toggle" aria-label="読書UIを表示" title="読書UIを表示"><span aria-hidden="true">⌃</span><span style="margin-left:6px">UI表示</span></button>
     <div class="r-bar" id="r-top">
       <button class="secondary sm-btn" data-act="r-back" style="width:52px"><svg class="icon"><path d="m15 18-6-6 6-6"/></svg></button>
       <div id="r-title" class="serif" style="font-size:var(--fs-t); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:45%"></div>
@@ -8532,6 +8555,6 @@ html[data-device="smartphone"] .phone-sheet-row{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-hardening-v20261005-11"></script>
+<script src="./app.js?v=reader-text-ui-v20261005-12"></script>
 </body>
 </html>
