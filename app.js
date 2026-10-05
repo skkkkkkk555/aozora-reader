@@ -1607,13 +1607,31 @@ async function fetchBody(w){
     if(is404){ dead.add(w.id); filterWorks(); save(); throw {dead:true}; }
     throw new Error('通信エラーが発生しました');
   }
-  const txt=new TextDecoder('shift_jis').decode(buf);
-  const parsed=parseAozora(txt,true);
+  const parsed=await parseAozoraAsync(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength));
   const html=parsed.html,plain=parsed.plain;
   const doc={html,plain,safe:2};
   await idb.set('docs',w.id,doc);
   savedKeys.add(w.id);
   return doc;
+}
+
+let readerParseSeq=0;
+function parseAozoraAsync(buffer){
+  return new Promise((resolve,reject)=>{
+    const id=++readerParseSeq;
+    let settled=false,worker=null;
+    const finish=(fn,val)=>{if(settled)return;settled=true;try{worker?.terminate()}catch{}fn(val)};
+    try{
+      worker=new Worker('./reader-worker.js');
+      worker.onmessage=e=>{
+        const d=e.data||{};if(d.id!==id)return;
+        if(d.ok&&typeof d.html==='string'&&typeof d.plain==='string')finish(resolve,{html:d.html,plain:d.plain,safe:2});
+        else finish(reject,new Error(d.error||'本文解析に失敗しました'));
+      };
+      worker.onerror=e=>finish(reject,new Error(e.message||'本文解析ワーカーを起動できませんでした'));
+      worker.postMessage({id,buffer},[buffer]);
+    }catch(e){finish(reject,e)}
+  });
 }
 
 let midashiSeq=0;
@@ -1804,8 +1822,7 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
     const doc=await fetchBody(w);
     if(tId!==readerTok||!$('reader')?.classList.contains('open'))return;
     curDoc=doc;
-    const rendered=await renderReaderBodyProgressively($('body'),doc.html,()=>tId===readerTok&&curWork?.id===w.id&&$('reader')?.classList.contains('open'));
-    if(!rendered)return;
+    renderReaderBody();
     if(tId!==readerTok||!$('reader')?.classList.contains('open'))return;
     $('body').classList.add('paper-paged');
     setReaderLoading(false);
@@ -1820,12 +1837,7 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
         safeText('r-prog','0%');
         const slider=$('r-slider');
         if(slider)slider.value='0';
-        safeText('r-page-lbl','0% · 読書準備完了 · ページ計算中…');
-        const idle=fn=>{
-          if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(fn,{timeout:700});
-          else window.setTimeout(fn,80);
-        };
-        idle(()=>{if(tId===readerTok&&curWork?.id===w.id&&$('reader')?.classList.contains('open'))syncReaderPagination(0);});
+        safeText('r-page-lbl','0% · 読書準備完了');
       }else{
         const page=getReaderPageCount();
         const idx=Math.max(0,Math.min(page-1,Math.round(f*Math.max(0,page-1))));
@@ -1937,65 +1949,10 @@ function pulseState(el){
 function renderReaderBody(){
   if(!curDoc)return;
   const body=$('body');
+  body.classList.add('reader-building');
   body.innerHTML=curDoc.html;
+  body.classList.remove('reader-building');
   body.classList.add('paper-paged');
-}
-function splitReaderHtml(html,maxChunk=18000){
-  const src=String(html||'');
-  const chunks=[];
-  const stack=[];
-  const voidTags=new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
-  const tagRe=/<\/?([A-Za-z][\w:-]*)(?:\s[^>]*?)?\/?\s*>/g;
-  let chunkStart=0,pos=0;
-  while(pos<src.length){
-    const nl=src.indexOf('\n',pos);
-    const end=nl<0?src.length:nl+1;
-    tagRe.lastIndex=pos;
-    let m;
-    while((m=tagRe.exec(src))&&m.index<end){
-      const full=m[0],name=m[1].toLowerCase();
-      if(full.startsWith('</')){
-        const idx=stack.lastIndexOf(name);
-        if(idx>=0)stack.splice(idx,1);
-      }else if(!voidTags.has(name)&&!full.endsWith('/>')){
-        stack.push(name);
-      }
-    }
-    pos=end;
-    if(stack.length===0&&(pos-chunkStart>=maxChunk||pos===src.length)){
-      chunks.push(src.slice(chunkStart,pos));
-      chunkStart=pos;
-    }
-  }
-  if(chunkStart<src.length)chunks.push(src.slice(chunkStart));
-  if(!chunks.length)chunks.push('');
-  return chunks;
-}
-function renderReaderBodyProgressively(target,html,guard=()=>true){
-  return new Promise(resolve=>{
-    if(!target){resolve(false);return;}
-    const chunks=splitReaderHtml(html);
-    target.innerHTML='';
-    target.classList.add('reader-building');
-    let index=0;
-    const run=()=>{
-      if(!guard()){resolve(false);return;}
-      const deadline=(typeof performance!=='undefined'&&performance.now)?performance.now()+7:Date.now()+7;
-      while(index<chunks.length){
-        target.insertAdjacentHTML('beforeend',chunks[index++]);
-        const now=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
-        if(now>=deadline)break;
-      }
-      if(index<chunks.length){
-        window.setTimeout(run,0);
-        return;
-      }
-      target.classList.remove('reader-building');
-      const done=()=>resolve(true);
-      if(typeof window.requestAnimationFrame==='function')window.requestAnimationFrame(done);else done();
-    };
-    window.setTimeout(run,0);
-  });
 }
 
 function getReaderPageMetrics(){
@@ -2012,22 +1969,18 @@ function getReaderPageMetrics(){
     pt,pr,pb,pl
   };
 }
-function getReaderPageSize(){
-  return getReaderPageMetrics().width;
-}
+function getReaderPageSize(){return getReaderPageMetrics().width}
+function getReaderAxis(){return $('body')?.classList.contains('v')?'x':'y'}
 function getReaderPageCount(){
-  const b=$('body');
-  if(!b)return 1;
-  const step=getReaderPageSize();
-  const travel=Math.max(0,b.scrollWidth-b.clientWidth);
+  const b=$('body');if(!b)return 1;
+  const axis=getReaderAxis(),step=axis==='x'?Math.max(1,b.clientWidth):Math.max(1,b.clientHeight);
+  const travel=axis==='x'?Math.max(0,b.scrollWidth-b.clientWidth):Math.max(0,b.scrollHeight-b.clientHeight);
   return Math.max(1,Math.ceil((travel+0.5)/step)+1);
 }
 function getReaderPageIndex(){
-  const b=$('body');
-  const count=getReaderPageCount();
-  if(!b||count<=1)return 0;
-  const step=getReaderPageSize();
-  const raw=Math.abs(Number(b.scrollLeft)||0);
+  const b=$('body'),count=getReaderPageCount();if(!b||count<=1)return 0;
+  const axis=getReaderAxis(),step=axis==='x'?Math.max(1,b.clientWidth):Math.max(1,b.clientHeight);
+  const raw=axis==='x'?Math.abs(Number(b.scrollLeft)||0):Math.max(0,Number(b.scrollTop)||0);
   return Math.max(0,Math.min(count-1,Math.round(raw/step)));
 }
 function syncReaderPagination(preserveFraction=null){
@@ -2068,21 +2021,13 @@ function turnReaderPage(dir){
   return true;
 }
 function setReaderPage(index,animate=true){
-  const b=$('body');
-  if(!b)return;
-  const count=getReaderPageCount();
-  const clamped=Math.max(0,Math.min(count-1,Number(index)||0));
-  const step=getReaderPageSize();
-  const maxTravel=Math.max(0,b.scrollWidth-b.clientWidth);
+  const b=$('body');if(!b)return;
+  const count=getReaderPageCount(),clamped=Math.max(0,Math.min(count-1,Number(index)||0)),axis=getReaderAxis();
+  const step=axis==='x'?Math.max(1,b.clientWidth):Math.max(1,b.clientHeight);
+  const maxTravel=axis==='x'?Math.max(0,b.scrollWidth-b.clientWidth):Math.max(0,b.scrollHeight-b.clientHeight);
   const target=Math.min(maxTravel,clamped*step);
-  const isV=b.classList.contains('v');
-
-  if(animate) playPaperTurn(clamped>getReaderPageIndex()?'next':'prev');
-  b.scrollTo({
-    left:isV?-target:target,
-    top:0,
-    behavior:'auto'
-  });
+  if(animate)playPaperTurn(clamped>getReaderPageIndex()?'next':'prev');
+  b.scrollTo(axis==='x'?{left:b.classList.contains('v')?-target:target,top:0,behavior:'auto'}:{left:0,top:target,behavior:'auto'});
   updateProgress(true);
 }
 function playPaperTurn(direction){
@@ -2131,6 +2076,7 @@ let lastProgressSave=0;
 function updateProgress(force=false){
   if(!curWork) return;
   const b=$('body');
+  if(b?.getAttribute('aria-busy')==='true'||b?.classList.contains('reader-building'))return;
   const count=getReaderPageCount();
   const idx=getReaderPageIndex();
   const f=readerPageProgress(idx);
@@ -4212,8 +4158,9 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(!state.reader||String(state.work?.id)!==String(w.id))return;
       state.readerDoc=doc;
       curDoc=doc;
-      const rendered=await renderReaderBodyProgressively(body,doc.html,()=>state.reader&&String(state.work?.id)===String(w.id)&&$p('#phone-reader')?.classList.contains('phone-open'));
-      if(!rendered)return;
+      body.classList.add('reader-building');
+      body.innerHTML=doc.html;
+      body.classList.remove('reader-building');
       if(!state.reader||String(state.work?.id)!==String(w.id))return;
       setPhoneReaderLoading(false);
       body.scrollTop=0;
