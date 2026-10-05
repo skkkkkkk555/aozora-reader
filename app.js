@@ -1586,10 +1586,16 @@ async function fetchBody(w){
   if(typeof w.id!=='string'||!safeStateKey(w.id)||typeof w.x!=='string'||w.x.length>500||w.x.includes('..')||w.x.includes('\\')||w.x.startsWith('http'))throw new Error('invalid-book-path');
   const c=await idb.get('docs',w.id);
   if(c&&typeof c==='object'&&typeof c.html==='string'&&c.html.length<=4*1024*1024){
+    // safe:1 は fetchBody を通して一度だけ安全化済みのキャッシュ。
+    if(c.safe===1&&typeof c.plain==='string'&&c.plain.length<=SEC.maxBookBytes&&c.plain.trim().length>=20){
+      return c;
+    }
     const safeHtml=sanitizeReaderHtml(c.html);
     const safePlain=toPlain(safeHtml);
     if(safeHtml.length<=4*1024*1024&&safePlain.length<=SEC.maxBookBytes&&safePlain.trim().length>=20){
-      c.html=safeHtml;c.plain=safePlain;return c;
+      const safeDoc={html:safeHtml,plain:safePlain,safe:1};
+      await idb.set('docs',w.id,safeDoc);
+      return safeDoc;
     }
     // 壊れた/空の旧キャッシュを残すと、通信に成功しても永遠に空本文を返すため破棄して再取得する。
     try{await idb.del('docs',w.id);}catch{}
@@ -1620,7 +1626,7 @@ async function fetchBody(w){
   }
   const txt=new TextDecoder('shift_jis').decode(buf);
   const html=sanitizeReaderHtml(parseAozora(txt)),plain=toPlain(html);
-  const doc={html,plain};
+  const doc={html,plain,safe:1};
   await idb.set('docs',w.id,doc);
   savedKeys.add(w.id);
   return doc;
@@ -1787,7 +1793,9 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
   if(currentId===w.id && readerEl?.classList.contains('open') && $('body')?.getAttribute('aria-busy')==='true')return;
   readerLoadingWorkId=w.id;
   if(document.documentElement.dataset.device==='smartphone'&&typeof window.__aozoraPhoneOpenReader==='function'){
-    window.__aozoraPhoneOpenReader(w,fromDetail,bookmarkF);
+    const phoneTask=window.__aozoraPhoneOpenReader(w,fromDetail,bookmarkF);
+    if(phoneTask&&typeof phoneTask.finally==='function')phoneTask.finally(()=>{if(readerLoadingWorkId===w.id)readerLoadingWorkId=''});
+    else if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
     return;
   }
   closeSheet();
@@ -1812,7 +1820,7 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
     curDoc=doc;
     renderReaderBody();
     setReaderLoading(false);
-    applyReaderConfig();
+    applyReaderConfig(null);
 
     requestAnimationFrame(()=>{
       requestAnimationFrame(()=>{
@@ -1827,10 +1835,10 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
 
     if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
 
-    if(st.kp && !document.body.classList.contains('low-power')){
+    if(st.kp && !document.body.classList.contains('low-power') && doc.plain.length<=120000){
       const schedule=fn=>{
         if(typeof window.requestIdleCallback==='function') window.requestIdleCallback(fn,{timeout:1200});
-        else window.setTimeout(fn,450);
+        else window.setTimeout(fn,2500);
       };
       schedule(()=>{
         if(tId!==readerTok||curWork?.id!==w.id||!$('reader')?.classList.contains('open'))return;
@@ -1865,7 +1873,7 @@ function pulseState(el){
 function renderReaderBody(){
   if(!curDoc) return;
   const body=$('body');
-  body.innerHTML=sanitizeReaderHtml(curDoc.html);
+  body.innerHTML=curDoc.html;
   body.classList.add('paper-paged');
 }
 
@@ -2250,7 +2258,11 @@ function extractKeyphrases(txt){
   if(!top.length) return;
   const re=new RegExp(top.map(escRe).join('|'),'gu');
   const w=document.createTreeWalker($('body'),NodeFilter.SHOW_TEXT);
-  const nds=[]; let n; while((n=w.nextNode())) nds.push(n);
+  const nds=[]; let n;
+  while((n=w.nextNode())){
+    nds.push(n);
+    if(nds.length>=3000)break;
+  }
   nds.forEach(node=>{
     if(node.parentElement.closest('rt,rp,ruby,.keyphrase,.search-hl')) return;
     re.lastIndex=0;
@@ -2997,8 +3009,7 @@ document.addEventListener('click',async(e)=>{
     }
     $('pop').classList.remove('open');
   }
-  else if(act==='pop-copy'){
-    const txt=getSelection().toString();
+  else if(act==='pop-copy'){    const txt=getSelection().toString();
     $('pop').classList.remove('open');
     if(txt){
       const quoteText=`「${txt}」\n\n――『${curWork?.t||''}』\n${curWork?.a||''}`;
@@ -4064,7 +4075,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(!state.reader||String(state.work?.id)!==String(w.id))return;
       state.readerDoc=doc;
       curDoc=doc;
-      body.innerHTML=sanitizeReaderHtml(doc.html);
+      body.innerHTML=doc.html;
       body.scrollTop=0;
       body.onscroll=saveReaderProgress;
       $p('#phone-reader')?.classList.remove('reader-chrome-hidden');
