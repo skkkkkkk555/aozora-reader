@@ -170,6 +170,7 @@ function assertDesktopReaderChrome(d,label){
     await waitFor(()=>readerRendered(d,'#phone-reader-body')&&!/本文を読み込めませんでした/.test(readerText(d)),30000);
     if(d.querySelector('#phone-reader-loading-layer')?.hidden===false)throw new Error('mobile loader did not hide after render');
     if(!readerScrollable(d,'#phone-reader-body'))fail('smartphone reader body is not actually scrollable');
+    if(textOf(d.querySelector('#phone-reader-body')).replace(/\s+/g,'').length<20)fail('smartphone reader body has no readable text');
     assertNoRuntimeErrors(d,'mobile after reader render');
     clearRuntimeErrors(d);
     assertNoRuntimeErrors(d,'mobile after reader render');
@@ -270,10 +271,16 @@ function assertDesktopReaderChrome(d,label){
     const readerOpacity=d.defaultView.getComputedStyle(d.querySelector('#reader')).opacity;
     if(Number(readerOpacity)<0.99)throw new Error('desktop reader still fades over the previous UI');
     assertDesktopReaderChrome(d,'desktop reader chrome after open');
+    const uiRestore=d.querySelector('#r-ui-toggle');
+    if(!uiRestore||!visible(uiRestore))fail('desktop reader UI restore button is not visible');
+    if(!/UI表示/.test(textOf(uiRestore)))fail('desktop reader UI restore button label missing');
     if(d.querySelector('#body .aozora-loader'))throw new Error('desktop loader leaked into article body');
-    await waitFor(()=>readerRendered(d,'#body'),30000);
+    await waitFor(()=>readerRendered(d,'#body')&&textOf(d.querySelector('#body')).length>80,30000);
     if(d.querySelector('#reader-loading-layer')?.hidden===false)throw new Error('desktop loader did not hide after render');
+    const bodyVis=d.defaultView.getComputedStyle(d.querySelector('#body'));
+    if(bodyVis.visibility==='hidden'||Number(bodyVis.opacity)<0.99)fail('desktop reader body is hidden after render');
     if(!readerScrollable(d,'#body'))fail('desktop reader body is not actually scrollable');
+    if(textOf(d.querySelector('#body')).replace(/\s+/g,'').length<20)fail('desktop reader body has no readable text');
     assertNoRuntimeErrors(d,'desktop after reader render');
     clearRuntimeErrors(d);
     const desktopBody=d.querySelector('#body');
