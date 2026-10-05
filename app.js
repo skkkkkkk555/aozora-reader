@@ -1840,7 +1840,7 @@ function parseAozoraAsync(buffer){
     cancelReaderParser();
     const id=++readerParseSeq;
     let settled=false,worker=null,timer=0;
-    const fallbackLimit=12*1024*1024;
+    const fallbackLimit=document.documentElement.dataset.device==='smartphone'?SEC.maxBookBytes:12*1024*1024;
     const finish=(fn,val)=>{if(settled)return;settled=true;clearTimeout(timer);try{worker?.terminate()}catch{}if(activeReaderParserWorker===worker)activeReaderParserWorker=null;fn(val)};
     const fallbackOrReject=(err)=>{
       if(buffer.byteLength<=fallbackLimit){
@@ -4820,8 +4820,10 @@ window.addEventListener('DOMContentLoaded',()=>{
   function fraction(){
     const b=currentReaderBody();if(!b)return 0;
     if(state.readerVertical){
-      const max=Math.max(0,b.scrollWidth-b.clientWidth);
-      return max>0?Math.max(0,Math.min(1,(max-Math.max(0,b.scrollLeft))/max)):0;
+      const m=getPhoneVerticalMetrics(b);
+      if(!m.max)return 0;
+      const distance=m.sign<0?-b.scrollLeft:b.scrollLeft;
+      return Math.max(0,Math.min(1,Math.max(0,distance)/m.max));
     }
     const max=Math.max(0,b.scrollHeight-b.clientHeight);
     return max>0?Math.max(0,Math.min(1,b.scrollTop/max)):0;
@@ -4853,6 +4855,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     const titleEl=$p('#phone-reader-title');if(titleEl)titleEl.textContent=wt(w);
     const body=currentReaderBody();if(!body)return;
     bindReaderChrome();
+    bindPhoneReaderAxisScroll();
     const reader=$p('#phone-reader');reader?.classList.remove('reader-chrome-hidden');
     body.style.setProperty('--phone-reader-fs',state.readerFs+'px');
     body.style.setProperty('--phone-reader-lh',state.readerLh);
@@ -4882,8 +4885,12 @@ window.addEventListener('DOMContentLoaded',()=>{
       body.setAttribute('aria-busy','false');
 
       const richCurrent=()=>state.reader&&String(state.work?.id)===String(w.id)&&$p('#phone-reader')?.classList.contains('phone-open');
-      const rendered=await renderPhoneReaderBody(body,doc.html,richCurrent);
-      if(rendered===null)return;
+      // ハンドヘルドではプレーン本文を正式表示として使用する。
+      // 巨大HTMLの再構築は古いWebView/iOSで白画面化するリスクがあるため行わない。
+      if(document.documentElement.dataset.device!=='smartphone'){
+        const rendered=await renderPhoneReaderBody(body,doc.html,richCurrent);
+        if(rendered===null)return;
+      }
       // リッチHTML側の検証。失敗時は直前に表示したプレーン本文を維持する。
       if(!ensureReaderBodyText(body,doc)){
         const e=new Error('本文を画面へ表示できませんでした');e.code='reader-display-empty';e.stage='render';throw e;
@@ -4892,6 +4899,8 @@ window.addEventListener('DOMContentLoaded',()=>{
       body.style.visibility='visible';
       body.style.opacity='1';
       body.style.pointerEvents='auto';
+      body.classList.remove('reader-building');
+      body.setAttribute('aria-busy','false');
       if(!state.reader||String(state.work?.id)!==String(w.id))return;
       phoneReaderContentReady=true;
       setPhoneReaderLoading(false);
@@ -4909,8 +4918,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       requestAnimationFrame(()=>{
         const f=progressOf(w);
         if(state.readerVertical){
-          const max=Math.max(0,body.scrollWidth-body.clientWidth);
-          body.scrollLeft=max-f*max;body.scrollTop=0;
+          setPhoneVerticalFraction(f,body);
         }else{
           body.scrollTop=f*Math.max(0,body.scrollHeight-body.clientHeight);body.scrollLeft=0;
         }
@@ -5099,12 +5107,40 @@ window.addEventListener('DOMContentLoaded',()=>{
     const next=cur==='auto'?'sepia':cur==='sepia'?'dark':'auto';
     st.theme=next;applySettings();save();renderSettings();toast('テーマを変更しました');
   }
+  function getPhoneVerticalMetrics(b=currentReaderBody()){
+    if(!b)return {max:0,sign:1};
+    const max=Math.max(0,b.scrollWidth-b.clientWidth);
+    if(max<=0)return {max:0,sign:1};
+    const old=b.scrollLeft;
+    b.scrollLeft=1;
+    const positive=b.scrollLeft!==old;
+    if(positive){
+      b.scrollLeft=old;
+      return {max,sign:1};
+    }
+    b.scrollLeft=-1;
+    const negative=b.scrollLeft!==old;
+    b.scrollLeft=old;
+    return {max,sign:negative?-1:1};
+  }
+  function setPhoneVerticalFraction(f,b=currentReaderBody()){
+    if(!b)return;
+    const m=getPhoneVerticalMetrics(b);
+    const p=Math.max(0,Math.min(1,Number(f)||0));
+    b.scrollTop=0;
+    b.scrollLeft=m.sign*(-p*m.max);
+  }
   function applyPhoneReaderDirection(){
     const b=currentReaderBody(),r=$p('#phone-reader');
     if(!b||!r)return;
     b.classList.toggle('phone-reader-vertical',!!state.readerVertical);
     b.setAttribute('data-writing-mode',state.readerVertical?'vertical':'horizontal');
     r.classList.toggle('reader-direction-vertical',!!state.readerVertical);
+    b.style.setProperty('touch-action',state.readerVertical?'pan-x':'pan-y','important');
+    b.style.setProperty('overflow-x',state.readerVertical?'auto':'hidden','important');
+    b.style.setProperty('overflow-y',state.readerVertical?'hidden':'auto','important');
+    b.style.setProperty('width','100%','important');
+    b.style.setProperty('max-width',state.readerVertical?'none':'100%','important');
   }
   function togglePhoneReaderDirection(){
     state.readerVertical=!state.readerVertical;
@@ -5112,10 +5148,40 @@ window.addEventListener('DOMContentLoaded',()=>{
     const b=currentReaderBody();
     if(b){
       b.scrollTop=0;
-      b.scrollLeft=state.readerVertical?Math.max(0,b.scrollWidth-b.clientWidth):0;
+      if(state.readerVertical)setPhoneVerticalFraction(0,b);
+      else b.scrollLeft=0;
       requestAnimationFrame(()=>saveReaderProgress());
     }
     toast(state.readerVertical?'縦読み':'横読み');
+  }
+  function bindPhoneReaderAxisScroll(){
+    const b=currentReaderBody();
+    if(!b||b.dataset.axisScrollBound==='1')return;
+    b.dataset.axisScrollBound='1';
+    b.addEventListener('wheel',e=>{
+      if(!state.readerVertical)return;
+      const m=getPhoneVerticalMetrics(b);
+      if(m.max<=0)return;
+      const delta=Math.abs(e.deltaY)>=Math.abs(e.deltaX)?e.deltaY:e.deltaX;
+      if(!delta)return;
+      e.preventDefault();
+      const next=Math.max(0,Math.min(1,fraction()+delta/(m.max||1)));
+      setPhoneVerticalFraction(next,b);
+    },{passive:false});
+    let sx=0,sy=0,active=false;
+    b.addEventListener('pointerdown',e=>{
+      if(e.pointerType!=='touch'||!state.readerVertical)return;
+      sx=e.clientX;sy=e.clientY;active=true;
+    },{passive:true});
+    b.addEventListener('pointerup',e=>{
+      if(e.pointerType!=='touch'||!active||!state.readerVertical)return;
+      active=false;
+      const dx=e.clientX-sx,dy=e.clientY-sy;
+      if(Math.abs(dx)<24||Math.abs(dx)<Math.abs(dy)*1.1)return;
+      const m=getPhoneVerticalMetrics(b),step=Math.min(.65,Math.max(.06,b.clientWidth*.72/(m.max||1)));
+      setPhoneVerticalFraction(fraction()+(dx<0?step:-step),b);
+    },{passive:true});
+    b.addEventListener('pointercancel',()=>{active=false},{passive:true});
   }
   function applyPhoneReaderTypography(kind,value){
     const b=currentReaderBody();
@@ -5129,9 +5195,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       b.style.setProperty('--phone-reader-lh',state.readerLh);
       requestAnimationFrame(()=>{
         if(state.readerVertical){
-          const max=Math.max(0,b.scrollWidth-b.clientWidth);
-          b.scrollLeft=max-oldFraction*max;
-          b.scrollTop=0;
+          setPhoneVerticalFraction(oldFraction,b);
         }else{
           b.scrollTop=oldFraction*Math.max(0,b.scrollHeight-b.clientHeight);
           b.scrollLeft=0;
