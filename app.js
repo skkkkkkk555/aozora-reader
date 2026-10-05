@@ -3968,8 +3968,19 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(act==='shelf-filter'){state.shelf=el.dataset.filter||'reading';if(state.shelf==='records'){showScreen('records')}else renderShelf();return}
     if(act==='record-filter'){state.record=el.dataset.filter||'all';renderRecords();return}
     if(act==='detail-back'){
-      if(history.state?.phoneLayer==='phone-detail'){history.back();return;}
-      state.work=null;state.readerFromDetail=false;showScreen(state.screen,'back');return;
+      if(history.state?.phoneLayer==='phone-detail'){
+        const base={...(history.state||{})};
+        delete base.phoneLayer;
+        delete base.phoneParent;
+        history.replaceState(base,'',location.href);
+      }
+      state.work=null;
+      state.readerFromDetail=false;
+      syncScreens('main','back');
+      $p('.phone-tab').forEach(b=>b.classList.toggle('active',b.dataset.phoneTab===state.screen));
+      const fn={home:renderHome,search:renderSearch,shelf:renderShelf,records:renderRecords,settings:renderSettings}[state.screen]||renderHome;
+      fn();
+      return;
     }
     if(act==='detail-read'){openReader(state.work,true);return}
     if(act==='detail-more'){
