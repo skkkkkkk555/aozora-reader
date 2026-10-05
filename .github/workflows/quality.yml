@@ -35,13 +35,13 @@ jobs:
         run: |
           BROWSER="$(command -v chromium || command -v google-chrome || command -v chromium-browser || true)"
           test -n "$BROWSER"
-          timeout 120s "$BROWSER"             --headless             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --window-size=412,915             --user-agent='Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36'             --virtual-time-budget=30000             --dump-dom             'http://127.0.0.1:4173/scripts/browser-smoke.html?mode=mobile'             > /tmp/mobile-smoke.html
+          timeout 120s "$BROWSER"             --headless             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --window-size=412,915             --user-agent='Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36'             --timeout=25000             --dump-dom             'http://127.0.0.1:4173/scripts/browser-smoke.html?mode=mobile'             > /tmp/mobile-smoke.html
           grep -q 'SMOKE_OK' /tmp/mobile-smoke.html || { cat /tmp/mobile-smoke.html; exit 1; }
       - name: Run desktop smoke test
         run: |
           BROWSER="$(command -v chromium || command -v google-chrome || command -v chromium-browser || true)"
           test -n "$BROWSER"
-          timeout 120s "$BROWSER"             --headless             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --window-size=1440,1000             --virtual-time-budget=30000             --dump-dom             'http://127.0.0.1:4173/scripts/browser-smoke.html?mode=desktop'             > /tmp/desktop-smoke.html
+          timeout 120s "$BROWSER"             --headless             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --window-size=1440,1000             --timeout=25000             --dump-dom             'http://127.0.0.1:4173/scripts/browser-smoke.html?mode=desktop'             > /tmp/desktop-smoke.html
           grep -q 'SMOKE_OK' /tmp/desktop-smoke.html || { cat /tmp/desktop-smoke.html; exit 1; }
       - name: Show smoke logs on failure
         if: failure()
