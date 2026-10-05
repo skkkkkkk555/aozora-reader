@@ -55,8 +55,8 @@ for(const id of ['phone-app','phone-content','phone-detail','phone-reader','phon
 ok(inlineScripts.length===0,'inline script remains and may be blocked by CSP');
 ok(html.includes('touch-action:pan-y!important'),'smartphone reader body does not allow vertical touch scrolling');
 ok(/<script\s+src="\.\/app\.js\?v=[^"]+"><\/script>/.test(html),'app.js cache-bust script tag is missing');
-ok(latestEntry.includes('./redirect.js?v=20261005-26')&&!latestEntry.includes('phone-app'),'reader-latest.html must be a thin single-entry redirect');
-ok(v24Entry.includes('./redirect.js?v=20261005-26')&&!v24Entry.includes('phone-app'),'reader-v24.html must be a thin single-entry redirect');
+ok(/<script\s+src="\.\/redirect\.js\?v=20261005-\d+"><\/script>/.test(latestEntry)&&!latestEntry.includes('phone-app'),'reader-latest.html must be a thin single-entry redirect');
+ok(/<script\s+src="\.\/redirect\.js\?v=20261005-\d+"><\/script>/.test(v24Entry)&&!v24Entry.includes('phone-app'),'reader-v24.html must be a thin single-entry redirect');
 ok(app.includes("reader.classList.add('phone-open')"),'smartphone reader open class lifecycle missing');
 ok(html.includes('.phone-reader.phone-open{display:flex!important}'),'smartphone reader display rule missing');
 ok(app.includes('__aozoraPhoneOpenSheet=openPhoneSheet'),'global sheet bridge missing');
@@ -101,7 +101,7 @@ ok(html.includes('width:min(320px,calc(100vw - 28px))!important'),'mobile banner
 ok(app.includes('const handlePhoneBack='),'direct mobile back handler is missing');
 ok(html.includes('http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"'),'index cache policy hardening missing');
 ok(smoke.includes('history.back()'),'mobile smoke does not simulate Android/browser back');
-ok(smoke.includes('readerHeaderBack.click()'),'mobile smoke does not click visible reader back');
+ok(smoke.includes('touchTap(readerHeaderBack)'),'mobile smoke does not exercise touch reader back');
 ok(smoke.includes('toastRect.width>320'),'mobile smoke does not verify compact toast size');
 ok(app.includes("const left=b.classList.contains('v')?Math.max(0,m.max-target):target"),'desktop vertical page position does not use stable LTR coordinates');
 ok(app.includes("b.scrollLeft=Math.max(0,Math.min(m.max,b.scrollLeft-d))"),'desktop vertical wheel direction is unstable');
