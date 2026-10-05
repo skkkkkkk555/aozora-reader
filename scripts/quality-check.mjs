@@ -68,7 +68,7 @@ ok(!/https:\'&&isSafeOllamaUrl\(u\.href\)/.test(app),'generic HTTPS is still tre
 ok(html.includes(".rich-motion .view.active{animation:none!important}"),'stable view animation override missing');
 ok(app.includes("classList.remove('view-slide-forward','view-slide-backward')"),'view transition cleanup missing');
 ok(app.includes("navigator.wakeLock"),'screen wake-lock feature missing');
-ok(app.includes("new Worker('./reader-worker.js')"),'reader parser worker missing');
+ok(/new Worker\('\.\/reader-worker\.js\?v='/.test(app),'reader parser worker missing');
 ok(html.includes("worker-src 'self'"),'CSP does not permit the reader parser worker');
 
 ok(app.includes("function getReaderAxis"),'reader paging axis helper missing');
@@ -108,7 +108,7 @@ let rightsIds=[];try{rightsIds=JSON.parse(rightsManifest)}catch{}
 ok(Array.isArray(rightsIds)&&rightsIds.length>1000&&rightsIds.length<30000,'rights allowlist size is invalid');
 ok(Array.isArray(rightsIds)&&rightsIds.every(id=>/^\d{6}$/.test(String(id))),'rights allowlist contains invalid IDs');
 ok(!Array.isArray(rightsIds)||!rightsIds.includes('061517'),'known excluded work is present in rights allowlist');
-ok(app.includes("const CATALOG_CACHE_KEY='cat-rights-v5'"),'persistent catalog cache key is missing');
+ok(/const CATALOG_CACHE_KEY='cat-rights-v\d+'/.test(app),'persistent catalog cache key is missing');
 ok(app.includes('refreshCatalogInBackground'),'background catalog refresh helper is missing');
 ok(app.includes('scheduleCatalogRefresh'),'scheduled catalog refresh is missing');
 ok(app.includes("await idb.set('k',CATALOG_CACHE_KEY,allWorks)"),'catalog import does not persist to the canonical cache key');
