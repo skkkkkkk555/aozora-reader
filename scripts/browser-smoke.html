@@ -294,6 +294,7 @@ function assertDesktopReaderChrome(d,label){
     const uiRestore=d.querySelector('#r-ui-toggle');
     if(!uiRestore||!visible(uiRestore))fail('desktop reader UI restore button is not visible');
     if(!/UI表示/.test(textOf(uiRestore)))fail('desktop reader UI restore button label missing');
+    if(uiRestore.closest('#reader'))fail('desktop reader UI restore button must stay outside #reader');
     if(d.querySelector('#body .aozora-loader'))throw new Error('desktop loader leaked into article body');
     await waitFor(()=>readerRendered(d,'#body')&&textOf(d.querySelector('#body')).length>80,30000);
     if(d.querySelector('#reader-loading-layer')?.hidden===false)throw new Error('desktop loader did not hide after render');
@@ -307,6 +308,35 @@ function assertDesktopReaderChrome(d,label){
     desktopBody.scrollTop=Math.min(700,Math.max(0,desktopBody.scrollTop)+700);
     await sleep(250);
     assertDesktopReaderChrome(d,'desktop reader chrome after scrolling');
+    clearRuntimeErrors(d);
+
+    // 縦読み回帰テスト: 縦書き切替後にUIが消えたり、復帰不能になったりしないことを確認。
+    const verticalToggle=await waitFor(()=>d.querySelector('#reader [data-act="r-vt"]'),4000);
+    clearRuntimeErrors(d);
+    verticalToggle.click();
+    await sleep(300);
+    if(!desktopBody.classList.contains('v'))fail('desktop vertical reader did not activate');
+    assertDesktopReaderChrome(d,'desktop reader chrome after vertical toggle');
+    const verticalRestore=d.querySelector('#r-ui-toggle');
+    if(!verticalRestore||!visible(verticalRestore)||verticalRestore.closest('#reader'))fail('desktop vertical UI restore control is unavailable');
+    // 縦書き本文は横方向に進めてもUIを失わない。
+    const horizontalScrollable=desktopBody.scrollWidth>desktopBody.clientWidth+2;
+    if(horizontalScrollable){
+      const beforeX=desktopBody.scrollLeft;
+      desktopBody.scrollLeft=Math.min(desktopBody.scrollWidth-desktopBody.clientWidth,Math.max(0,beforeX+Math.max(200,desktopBody.clientWidth)));
+      await sleep(300);
+      if(desktopBody.scrollLeft===beforeX&&desktopBody.scrollWidth>desktopBody.clientWidth+2)fail('desktop vertical reader did not move horizontally');
+    }
+    assertDesktopReaderChrome(d,'desktop reader chrome after vertical paging');
+    clearRuntimeErrors(d);
+    verticalRestore.click();
+    await sleep(120);
+    assertDesktopReaderChrome(d,'desktop reader chrome after vertical UI restore');
+    clearRuntimeErrors(d);
+    verticalToggle.click();
+    await sleep(250);
+    if(desktopBody.classList.contains('v'))fail('desktop vertical reader did not return to horizontal mode');
+    assertDesktopReaderChrome(d,'desktop reader chrome after vertical toggle off');
     clearRuntimeErrors(d);
 
     const readerSearch=d.querySelector('#reader [data-act="r-search-open"]');
