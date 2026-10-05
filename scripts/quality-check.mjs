@@ -38,7 +38,7 @@ for(const [id,count] of idCounts)ok(count===1,`duplicate id: ${id}`);
 for(const id of ['phone-app','phone-content','phone-detail','phone-reader','phone-reader-body','phone-reader-progress','phone-sheet','phone-sheet-body','phone-sheet-scrim'])ok(new RegExp(`id=["']${id}["']`).test(html),`smartphone shell id missing: ${id}`);
 ok(inlineScripts.length===0,'inline script remains and may be blocked by CSP');
 ok(html.includes('touch-action:pan-y!important'),'smartphone reader body does not allow vertical touch scrolling');
-ok(html.includes('app.js?v=ios-deep-20261005-rights3'),'app.js cache-bust was not refreshed');
+ok(html.includes('app.js?v=ios-deep-20261005-rights4'),'app.js cache-bust was not refreshed');
 ok(app.includes("reader.classList.add('phone-open')"),'smartphone reader open class lifecycle missing');
 ok(html.includes('.phone-reader.phone-open{display:flex!important}'),'smartphone reader display rule missing');
 ok(app.includes('__aozoraPhoneOpenSheet=openPhoneSheet'),'global sheet bridge missing');
@@ -92,8 +92,8 @@ ok(license.includes('catalog.json'),'LICENSE.md does not separate catalog.json l
 ok(readme.includes('CC BY 4.0'),'README.md is missing CC BY 4.0 information');
 ok(html.includes('青空文庫リーダー（非公式）'),'index.html title is missing unofficial designation');
 ok(app.includes("if(Number(raw.c)!==1)continue;"),'catalog sanitizer does not remove protected works before catalog exposure');
-ok(app.includes("Number(w.r) === 1"),'reader public-work guard does not require rights verification marker');
-ok(app.includes("const CATALOG_CACHE_KEY='cat-rights-v3'"),'legacy unverified catalog cache key is still in use');
+ok(app.includes('rightsReady&&rightsAllowlist.has')||app.includes('rightsReady && rightsAllowlist.has'),'reader public-work guard does not require copyright allowlist verification');
+ok(app.includes("const CATALOG_CACHE_KEY='cat-rights-v4'"),'legacy unverified catalog cache key is still in use');
 ok(app.includes("const authorRightsFlag = cols[26]"),'CSV import does not inspect person copyright flag');
 
 ok(app.includes('// 許諾・保護中の作品は、この時点で取り込み対象から完全に除外する。'),'CSV import does not explicitly exclude protected works');
