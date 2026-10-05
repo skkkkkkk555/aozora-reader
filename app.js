@@ -117,7 +117,7 @@ const escAttr=esc;
 
 /* ==================== SECURITY HARDENING ==================== */
 const SEC={maxCatalogBytes:30*1024*1024,maxCatalogText:32*1024*1024,maxLocalFileBytes:30*1024*1024,maxBookBytes:32*1024*1024,maxResponseHeadBytes:4096,maxStateChars:4*1024*1024};
-const READER_PROGRESS_VERSION=2;
+const READER_PROGRESS_VERSION=3;
 const NETWORK_HOSTS=new Set(['www.aozora.gr.jp','aozorahack.org','raw.githubusercontent.com','cdn.jsdelivr.net','fastly.jsdelivr.net','corsproxy.io','corsproxy.org','api.allorigins.win']);
 const secureUrl=input=>{
   try{
