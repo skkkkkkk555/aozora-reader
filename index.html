@@ -6181,6 +6181,51 @@ html[data-device="smartphone"] .phone-reader-header-actions .phone-icon-button:l
 }
 
 .phone-catalog-file{position:relative!important;overflow:hidden!important;cursor:pointer!important;}
+
+/* ===== Startup v2: layered particles / scan / 3D depth ===== */
+#app-boot{perspective:1200px}
+.boot-card{transform-style:preserve-3d}
+.boot-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.boot-particles i{
+  position:absolute;left:calc(50% + (var(--i) - 4)*6vw);top:calc(50% + (4 - var(--i))*5vh);
+  width:5px;height:5px;border-radius:50%;
+  background:var(--ac);opacity:0;
+  box-shadow:0 0 14px color-mix(in srgb,var(--ac) 55%,transparent);
+  animation:bootParticle 2.8s ease-in-out calc(var(--i)*120ms) infinite;
+}
+.boot-particles i:nth-child(2n){width:3px;height:3px}
+.boot-particles i:nth-child(3n){width:7px;height:7px}
+.boot-orbit-a{box-shadow:0 0 40px color-mix(in srgb,var(--ac) 7%,transparent)}
+.boot-orbit-b{box-shadow:0 0 70px color-mix(in srgb,var(--ac) 5%,transparent)}
+.boot-card::before{
+  content:"";position:absolute;inset:-1px;border-radius:30px;padding:1px;
+  background:conic-gradient(from 90deg,transparent 0 55%,color-mix(in srgb,var(--ac) 38%,transparent) 63%,transparent 72% 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+  animation:bootBorderSpin 5.5s linear infinite;pointer-events:none;opacity:.8;
+}
+.boot-card::after{
+  content:"";position:absolute;left:0;right:0;top:-12%;height:24%;
+  background:linear-gradient(180deg,transparent,rgba(255,255,255,.18),transparent);
+  transform:translateY(-120%);animation:bootScan 2.7s ease-in-out .8s infinite;
+  pointer-events:none;mix-blend-mode:screen;
+}
+.boot-mark{transform-style:preserve-3d}
+.boot-mark span{display:block;transform:translateZ(8px)}
+.boot-progress-meta{letter-spacing:.01em}
+.boot-stage::after{content:"";display:inline-block;width:5px;height:5px;margin-left:5px;border-radius:50%;background:var(--ac);vertical-align:2px;animation:bootDot 900ms ease-in-out infinite}
+@keyframes bootParticle{
+  0%,100%{opacity:0;transform:translate3d(0,12px,0) scale(.5)}
+  20%{opacity:.75}
+  55%{opacity:.9;transform:translate3d(calc((var(--i) - 4)*9px),-28px,40px) scale(1)}
+  82%{opacity:.12}
+}
+@keyframes bootBorderSpin{to{transform:rotate(360deg)}}
+@keyframes bootScan{0%,25%{transform:translateY(-120%);opacity:0}42%{opacity:.85}70%,100%{transform:translateY(520%);opacity:0}}
+@keyframes bootDot{0%,100%{transform:scale(.55);opacity:.35}50%{transform:scale(1.05);opacity:1}}
+@media(prefers-reduced-motion:reduce){
+  .boot-particles i,.boot-card::before,.boot-card::after{animation:none!important}
+}
 </style>
 </head>
 <body>
@@ -6257,6 +6302,7 @@ html[data-device="smartphone"] .phone-reader-header-actions .phone-icon-button:l
   <div class="boot-noise" aria-hidden="true"></div>
   <div class="boot-orbit boot-orbit-a" aria-hidden="true"></div>
   <div class="boot-orbit boot-orbit-b" aria-hidden="true"></div>
+  <div class="boot-particles" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i></div>
   <div class="boot-card">
     <div class="boot-glow" aria-hidden="true"></div>
     <div class="boot-mark"><span>青</span></div>
