@@ -80,7 +80,7 @@ ok(app.includes('const bodyDeadline=Date.now()+30000'),'book fetch has no total 
 ok(smoke.includes('function readerScrollable'),'browser smoke does not verify actual reader scrollability');
 ok(smoke.includes("readerRendered(d,'#phone-reader-body')"),'smartphone smoke does not verify visible reader geometry');
 ok(smoke.includes("readerRendered(d,'#body')"),'desktop smoke does not verify visible reader geometry');
-ok(workflow.includes('--timeout 120s'),'browser process timeout is missing');
+ok(workflow.includes('timeout 120s'),'browser process timeout is missing');
 ok(!workflow.includes('--virtual-time-budget='),'browser smoke still relies on virtual-time-budget');
 ok(app.includes("currentView==='v-search'"),'desktop search does not recover after catalog initialization');
 ok(app.includes('retryPhoneCatalog'),'smartphone catalog boot retry is missing');
