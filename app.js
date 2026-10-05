@@ -4863,7 +4863,8 @@ window.addEventListener('DOMContentLoaded',()=>{
     const content=$p('#phone-content'),tabs=$p('.phone-tabbar'),detail=$p('#phone-detail'),reader=$p('#phone-reader');
     const globalBack=$p('#phone-global-back');
     if(globalBack){
-      const showBack=mode==='detail'||mode==='reader';
+      // 各画面に専用の戻るボタンがあるため、固定ボタンを重ねて操作を奪わない。
+      const showBack=false;
       globalBack.hidden=!showBack;
       globalBack.classList.toggle('is-visible',showBack);
       globalBack.setAttribute('aria-hidden',showBack?'false':'true');
