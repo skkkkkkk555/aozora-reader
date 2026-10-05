@@ -4981,7 +4981,6 @@ window.addEventListener('DOMContentLoaded',()=>{
       '<div class="phone-detail-description">'+escP(w.desc||w.description||'青空文庫の公開作品です。本文を読みながら、栞・メモ・蛍光ペン・朗読などを利用できます。')+'</div>'+
       '<button class="phone-primary" data-phone-action="detail-read">'+(p>0&&p<97?'続きから読む':'この作品を読む')+'</button>'+
       '<button class="phone-secondary" data-phone-action="detail-author">この作家の作品を見る</button>';
-    bindPhoneBackControl(d.querySelector('[data-phone-action="detail-back"]'));
   }
 
   function currentReaderBody(){return $p('#phone-reader-body')}
@@ -5555,39 +5554,37 @@ window.addEventListener('DOMContentLoaded',()=>{
   };
 
   const phoneSelector='#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]';
+  // スマホの戻る操作は、動的に生成される詳細/読書ボタンを含めて
+  // document capture の一本だけで処理する。個別bindや二重pointer/click処理は行わない。
   let phoneBackHandledUntil=0;
-  const bindPhoneBackControl=(button)=>{
-    if(!button||button.dataset.phoneBackBound==='1')return;
-    button.dataset.phoneBackBound='1';
-    const go=e=>{
-      // 実タッチはdocument-level pointerupを唯一の経路とし、直後の合成clickを無視する。
-      if(e.type==='click' && Date.now()<Number(window.__aozoraPhoneBackHandledUntil||0))return;
-      e.preventDefault();
-      e.stopPropagation();
-      window.__aozoraPhoneBack?.();
-    };
-    button.addEventListener('click',go);
-  };
-
+  const phoneBackSelector='#phone-global-back,#phone-app [data-phone-action="reader-back"],#phone-app [data-phone-action="detail-back"]';
   const handlePhoneBack=()=>{
-    window.__aozoraPhoneBackHandledUntil=Date.now()+700;
     phoneBackHandledUntil=Date.now()+700;
+    window.__aozoraPhoneBackHandledUntil=phoneBackHandledUntil;
     window.__aozoraPhoneBack?.();
   };
   document.addEventListener('pointerup',e=>{
-    if(!isPhone()||e.pointerType!=='touch')return;
-    const el=e.target.closest?.('#phone-global-back,#phone-app [data-phone-action="reader-back"],#phone-app [data-phone-action="detail-back"]');
+    if(!isPhone()||!['touch','pen'].includes(e.pointerType))return;
+    const el=e.target.closest?.(phoneBackSelector);
     if(!el)return;
     e.preventDefault();
     e.stopImmediatePropagation();
     handlePhoneBack();
   },{capture:true,passive:false});
+  document.addEventListener('click',e=>{
+    if(!isPhone())return;
+    const el=e.target.closest?.(phoneBackSelector);
+    if(!el)return;
+    if(Date.now()<phoneBackHandledUntil)return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    handlePhoneBack();
+  },{capture:true});
 
-  // ネイティブclickを一度だけ処理。pointer/touchの合成clickはここに集約される。
+  // ネイティブclickを一度だけ処理。戻る以外のスマホ操作をここに集約する。
   const phoneEvent=e=>{
     if(!isPhone())return;
-    const backEl=e.target.closest?.('#phone-global-back,#phone-app [data-phone-action="reader-back"],#phone-app [data-phone-action="detail-back"]');
-    // 戻るボタンは各ボタンへ直接バインドする。委譲と二重実行させない。
+    const backEl=e.target.closest?.(phoneBackSelector);
     if(backEl)return;
     const el=e.target.closest?.(phoneSelector);
     if(!el)return;
@@ -5670,13 +5667,6 @@ window.addEventListener('DOMContentLoaded',()=>{
     syncScreens(state.reader?'reader':'main');
   }
 
-  window.addEventListener('DOMContentLoaded',()=>{
-    const b=$p('#phone-global-back');
-    if(!b||b.dataset.bound==='1')return;
-    b.dataset.bound='1';
-    b.type='button';
-    bindPhoneBackControl(b);
-  },{once:true});
   const phoneBootWatchdog=setTimeout(()=>{
     if(!isPhone())return;
     try{
