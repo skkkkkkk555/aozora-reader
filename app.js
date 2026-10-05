@@ -138,13 +138,14 @@ function sanitizeCatalogRecords(v){
   const out=[];const seen=new Set();
   for(const raw of v){
     if(out.length>=20000||!raw||typeof raw!=='object')break;
-    // 作品著作権フラグと人物著作権フラグの両方を確認済み(r:1)の作品だけを採用。
-    // 権利状態が確認できない旧/外部カタログは検索・詳細・本文へ流さない。
-    if(Number(raw.c)!==1||Number(raw.r)!==1)continue;
-    const id=String(raw.id||'').slice(0,80),t=String(raw.t||'').slice(0,300),a=String(raw.a||'').slice(0,300),x=String(raw.x||'').slice(0,500);
+    const rawId=String(raw.id||'').slice(0,80);
+    // c:1 に加えて、永続化した著作権確認済みIDを必須とする。
+    // catalog.jsonにはrフラグが無い場合があるため、許可リスト照合後にr:1へ正規化する。
+    if(Number(raw.c)!==1||!rightsReady||!rightsAllowlist.has(rawId.padStart(6,'0')))continue;
+    const id=rawId,t=String(raw.t||'').slice(0,300),a=String(raw.a||'').slice(0,300),x=String(raw.x||'').slice(0,500);
     if(!safeStateKey(id)||seen.has(id)||!t||!x||x.length>500||x.includes('..')||x.includes('\\')||x.startsWith('http')||x.startsWith('//')||!/^[A-Za-z0-9._\/-]+$/.test(x))continue;
     seen.add(id);
-    out.push({id,t,a,tk:String(raw.tk||'').slice(0,300),ak:String(raw.ak||'').slice(0,300),d:String(raw.d||'').slice(0,80),k:Number(raw.k)===1?1:0,c:1,ndc:String(raw.ndc||'').slice(0,80),norm:String(raw.norm||'').slice(0,700),x,r:1});
+    out.push({id,t,a,tk:String(raw.tk||'').slice(0,300),ak:String(raw.ak||'').slice(0,300),d:String(raw.d||'').slice(0,80),k:Number(raw.k)===1?1:0,c:1,r:1,ndc:String(raw.ndc||'').slice(0,80),norm:String(raw.norm||'').slice(0,700),x});
   }
   return out;
 }
@@ -691,6 +692,13 @@ async function loadCachedCatalog(){
     await idb.set('k',CATALOG_CACHE_KEY,safeCatalog);
     return safeCatalog;
   }
+  // さらに旧自動/手動取り込みキーも安全に移行する。
+  c=await idb.get('k','cat');
+  safeCatalog=sanitizeCatalogRecords(c);
+  if(safeCatalog.length){
+    await idb.set('k',CATALOG_CACHE_KEY,safeCatalog);
+    return safeCatalog;
+  }
   return [];
 }
 
@@ -883,7 +891,9 @@ function parseFile(file){
 
 async function parseCsv(csv,{background=false}={}){
   if(typeof csv!=='string'||csv.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
-  $('c-bar').style.width='70%'; $('c-log').textContent='解析中…';
+  const cBar=$('c-bar'),cLog=$('c-log');
+  if(!background&&cBar)cBar.style.width='70%';
+  if(!background&&cLog)cLog.textContent='解析中…';
   const lines=csv.split('\n');
   if(lines.length>20000)throw new Error('catalog-rows-too-many');
   if(!lines.length||lines[0].length>200000)throw new Error('catalog-header-invalid');
@@ -930,12 +940,17 @@ async function parseCsv(csv,{background=false}={}){
       norm:(t+' '+tk+' '+author+' '+ak).replace(/[\s　]/g,'').toLowerCase(),
       x:cols[col.x].replace('https://www.aozora.gr.jp/','').replace(/\.zip$/,'').replace(/\/([^\/]+)$/,'/$1/$1.txt').replace(/^\/+|\.\.+/g,'')
     });
-    if(i%2500===0){ $('c-bar').style.width=(70+Math.round(i/lines.length*28))+'%'; await new Promise(r=>setTimeout(r,0)); }
+    if(i%2500===0){
+      if(!background&&cBar)cBar.style.width=(70+Math.round(i/lines.length*28))+'%';
+      await new Promise(r=>setTimeout(r,0));
+    }
   }
   allWorks=sanitizeCatalogRecords([...m.values()]);
   filterWorks();
-  await idb.set('k','cat',allWorks);
-  $('c-bar').classList.remove('loading-bar-live'); $('c-bar').style.width='100%'; $('c-log').textContent='完了しました！';
+  await idb.set('k',CATALOG_CACHE_KEY,allWorks);
+  if(cBar)cBar.classList.remove('loading-bar-live');
+  if(cBar)cBar.style.width='100%';
+  if(cLog)cLog.textContent='完了しました！';
   if(background){renderHome();}else setTimeout(()=>{ closeSheet(); renderHome(); toast('作品カタログを取り込みました'); },400);
 }
 
