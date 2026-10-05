@@ -1,6 +1,8 @@
 import {readFileSync} from 'node:fs';
 
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const latestEntry=readFileSync(new URL('../reader-latest.html',import.meta.url),'utf8');
+const v24Entry=readFileSync(new URL('../reader-v24.html',import.meta.url),'utf8');
 const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');
 const notice=readFileSync(new URL('../NOTICE.md',import.meta.url),'utf8');
 const license=readFileSync(new URL('../LICENSE.md',import.meta.url),'utf8');
@@ -40,6 +42,8 @@ for(const id of ['phone-app','phone-content','phone-detail','phone-reader','phon
 ok(inlineScripts.length===0,'inline script remains and may be blocked by CSP');
 ok(html.includes('touch-action:pan-y!important'),'smartphone reader body does not allow vertical touch scrolling');
 ok(/<script\s+src="\.\/app\.js\?v=[^"]+"><\/script>/.test(html),'app.js cache-bust script tag is missing');
+ok(latestEntry.includes('./redirect.js?v=20261005-26')&&!latestEntry.includes('phone-app'),'reader-latest.html must be a thin single-entry redirect');
+ok(v24Entry.includes('./redirect.js?v=20261005-26')&&!v24Entry.includes('phone-app'),'reader-v24.html must be a thin single-entry redirect');
 ok(app.includes("reader.classList.add('phone-open')"),'smartphone reader open class lifecycle missing');
 ok(html.includes('.phone-reader.phone-open{display:flex!important}'),'smartphone reader display rule missing');
 ok(app.includes('__aozoraPhoneOpenSheet=openPhoneSheet'),'global sheet bridge missing');
