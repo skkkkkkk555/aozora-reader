@@ -156,7 +156,10 @@ ok(html.includes('#reader.open { display: flex; animation: none!important;'),'re
 ok(html.includes('background:var(--bg)!important;'),'reader loading layer is not opaque');
 
 ok(app.includes("body.classList.add('reader-building')"),'reader build isolation missing');
+ok(app.includes('function enforceDesktopVerticalReaderLayout'),'desktop vertical reader layout guard missing');
+ok(app.includes("st.v!==false)enforceDesktopVerticalReaderLayout()"),'vertical toggle does not reassert desktop reader layout');
 ok(html.includes('id="aozora-pc-ui-absolute-final"'),'desktop reader absolute UI rule missing');
+ok(smoke.includes("desktop reader chrome after vertical toggle"),'browser smoke does not verify desktop vertical reader UI');
 ok(app.includes('readerTok++;'),'reader close does not invalidate pending work');
 ok(!app.includes("body.innerHTML=readerLoaderMarkup()"),'reader loader must not be injected into article body');
 ok(app.includes("body.scrollTop=0;")&&app.includes("body.scrollLeft=0;"),'reader opening does not reset both scroll axes');
