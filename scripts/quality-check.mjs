@@ -80,7 +80,10 @@ ok(app.includes('b.scrollLeft=Math.max(0,m.max-p*m.max);'),'handheld vertical fr
 ok(app.includes("const left=b.classList.contains('v')?Math.max(0,m.max-target):target"),'desktop vertical page position does not use stable LTR coordinates');
 ok(app.includes("b.scrollLeft=Math.max(0,Math.min(m.max,b.scrollLeft-d))"),'desktop vertical wheel direction is unstable');
 ok(app.includes("body.classList.remove('paper-turning-next','paper-turning-prev')"),'page turn still transforms article body');
-ok(html.includes('app.js?v=reader-structural-reader-v20261005-35'),'vertical reader structural cache bust missing');
+ok(html.includes('app.js?v=reader-actual-device-v20261005-37'),'actual-device reader cache bust missing');
+ok(html.includes('id="phone-global-back"'),'smartphone global back control missing');
+ok(html.includes('aozora-actual-device-fix'),'actual-device control hardening missing');
+ok(html.includes('.phone-icon-button .phone-svg'),'smartphone icon size hardening missing');
 
 
 ok(app.includes("cur==='auto'?'sepia':cur==='sepia'?'dark':'auto'"),'smartphone theme cycle contains invalid theme value');
@@ -119,6 +122,8 @@ ok(/const catalogDeadline=Date\.now\(\)\+\d+/.test(app),'catalog fetch has no to
 ok(/const bodyDeadline=Date\.now\(\)\+\d+/.test(app),'book fetch has no total wait deadline');
 ok(smoke.includes('function readerScrollable'),'browser smoke does not verify actual reader scrollability');
 ok(smoke.includes("readerRendered(d,'#phone-reader-body')"),'smartphone smoke does not verify visible reader geometry');
+ok(smoke.includes("globalBack"),'smartphone smoke does not exercise global back control');
+ok(smoke.includes("clientWidth>0&&el.clientHeight>0"),'reader smoke lacks usable geometry checks');
 ok(smoke.includes("readerRendered(d,'#body')"),'desktop smoke does not verify visible reader geometry');
 ok(workflow.includes('timeout 120s'),'browser process timeout is missing');
 ok(!workflow.includes('--virtual-time-budget='),'browser smoke still relies on virtual-time-budget');
