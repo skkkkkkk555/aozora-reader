@@ -76,10 +76,14 @@ function readerText(d){
   }else{
     if(device==='smartphone')fail('desktop detection unexpectedly smartphone');
 
-    const homeEntry=await waitFor(()=>d.querySelector('#v-home [data-act="feat-read"],#v-home [data-act="open-book"],#v-home [data-act="resume-click"],#v-home [data-act="feat-click"]'),18000);
+    let homeEntry=null;
+    await waitFor(()=>{
+      homeEntry=d.querySelector('#v-home [data-act="feat-read"]')||d.querySelector('#v-home [data-act="open-book"]')||d.querySelector('#v-home [data-act="resume-click"]');
+      return homeEntry;
+    },18000);
     homeEntry.click();
 
-    const sheetOrReader=await waitFor(()=>d.querySelector('#reader')?.classList.contains('open')||d.querySelector('#sheet')?.classList.contains('open'),7000);
+    await waitFor(()=>d.querySelector('#reader')?.classList.contains('open')||d.querySelector('#sheet')?.classList.contains('open'),7000);
     if(!d.querySelector('#reader')?.classList.contains('open')){
       const readNow=await waitFor(()=>d.querySelector('#sheet [data-act="read-now"]'),6000);
       readNow.click();
