@@ -62,7 +62,16 @@ function readerScrollable(d,selector){
     frame.addEventListener('error',onerror,{once:true});
   });
   const d=frame.contentDocument;
+  const runtimeErrors=[];
+  frame.contentWindow?.addEventListener('error',e=>{
+    runtimeErrors.push({kind:'error',message:String(e.message||e.error?.message||'error'),stack:String(e.error?.stack||'').slice(0,3000)});
+  });
+  frame.contentWindow?.addEventListener('unhandledrejection',e=>{
+    runtimeErrors.push({kind:'unhandledrejection',message:String(e.reason?.message||e.reason||'rejection'),stack:String(e.reason?.stack||'').slice(0,3000)});
+  });
   await waitFor(()=>d?.documentElement?.dataset?.device,10000);
+  await sleep(500);
+  if(runtimeErrors.length)fail('runtime error during startup: '+JSON.stringify(runtimeErrors));
   const device=d.documentElement.dataset.device;
 
   if(mode==='live'){
