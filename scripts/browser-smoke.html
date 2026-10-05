@@ -37,6 +37,11 @@ function readerText(d){
   return textOf(d.querySelector('#phone-reader-body'))||textOf(d.querySelector('#body'));
 }
 function readerRendered(d,selector){
+function touchTap(el){
+  if(!el)throw new Error('touch target missing');
+  el.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,cancelable:true,pointerType:'touch',clientX:80,clientY:80}));
+  el.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,detail:1}));
+}
   const el=d.querySelector(selector);
   if(!visible(el))return false;
   const rect=el.getBoundingClientRect();
@@ -205,6 +210,16 @@ function assertDesktopReaderChrome(d,label){
     if(d.querySelector('#phone-reader')?.classList.contains('reader-chrome-hidden'))fail('smartphone reader UI restore button did not restore UI');
     clearRuntimeErrors(d);
     if(textOf(d.querySelector('#phone-reader-body')).replace(/\s+/g,'').length<20)fail('smartphone reader body has no readable text');
+     const visibleBody=d.querySelector('#phone-reader-body');
+     const visibleFlow=visibleBody?.querySelector('.reader-flow');
+     const bodyRect=visibleBody?.getBoundingClientRect();
+     const flowRect=visibleFlow?.getBoundingClientRect();
+     const bodyStyle=visibleBody?d.defaultView.getComputedStyle(visibleBody):null;
+     const flowStyle=visibleFlow?d.defaultView.getComputedStyle(visibleFlow):null;
+     if(!bodyRect||bodyRect.width<1||bodyRect.height<1)fail('smartphone reader body has no visible geometry');
+     if(!flowRect||flowRect.width<1||flowRect.height<1)fail('smartphone reader text flow has no visible geometry');
+     if(!bodyStyle||bodyStyle.visibility!=='visible'||Number(bodyStyle.opacity)<.99||bodyStyle.display==='none')fail('smartphone reader body is hidden by computed style');
+     if(!flowStyle||flowStyle.visibility!=='visible'||Number(flowStyle.opacity)<.99||flowStyle.display==='none')fail('smartphone reader text flow is hidden by computed style');
     assertNoRuntimeErrors(d,'mobile after reader render');
     clearRuntimeErrors(d);
     assertNoRuntimeErrors(d,'mobile after reader render');
@@ -249,7 +264,7 @@ function assertDesktopReaderChrome(d,label){
     // グローバル戻るは本文を覆わない設計。実際のヘッダー戻るを検査する。
     const readerHeaderBack=d.querySelector('#phone-reader [data-phone-action="reader-back"]');
     if(!readerHeaderBack||!visible(readerHeaderBack))fail('smartphone reader header back button is not visible');
-    readerHeaderBack.click();
+     touchTap(readerHeaderBack);
     await sleep(100);
     await waitFor(()=>!d.querySelector('#phone-reader')?.classList.contains('phone-open'),5000);
     await waitFor(()=>visible(d.querySelector('#phone-detail')),4000);
@@ -268,7 +283,7 @@ function assertDesktopReaderChrome(d,label){
     await waitFor(()=>readerRendered(d,'#phone-reader-body'),20000);
     const readerBack=await waitFor(()=>d.querySelector('#phone-reader [data-phone-action="reader-back"]'),4000);
     clearRuntimeErrors(d);
-    readerBack.click();
+     touchTap(readerBack);
     assertNoRuntimeErrors(d,'mobile after reader back');
     clearRuntimeErrors(d);
     await waitFor(()=>!d.querySelector('#phone-reader')?.classList.contains('phone-open'),5000);
