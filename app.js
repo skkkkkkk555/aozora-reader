@@ -617,7 +617,6 @@ const RIGHTS_CACHE_KEY='rights-allowlist-v1';
 const RIGHTS_MANIFEST='./rights-allowlist.json';
 const CATALOG_TARGET='https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip';
 const URLS=[
-  './catalog.json',
   CATALOG_TARGET,
   'https://raw.githubusercontent.com/aozorabunko/aozorabunko/master/index_pages/list_person_all_extended_utf8.zip',
   'https://raw.githubusercontent.com/code4fukui/koten-reader/main/list_person_all_extended_utf8.csv',
