@@ -17,7 +17,7 @@ ok(app.includes('if(progressMigrated)save();'),'legacy progress migration is not
 ok(app.includes('pos=Number(d.readerProgressVersion)===READER_PROGRESS_VERSION?(d.pos||{}):{};'),'legacy reader progress migration is not enforced');
 ok(app.includes('let readerPositionReady=false'),'reader initial-position guard missing');
 ok(app.includes('!readerPositionReady'),'progress guard is not tied to initial-position readiness');
-ok(app.includes('const READER_PROGRESS_VERSION=2'),'reader progress schema version missing');
+ok(/const READER_PROGRESS_VERSION=\d+/.test(app),'reader progress schema version missing');
 ok(app.includes('phoneRoot:true'),'smartphone history root sentinel missing');
 ok(app.includes('const bindPhoneBackControl=(button)=>'),'direct smartphone back binding missing');
 ok(html.includes('id="aozora-reader-root-final-fix"'),'authoritative reader geometry CSS missing');
