@@ -63,6 +63,9 @@ ok(app.includes('function applyPhoneReaderDirection'),'smartphone reader directi
 ok(app.includes('function togglePhoneReaderDirection'),'smartphone reader direction toggle missing');
 ok(app.includes('if(state.readerVertical)'),'smartphone vertical progress axis handling missing');
 ok(app.includes("showScreen(state.screen||'home','back');"),'smartphone back navigation does not return to the previous main screen');
+ok(app.includes("phoneLayer:'phone-main'"),'smartphone main screen history is missing');
+ok(app.includes("history.state?.phoneScreen"),'smartphone history does not store/restore tabs');
+ok(app.includes("showScreen(next,'back',true)"),'smartphone popstate does not restore previous tab');
 ok(app.includes("globalBack.style.setProperty('display',showBack?'flex':'none','important')"),'smartphone global back control is not independently synchronized');
 ok(html.includes('aozora-final-device-ui-hardening'),'final cross-device UI hardening block is missing');
 ok(html.includes('phone-reader-body.phone-reader-vertical'),'smartphone vertical reader CSS is missing');
@@ -77,10 +80,16 @@ ok(app.includes('function bindDesktopVerticalWheel'),'desktop vertical wheel bin
 ok(app.includes("b.style.setProperty('touch-action',state.readerVertical?'pan-x':'pan-y','important')"),'handheld vertical touch-axis fix missing');
 ok(app.includes("if(handheld||buffer.byteLength<=4*1024*1024)"),'handheld parser still depends on Reader Worker');
 ok(app.includes('b.scrollLeft=Math.max(0,m.max-p*m.max);'),'handheld vertical fraction uses stable LTR coordinates');
+ok(app.includes('function decodeAozoraText(buffer)'),'robust Aozora decoder is missing');
+ok(app.includes("new TextDecoder(enc,{fatal:false})"),'Aozora decoder does not try multiple encodings');
+ok(html.includes('aozora-mobile-final-stability'),'mobile final stability CSS is missing');
+ok(html.includes('max-width:300px!important'),'mobile toast is not compact');
+ok(html.includes('width:min(320px,calc(100vw - 28px))!important'),'mobile banner is not compact');
+ok(app.includes('const handlePhoneBack='),'direct mobile back handler is missing');
 ok(app.includes("const left=b.classList.contains('v')?Math.max(0,m.max-target):target"),'desktop vertical page position does not use stable LTR coordinates');
 ok(app.includes("b.scrollLeft=Math.max(0,Math.min(m.max,b.scrollLeft-d))"),'desktop vertical wheel direction is unstable');
 ok(app.includes("body.classList.remove('paper-turning-next','paper-turning-prev')"),'page turn still transforms article body');
-ok(html.includes('app.js?v=reader-actual-device-v20261005-37'),'actual-device reader cache bust missing');
+ok(html.includes('app.js?v=reader-mobile-zero-bug-v20261005-38'),'mobile zero-bug cache bust missing');
 ok(html.includes('id="phone-global-back"'),'smartphone global back control missing');
 ok(html.includes('aozora-actual-device-fix'),'actual-device control hardening missing');
 ok(html.includes('.phone-icon-button .phone-svg'),'smartphone icon size hardening missing');
