@@ -170,6 +170,14 @@ function assertDesktopReaderChrome(d,label){
     await waitFor(()=>readerRendered(d,'#phone-reader-body')&&!/本文を読み込めませんでした/.test(readerText(d)),30000);
     if(d.querySelector('#phone-reader-loading-layer')?.hidden===false)throw new Error('mobile loader did not hide after render');
     if(!readerScrollable(d,'#phone-reader-body'))fail('smartphone reader body is not actually scrollable');
+    const mobileUiRestore=d.querySelector('#phone-reader .phone-reader-ui-toggle');
+    if(!mobileUiRestore||!visible(mobileUiRestore))fail('smartphone reader UI restore button is not visible');
+    if(!/UI表示/.test(textOf(mobileUiRestore)))fail('smartphone reader UI restore button label missing');
+    d.querySelector('#phone-reader')?.classList.add('reader-chrome-hidden');
+    mobileUiRestore.click();
+    await sleep(80);
+    if(d.querySelector('#phone-reader')?.classList.contains('reader-chrome-hidden'))fail('smartphone reader UI restore button did not restore UI');
+    clearRuntimeErrors(d);
     if(textOf(d.querySelector('#phone-reader-body')).replace(/\s+/g,'').length<20)fail('smartphone reader body has no readable text');
     assertNoRuntimeErrors(d,'mobile after reader render');
     clearRuntimeErrors(d);
