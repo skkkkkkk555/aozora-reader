@@ -1550,26 +1550,6 @@ function openBookDetail(w){
       <div id="b-quote" style="padding:16px; background:var(--card-sub); border-radius:var(--radius-sm); font-size:var(--fs-b); line-height:1.6; color:var(--sub)">冒頭を読み込んでいます…</div>
     </div>`;
   sheet(w.t, html);
-  const readBtn=$('sheet')?.querySelector('[data-act="read-now"]');
-  if(readBtn){
-    const openFromButton=()=>{
-      closeSheet(true);
-      history.replaceState(null,'',location.href);
-      openReader(w,false);
-    };
-    readBtn.addEventListener('pointerup',e=>{
-      if(e.pointerType!=='mouse'){
-        e.preventDefault();
-        e.stopPropagation();
-        openFromButton();
-      }
-    },{capture:true});
-    readBtn.addEventListener('click',e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      openFromButton();
-    },{capture:true});
-  }
   fetchHead(w).then(q=>{
     const el=$('b-quote');
     if(el){el.textContent=q;el.classList.remove('book-quote-loading');el.setAttribute('aria-busy','false');}
@@ -1595,6 +1575,7 @@ async function fetchHead(w){
 }
 
 let readerTok=0;
+let readerLoadingWorkId='';
 async function fetchBody(w){
   if(!w||!isPublicWork(w))throw new Error('protected-work');
   if(BROWSER_SMOKE){
@@ -1800,6 +1781,11 @@ let lastUserActivityTime=Date.now();
 let inBookSearchResults=[], inBookSearchIdx=0;
 
 async function openReader(w, fromDetail=false, bookmarkF=null){
+  if(!w||typeof w.id!=='string')return;
+  const readerEl=$('reader');
+  const currentId=readerLoadingWorkId;
+  if(currentId===w.id && readerEl?.classList.contains('open') && $('body')?.getAttribute('aria-busy')==='true')return;
+  readerLoadingWorkId=w.id;
   if(document.documentElement.dataset.device==='smartphone'&&typeof window.__aozoraPhoneOpenReader==='function'){
     window.__aozoraPhoneOpenReader(w,fromDetail,bookmarkF);
     return;
@@ -1839,9 +1825,12 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
       });
     });
 
+    if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
+
     if(st.kp && !document.body.classList.contains('low-power')) extractKeyphrases(doc.plain);
   } catch(e){
     setReaderLoading(false);
+    if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
     if(e.dead) toast('取得できない作品のため除外しました');
     else $('body').innerHTML='<div class="reader-error-state"><div class="reader-error-icon">!</div><div class="reader-error-title">本文を読み込めませんでした</div><div class="reader-error-text">通信状態を確認して、もう一度お試しください。</div><button class="primary" data-act="r-retry" style="margin-top:16px">再試行</button>';
   }
@@ -4023,22 +4012,6 @@ window.addEventListener('DOMContentLoaded',()=>{
       '<div class="phone-detail-description">'+escP(w.desc||w.description||'青空文庫の公開作品です。本文を読みながら、栞・メモ・蛍光ペン・朗読などを利用できます。')+'</div>'+
       '<button class="phone-primary" data-phone-action="detail-read" data-act="read-now">'+(p>0&&p<97?'続きから読む':'この作品を読む')+'</button>'+
       '<button class="phone-secondary" data-phone-action="detail-author">この作家の作品を見る</button>';
-    const phoneReadBtn=$p('#phone-detail [data-phone-action="detail-read"]');
-    if(phoneReadBtn){
-      const openFromButton=()=>openReader(w,true);
-      phoneReadBtn.addEventListener('pointerup',e=>{
-        if(e.pointerType!=='mouse'){
-          e.preventDefault();
-          e.stopPropagation();
-          openFromButton();
-        }
-      },{capture:true});
-      phoneReadBtn.addEventListener('click',e=>{
-        e.preventDefault();
-        e.stopPropagation();
-        openFromButton();
-      },{capture:true});
-    }
   }
 
   function currentReaderBody(){return $p('#phone-reader-body')}
