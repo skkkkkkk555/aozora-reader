@@ -616,6 +616,13 @@ const URLS=[
 ];
 
 async function checkCatalog(){
+  if(BROWSER_SMOKE){
+    // 実在する青空文庫の公開作品レコードを固定し、カタログ通信の揺らぎとUIテストを分離する。
+    allWorks=[{"id":"000789","t":"吾輩は猫である","a":"夏目 漱石","tk":"わがはいはねこである","ak":"なつめ","d":"1999-09-21","k":1,"c":1,"ndc":"NDC 913","norm":"吾輩は猫であるわがはいはねこである夏目漱石なつめ","x":"cards/000148/files/789_ruby_5639/789_ruby_5639.txt"}];
+    filterWorks();
+    renderHome();
+    return;
+  }
   const c=await idb.get('k','cat');
   const safeCatalog=sanitizeCatalogRecords(c);
   if(safeCatalog.length){
