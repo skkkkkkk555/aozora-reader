@@ -5128,7 +5128,14 @@ window.addEventListener('DOMContentLoaded',()=>{
       b.style.setProperty('--phone-reader-fs',state.readerFs+'px');
       b.style.setProperty('--phone-reader-lh',state.readerLh);
       requestAnimationFrame(()=>{
-        b.scrollTop=oldFraction*Math.max(0,b.scrollHeight-b.clientHeight);
+        if(state.readerVertical){
+          const max=Math.max(0,b.scrollWidth-b.clientWidth);
+          b.scrollLeft=max-oldFraction*max;
+          b.scrollTop=0;
+        }else{
+          b.scrollTop=oldFraction*Math.max(0,b.scrollHeight-b.clientHeight);
+          b.scrollLeft=0;
+        }
       });
     }
     save();
@@ -5157,6 +5164,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(b){
       b.style.setProperty('--phone-reader-fs',state.readerFs+'px');
       b.style.setProperty('--phone-reader-lh',state.readerLh);
+      applyPhoneReaderDirection();
     }
   };
   async function toggleWake(){
