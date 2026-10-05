@@ -1615,21 +1615,6 @@ async function fetchBody(w){
 }
 
 let midashiSeq=0;
-function aozoraPlain(raw){
-  let t=String(raw||'').replace(/\r\n?/g,'\n');
-  const ls=t.split('\n'),d=[];
-  ls.forEach((l,i)=>{if(/^-{20,}$/.test(l)&&i<60)d.push(i);});
-  t=d.length>=2?ls.slice(d[1]+1).join('\n'):ls.slice(2).join('\n');
-  const sourceIndex=t.search(/\n底本：/);
-  if(sourceIndex>0)t=t.slice(0,sourceIndex);
-  return t
-    .replace(/[０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0))
-    .replace(/｜([^《\n]+)《([^》\n]+)》/g,'$1')
-    .replace(/([\u4E00-\u9FFF々〆ヶ〇]+)《([^》\n]+)》/g,'$1')
-    .replace(/［＃[^］]*］/g,'')
-    .replace(/[ \t]+\n/g,'\n')
-    .trim();
-}
 function parseAozora(raw,withPlain=false){
   midashiSeq=0;
   let t=String(raw||'').replace(/\r\n?/g,'\n');
@@ -1640,7 +1625,17 @@ function parseAozora(raw,withPlain=false){
   let sourceInfo='';
   const sourceIndex=t.search(/\n底本：/);
   if(sourceIndex>0){sourceInfo=t.slice(sourceIndex).trim();t=t.slice(0,sourceIndex);}
-  const plain=aozoraPlain(raw);
+
+  let plain='';
+  if(withPlain){
+    plain=t
+      .replace(/[０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0))
+      .replace(/｜([^《\n]+)《([^》\n]+)》/g,'$1')
+      .replace(/([\u4E00-\u9FFF々〆ヶ〇]+)《([^》\n]+)》/g,'$1')
+      .replace(/［＃[^］]*］/g,'')
+      .replace(/[ \t]+\n/g,'\n')
+      .trim();
+  }
 
   t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
    .replace(/[０-９]/g,s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0))
@@ -1658,7 +1653,7 @@ function parseAozora(raw,withPlain=false){
   // 改行は<BR>要素に展開せず、そのまま保持してCSSのpre-wrapで表示する。
   let html=t;
   if(sourceInfo){
-    html+=`<section class="aozora-source-info" aria-label="青空文庫の作品情報"><div class="aozora-source-title">青空文庫 作品情報</div><pre>${esc(sourceInfo)}</pre></section>`;
+    html+=`<section class="aozora-source-info" aria-label="青空文庫 作品情報"><div class="aozora-source-title">青空文庫 作品情報</div><pre>${esc(sourceInfo)}</pre></section>`;
   }
   return withPlain?{html,plain}:html;
 }
@@ -1805,19 +1800,36 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
 
   try {
     const doc=await fetchBody(w);
-    if(tId!==readerTok) return;
+    if(tId!==readerTok||!$('reader')?.classList.contains('open'))return;
     curDoc=doc;
-    renderReaderBody();
+    const rendered=await renderReaderBodyProgressively($('body'),doc.html,()=>tId===readerTok&&curWork?.id===w.id&&$('reader')?.classList.contains('open'));
+    if(!rendered)return;
+    if(tId!==readerTok||!$('reader')?.classList.contains('open'))return;
+    $('body').classList.add('paper-paged');
     setReaderLoading(false);
     applyReaderConfig(null);
 
     const restoreInitialPage=()=>{
       if(tId!==readerTok||curWork?.id!==w.id||!$('reader')?.classList.contains('open'))return;
       const f=(bookmarkF!==null&&Number.isFinite(Number(bookmarkF)))?Math.max(0,Math.min(1,Number(bookmarkF))):(pos[w.id]?.f||0);
-      const page=getReaderPageCount();
-      const idx=Math.max(0,Math.min(page-1,Math.round(f*Math.max(0,page-1))));
-      setReaderPage(idx,false);
-      updateProgress(true);
+      if(f<=0){
+        const b=$('body');
+        if(b)b.scrollLeft=0;
+        safeText('r-prog','0%');
+        const slider=$('r-slider');
+        if(slider)slider.value='0';
+        safeText('r-page-lbl','0% · 読書準備完了 · ページ計算中…');
+        const idle=fn=>{
+          if(typeof window.requestIdleCallback==='function')window.requestIdleCallback(fn,{timeout:700});
+          else window.setTimeout(fn,80);
+        };
+        idle(()=>{if(tId===readerTok&&curWork?.id===w.id&&$('reader')?.classList.contains('open'))syncReaderPagination(0);});
+      }else{
+        const page=getReaderPageCount();
+        const idx=Math.max(0,Math.min(page-1,Math.round(f*Math.max(0,page-1))));
+        setReaderPage(idx,false);
+        updateProgress(true);
+      }
       window.setTimeout(()=>$('reader').classList.remove('paper-first-open'),900);
     };
     requestAnimationFrame(()=>{
@@ -1840,10 +1852,14 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
   } catch(e){
     setReaderLoading(false);
     if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
-    if(e.dead) toast('取得できない作品のため除外しました');
-    else $('body').innerHTML='<div class="reader-error-state"><div class="reader-error-icon">!</div><div class="reader-error-title">本文を読み込めませんでした</div><div class="reader-error-text">通信状態を確認して、もう一度お試しください。</div><button class="primary" data-act="r-retry" style="margin-top:16px">再試行</button>';
+    if(e.dead)toast('取得できない作品のため除外しました');
+    else{
+      $('body').innerHTML='<div class="reader-error-state"><div class="reader-error-icon">!</div><div class="reader-error-title">本文を読み込めませんでした</div><div class="reader-error-text">通信状態を確認して、もう一度お試しください。</div><button class="primary" data-act="r-retry" style="margin-top:16px">再試行</button></div>';
+      $('body').setAttribute('aria-busy','false');
+    }
   }
 }
+
 
 function readerLoaderMarkup(){
   return '<div class="reader-loading aozora-loader" role="status" aria-live="polite">'+
@@ -1858,14 +1874,55 @@ function readerLoaderMarkup(){
       '<div class="abl-leaf"><div class="abl-typeset-front">私は多少の金を工面して出掛ける事にした。私は金の工面に二三日を費やした。</div><div class="abl-typeset-back">私は多少の金を工面して出掛ける事にした。私は金の工面に二三日を費やした。</div></div>'+
     '</div>'+
     '<div class="reader-loading-title">本文を読み込んでいます</div>'+
-    '<div class="reader-loading-sub">青空文庫から本文を準備中…</div>'+
+    '<div class="reader-loading-sub">本文を画面に準備しています…</div>'+
   '</div>';
 }
-function setReaderLoading(show){
+function setLayerLoading(layer,show){
+  if(!layer)return;
+  if(show){
+    if(!layer.firstElementChild)layer.innerHTML=readerLoaderMarkup();
+    layer.hidden=false;
+    layer.setAttribute('aria-hidden','false');
+  }else{
+    layer.hidden=true;
+    layer.setAttribute('aria-hidden','true');
+  }
+}
+function resetDesktopReaderBody(){
   const body=$('body');
   if(!body)return;
-  body.setAttribute('aria-busy',show?'true':'false');
-  if(show)body.innerHTML=readerLoaderMarkup();
+  body.setAttribute('aria-busy','true');
+  body.classList.remove('paper-paged','v','reader-building','reader-page-next','reader-page-prev','paper-turning-next','paper-turning-prev');
+  body.style.removeProperty('--reader-page-width');
+  body.style.removeProperty('--reader-v-column-width');
+  body.innerHTML='';
+}
+function setReaderLoading(show){
+  const body=$('body'),reader=$('reader'),layer=$('reader-loading-layer');
+  if(body)body.setAttribute('aria-busy',show?'true':'false');
+  if(show){
+    resetDesktopReaderBody();
+    if(reader)reader.classList.add('reader-is-loading');
+    setLayerLoading(layer,true);
+  }else{
+    if(reader)reader.classList.remove('reader-is-loading');
+    setLayerLoading(layer,false);
+  }
+}
+function setPhoneReaderLoading(show){
+  const body=$p('#phone-reader-body'),reader=$p('#phone-reader'),layer=$p('#phone-reader-loading-layer');
+  if(body)body.setAttribute('aria-busy',show?'true':'false');
+  if(show){
+    if(body){
+      body.innerHTML='';
+      body.classList.remove('reader-building');
+    }
+    reader?.classList.add('reader-is-loading');
+    setLayerLoading(layer,true);
+  }else{
+    reader?.classList.remove('reader-is-loading');
+    setLayerLoading(layer,false);
+  }
 }
 function pulseState(el){
   if(!el||document.body.classList.contains('low-power'))return;
@@ -1876,10 +1933,67 @@ function pulseState(el){
 }
 
 function renderReaderBody(){
-  if(!curDoc) return;
+  if(!curDoc)return;
   const body=$('body');
   body.innerHTML=curDoc.html;
   body.classList.add('paper-paged');
+}
+function splitReaderHtml(html,maxChunk=18000){
+  const src=String(html||'');
+  const chunks=[];
+  const stack=[];
+  const voidTags=new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
+  const tagRe=/<\/?([A-Za-z][\w:-]*)(?:\s[^>]*?)?\/?\s*>/g;
+  let chunkStart=0,pos=0;
+  while(pos<src.length){
+    const nl=src.indexOf('\n',pos);
+    const end=nl<0?src.length:nl+1;
+    tagRe.lastIndex=pos;
+    let m;
+    while((m=tagRe.exec(src))&&m.index<end){
+      const full=m[0],name=m[1].toLowerCase();
+      if(full.startsWith('</')){
+        const idx=stack.lastIndexOf(name);
+        if(idx>=0)stack.splice(idx,1);
+      }else if(!voidTags.has(name)&&!full.endsWith('/>')){
+        stack.push(name);
+      }
+    }
+    pos=end;
+    if(stack.length===0&&(pos-chunkStart>=maxChunk||pos===src.length)){
+      chunks.push(src.slice(chunkStart,pos));
+      chunkStart=pos;
+    }
+  }
+  if(chunkStart<src.length)chunks.push(src.slice(chunkStart));
+  if(!chunks.length)chunks.push('');
+  return chunks;
+}
+function renderReaderBodyProgressively(target,html,guard=()=>true){
+  return new Promise(resolve=>{
+    if(!target){resolve(false);return;}
+    const chunks=splitReaderHtml(html);
+    target.innerHTML='';
+    target.classList.add('reader-building');
+    let index=0;
+    const run=()=>{
+      if(!guard()){resolve(false);return;}
+      const deadline=(typeof performance!=='undefined'&&performance.now)?performance.now()+7:Date.now()+7;
+      while(index<chunks.length){
+        target.insertAdjacentHTML('beforeend',chunks[index++]);
+        const now=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+        if(now>=deadline)break;
+      }
+      if(index<chunks.length){
+        window.setTimeout(run,0);
+        return;
+      }
+      target.classList.remove('reader-building');
+      const done=()=>resolve(true);
+      if(typeof window.requestAnimationFrame==='function')window.requestAnimationFrame(done);else done();
+    };
+    window.setTimeout(run,0);
+  });
 }
 
 function getReaderPageMetrics(){
@@ -1988,16 +2102,24 @@ function playPaperTurn(direction){
 
 async function closeReader(fromPop=false){
   closeOneLineMode();
-  // 閉じる直前のページ位置を必ず確定保存。
-  if(curWork) updateProgress(true);
-  await releaseScreenWakeLock();
-  $('reader').classList.remove('open','paper-reader','paper-first-open');
-  $('reader').classList.remove('reader-night', 'mode-focus');
-  applySettings();
-  if(window.speechSynthesis) speechSynthesis.cancel();
+  readerTok++;
+  readerLoadingWorkId='';
+  if(curWork){
+    try{updateProgress(true);}catch{}
+  }
+  $('reader').classList.remove('open','paper-reader','paper-first-open','reader-is-loading');
+  $('reader').classList.remove('reader-night','mode-focus');
+  setLayerLoading($('reader-loading-layer'),false);
+  if(window.speechSynthesis)speechSynthesis.cancel();
   popLayer('reader');
-  save(); switchView('v-home'); renderHome();
-  if(!fromPop && history.state?.layer==='reader') history.back();
+  save();
+  switchView('v-home');
+  renderHome();
+  void releaseScreenWakeLock();
+  if(!fromPop&&history.state?.layer==='reader')history.back();
+  curDoc=null;
+  curWork=null;
+  return true;
 }
 
 let progressRaf=null;
@@ -4081,23 +4203,36 @@ window.addEventListener('DOMContentLoaded',()=>{
     const reader=$p('#phone-reader');reader?.classList.remove('reader-chrome-hidden');
     body.style.setProperty('--phone-reader-fs',state.readerFs+'px');
     body.style.setProperty('--phone-reader-lh',state.readerLh);
-    body.innerHTML=readerLoaderMarkup();
-    const prog=$p('#phone-reader-progress span');if(prog)prog.style.width=Math.round(progressOf(w)*100)+'%';
+    setPhoneReaderLoading(true);
+    const prog=$p('#phone-reader-progress');if(prog)prog.style.width=Math.round(progressOf(w)*100)+'%';
     try{
       const doc=await fetchBody(w);
       if(!state.reader||String(state.work?.id)!==String(w.id))return;
       state.readerDoc=doc;
       curDoc=doc;
-      body.innerHTML=doc.html;
+      const rendered=await renderReaderBodyProgressively(body,doc.html,()=>state.reader&&String(state.work?.id)===String(w.id)&&$p('#phone-reader')?.classList.contains('phone-open'));
+      if(!rendered)return;
+      if(!state.reader||String(state.work?.id)!==String(w.id))return;
+      setPhoneReaderLoading(false);
       body.scrollTop=0;
-      body.onscroll=saveReaderProgress;
+      let progressRaf=0;
+      body.onscroll=()=>{
+        if(progressRaf)return;
+        progressRaf=requestAnimationFrame(()=>{
+          progressRaf=0;
+          saveReaderProgress();
+        });
+      };
       $p('#phone-reader')?.classList.remove('reader-chrome-hidden');
       requestAnimationFrame(()=>{const f=progressOf(w);body.scrollTop=f*Math.max(0,body.scrollHeight-body.clientHeight);saveReaderProgress();});
       hist=hist.filter(x=>String(x.id)!==String(w.id));hist.unshift({id:w.id,t:Date.now()});hist=hist.slice(0,200);save();
     }catch(err){
+      setPhoneReaderLoading(false);
       body.innerHTML='<div class="phone-empty"><b>本文を読み込めませんでした</b><br><span style="font-size:12px">通信状態または作品の公開先を確認してください。</span><button class="phone-primary" data-phone-action="reader-retry" style="margin-top:18px">もう一度読み込む</button></div>';
+      body.setAttribute('aria-busy','false');
     }
   }
+
 
   function closeReader(fromHistory=false){
     saveReaderProgress();
@@ -4107,11 +4242,12 @@ window.addEventListener('DOMContentLoaded',()=>{
       return;
     }
     if(b)b.onscroll=null;
+    setPhoneReaderLoading(false);
     const w=state.work;
     state.reader=false;state.readerDoc=null;
-    releaseScreenWakeLock();
     if(w&&state.readerFromDetail){openDetail(w,'back',true);}
     else{state.work=null;state.readerFromDetail=false;showScreen(state.screen,'back');}
+    void releaseScreenWakeLock();
   }
 
   function addBookmark(){
