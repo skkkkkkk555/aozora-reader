@@ -117,6 +117,7 @@ const escAttr=esc;
 
 /* ==================== SECURITY HARDENING ==================== */
 const SEC={maxCatalogBytes:30*1024*1024,maxCatalogText:32*1024*1024,maxLocalFileBytes:30*1024*1024,maxBookBytes:32*1024*1024,maxResponseHeadBytes:4096,maxStateChars:4*1024*1024};
+const READER_PROGRESS_VERSION=2;
 const NETWORK_HOSTS=new Set(['www.aozora.gr.jp','aozorahack.org','raw.githubusercontent.com','cdn.jsdelivr.net','fastly.jsdelivr.net','corsproxy.io','corsproxy.org','api.allorigins.win']);
 const secureUrl=input=>{
   try{
@@ -364,7 +365,7 @@ let searchState={
 };
 
 const save=()=>{
-  const d={fav:[...fav],want:[...want],done:[...done],favAuthors:[...favAuthors],pos,bm,notes,hls,hist,calData,goalMin,st,searchHistory,dead:[...dead]};
+  const d={fav:[...fav],want:[...want],done:[...done],favAuthors:[...favAuthors],pos,bm,notes,hls,hist,calData,goalMin,st,searchHistory,dead:[...dead],readerProgressVersion:READER_PROGRESS_VERSION};
   try{
     const packed=JSON.stringify(d);
     localStorage.setItem('aozora_terminal_v17',packed);
@@ -4974,6 +4975,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       '<div class="phone-detail-description">'+escP(w.desc||w.description||'青空文庫の公開作品です。本文を読みながら、栞・メモ・蛍光ペン・朗読などを利用できます。')+'</div>'+
       '<button class="phone-primary" data-phone-action="detail-read">'+(p>0&&p<97?'続きから読む':'この作品を読む')+'</button>'+
       '<button class="phone-secondary" data-phone-action="detail-author">この作家の作品を見る</button>';
+    bindPhoneBackControl(d.querySelector('[data-phone-action="detail-back"]'));
   }
 
   function currentReaderBody(){return $p('#phone-reader-body')}
@@ -5016,6 +5018,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     const body=currentReaderBody();if(!body)return;
     bindReaderChrome();
     bindPhoneReaderAxisScroll();
+    bindPhoneBackControl($p('#phone-reader [data-phone-action="reader-back"]'));
     const reader=$p('#phone-reader');reader?.classList.remove('reader-chrome-hidden');
     body.style.setProperty('--phone-reader-fs',state.readerFs+'px');
     body.style.setProperty('--phone-reader-lh',state.readerLh);
@@ -5527,6 +5530,20 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   const phoneSelector='#phone-app [data-phone-tab],#phone-app [data-phone-work],#phone-app [data-phone-action],#phone-sheet [data-phone-action],#phone-sheet-scrim[data-phone-action="sheet-close"]';
   let phoneBackHandledUntil=0;
+  const bindPhoneBackControl=(button)=>{
+    if(!button||button.dataset.phoneBackBound==='1')return;
+    button.dataset.phoneBackBound='1';
+    const go=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      window.__aozoraPhoneBack?.();
+    };
+    button.addEventListener('pointerup',e=>{
+      if(e.pointerType==='touch'||e.pointerType==='pen')go(e);
+    },{passive:false});
+    button.addEventListener('click',go);
+  };
+
   const handlePhoneBack=()=>{
     phoneBackHandledUntil=Date.now()+700;
     window.__aozoraPhoneBack?.();
@@ -5544,7 +5561,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   const phoneEvent=e=>{
     if(!isPhone())return;
     const backEl=e.target.closest?.('#phone-global-back,#phone-app [data-phone-action="reader-back"],#phone-app [data-phone-action="detail-back"]');
-    if(backEl&&Date.now()<phoneBackHandledUntil)return;
+    // 戻るボタンは各ボタンへ直接バインドする。委譲と二重実行させない。
+    if(backEl)return;
     const el=e.target.closest?.(phoneSelector);
     if(!el)return;
     // 入力欄・スライダー等は通常のブラウザ操作を許可。
@@ -5631,18 +5649,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     if(!b||b.dataset.bound==='1')return;
     b.dataset.bound='1';
     b.type='button';
-    b.addEventListener('pointerup',e=>{
-      if(e.pointerType!=='touch')return;
-      e.preventDefault();
-      e.stopPropagation();
-      handlePhoneBack();
-    },{passive:false});
-    b.addEventListener('click',e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      if(Date.now()<phoneBackHandledUntil)return;
-      handlePhoneBack();
-    });
+    bindPhoneBackControl(b);
   },{once:true});
   const phoneBootWatchdog=setTimeout(()=>{
     if(!isPhone())return;
@@ -5659,6 +5666,15 @@ window.addEventListener('DOMContentLoaded',()=>{
   function initPhone(){
     if(!isPhone())return;
     try{history.scrollRestoration='manual'}catch{}
+    try{
+      const current=history.state&&typeof history.state==='object'?history.state:{};
+      const layer=current.phoneLayer||null;
+      history.replaceState({...current,
+        phoneLayer:layer||'phone-main',
+        phoneScreen:layer==='phone-main'?(current.phoneScreen||state.screen||'home'):current.phoneScreen,
+        phoneRoot:true
+      },'',location.href);
+    }catch{}
     try{
       syncPhoneVisibility();
       bindPhoneHeaderScroll();
