@@ -7547,6 +7547,103 @@ html[data-device="smartphone"] .phone-reader-ui-toggle:active{
   .home-bookmark-point{flex-basis:23px!important;width:23px!important;min-width:23px!important;height:23px!important;min-height:23px!important;border-radius:6px!important}
   .home-bookmark-point span{font-size:8px!important}
 }
+
+/* ===== Final compact bookmarks + lightweight reader ===== */
+#body.paper-paged{
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+}
+#body.paper-paged h2,#body.paper-paged h3,
+#body.paper-paged section{white-space:pre-wrap!important;}
+#phone-reader-body{
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+}
+
+/* しおりは1冊=1行。中に大型の位置ボタン領域を作らない。 */
+.home-bookmark-list{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:4px!important;
+  width:100%!important;
+  margin:0 0 8px!important;
+}
+.home-bookmark-card{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  display:grid!important;
+  grid-template-columns:24px minmax(0,1fr) 16px!important;
+  align-items:center!important;
+  width:100%!important;
+  height:42px!important;
+  min-height:42px!important;
+  max-height:42px!important;
+  margin:0!important;
+  padding:4px 8px!important;
+  border-radius:9px!important;
+  box-sizing:border-box!important;
+  text-align:left!important;
+  overflow:hidden!important;
+}
+.home-bookmark-main,
+.home-bookmark-points{display:none!important;}
+.home-bookmark-icon{
+  width:24px!important;
+  height:24px!important;
+  display:grid!important;
+  place-items:center!important;
+  font-size:12px!important;
+}
+.home-bookmark-text{
+  min-width:0!important;
+  width:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:1px!important;
+  overflow:hidden!important;
+}
+.home-bookmark-text strong{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  font-size:12px!important;
+  line-height:1.1!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.home-bookmark-text small{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  font-size:8px!important;
+  line-height:1.05!important;
+  color:var(--sub)!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.home-bookmark-arrow{
+  display:block!important;
+  font-size:18px!important;
+  line-height:1!important;
+  text-align:right!important;
+  color:var(--sub)!important;
+}
+@media(max-width:520px){
+  .home-bookmark-card{
+    grid-template-columns:22px minmax(0,1fr) 14px!important;
+    height:40px!important;
+    min-height:40px!important;
+    max-height:40px!important;
+    padding:4px 7px!important;
+    border-radius:8px!important;
+  }
+  .home-bookmark-icon{width:22px!important;height:22px!important;font-size:11px!important;}
+  .home-bookmark-text strong{font-size:11px!important;}
+  .home-bookmark-text small{font-size:7.5px!important;}
+  .home-bookmark-arrow{font-size:17px!important;}
+}
 </style>
 </head>
 <body>
@@ -8071,6 +8168,6 @@ html[data-device="smartphone"] .phone-reader-ui-toggle:active{
   <div class="sheet-body" id="sheet-b"></div>
 </div>
 
-<script src="./app.js?v=reader-loader-stable-bookmark-final-20261005"></script>
+<script src="./app.js?v=reader-nodombloat-bookmarktiny-20261005"></script>
 </body>
 </html>
