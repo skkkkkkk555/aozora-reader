@@ -1714,7 +1714,9 @@ function buildBodyUrlCandidates(w){
   const proxy3=`https://api.allorigins.win/raw?url=${encodeURIComponent(official)}`;
   // CDNを第一候補にして、raw/mirror/公式/CORSプロキシへ段階的にフォールバック。
   // 地域・ISP・GitHub CDNの一時的な到達障害でも本文を表示できるようにする。
-  return [...new Set([cdn,cdnFast,raw,mirror,official,proxy1,proxy2,proxy3])];
+  const handheld=document.documentElement.dataset.device==='smartphone';
+  const candidates=handheld?[raw,cdn,cdnFast,mirror,official,proxy1,proxy2,proxy3]:[cdn,cdnFast,raw,mirror,official,proxy1,proxy2,proxy3];
+  return [...new Set(candidates)];
 }
 
 async function fetchBody(w){
@@ -5564,7 +5566,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     window.__aozoraPhoneBackHandledUntil=phoneBackHandledUntil;
     window.__aozoraPhoneBack?.();
   };
-  document.addEventListener('pointerup',e=>{
+  document.addEventListener('pointerdown',e=>{
     if(!isPhone()||!['touch','pen'].includes(e.pointerType))return;
     const el=e.target.closest?.(phoneBackSelector);
     if(!el)return;
