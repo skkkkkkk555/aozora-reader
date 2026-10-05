@@ -123,7 +123,7 @@ ok(/const bodyDeadline=Date\.now\(\)\+\d+/.test(app),'book fetch has no total wa
 ok(smoke.includes('function readerScrollable'),'browser smoke does not verify actual reader scrollability');
 ok(smoke.includes("readerRendered(d,'#phone-reader-body')"),'smartphone smoke does not verify visible reader geometry');
 ok(smoke.includes("globalBack"),'smartphone smoke does not exercise global back control');
-ok(smoke.includes("clientWidth>0&&el.clientHeight>0"),'reader smoke lacks usable geometry checks');
+ok(smoke.includes("rect.width>0&&rect.height>0"),'reader smoke lacks usable geometry checks');
 ok(smoke.includes("readerRendered(d,'#body')"),'desktop smoke does not verify visible reader geometry');
 ok(workflow.includes('timeout 120s'),'browser process timeout is missing');
 ok(!workflow.includes('--virtual-time-budget='),'browser smoke still relies on virtual-time-budget');
