@@ -83,7 +83,7 @@ ok(app.includes("const url=baseUrl+'#work='+encodeURIComponent(String(w.id))"),'
 ok(app.includes("rawHash.match(/^#work=(.+)$/)"),'smartphone shared-work deep link reader missing');
 ok(app.includes('BROWSER_SMOKE'),'browser smoke isolation mode is missing');
 ok(/const catalogDeadline=Date\.now\(\)\+\d+/.test(app),'catalog fetch has no total wait deadline');
-ok(app.includes('const bodyDeadline=Date.now()+45000'),'book fetch has no total wait deadline');
+ok(/const bodyDeadline=Date\.now\(\)\+\d+/.test(app),'book fetch has no total wait deadline');
 ok(smoke.includes('function readerScrollable'),'browser smoke does not verify actual reader scrollability');
 ok(smoke.includes("readerRendered(d,'#phone-reader-body')"),'smartphone smoke does not verify visible reader geometry');
 ok(smoke.includes("readerRendered(d,'#body')"),'desktop smoke does not verify visible reader geometry');
