@@ -694,27 +694,8 @@ async function loadCachedCatalog(){
   return [];
 }
 
-async function checkCatalog(){
-  const rightsOk=await loadRightsAllowlist();
-  if(!rightsOk){
-    allWorks=[];filterWorks();renderHome();
-    showBanner('著作権確認データを取得できないため、作品を表示できません。時間を置いて再試行してください。');
-    return;
-  }
-  if(BROWSER_SMOKE){
-    allWorks=[{"id":"000789","t":"吾輩は猫である","a":"夏目 漱石","tk":"わがはいはねこである","ak":"なつめ","d":"1999-09-21","k":1,"c":1,r:1,"ndc":"NDC 913","norm":"吾輩は猫であるわがはいはねこである夏目漱石なつめ","x":"cards/000148/files/789_ruby_5639/789_ruby_5639.txt"}];
-    filterWorks();renderHome();return;
-  }
-
-  const safeCatalog=await loadCachedCatalog();
-  if(safeCatalog.length){
-    allWorks=safeCatalog;
-    filterWorks();
-    renderHome();
-    return;
-  }
-
-  // GitHub Pagesと同一オリジンに置いたcatalog.jsonを初回データとして永久保存する。
+async function refreshCatalogInBackground(){
+  if(catalogBusy)return false;
   try{
     const res=await secureFetch('./catalog.json?'+Date.now(),{signal:sig(8000),cache:'no-store'});
     if(res.ok){
@@ -723,13 +704,53 @@ async function checkCatalog(){
       if(parsed.length>=100){
         allWorks=parsed;
         await idb.set('k',CATALOG_CACHE_KEY,parsed);
-        filterWorks();renderHome();return;
+        filterWorks();renderHome();
+        return true;
+      }
+    }
+  }catch(err){console.debug('background same-origin catalog refresh failed',err);}
+  return fetchCatalog({background:true,notifyOnFail:false});
+}
+
+async function checkCatalog(){
+  const rightsOk=await loadRightsAllowlist();
+  if(!rightsOk){
+    allWorks=[];filterWorks();renderHome();
+    showBanner('著作権確認データを取得できないため、作品を表示できません。時間を置いて再試行してください。');
+    return;
+  }
+  if(BROWSER_SMOKE){
+    allWorks=[{"id":"000789","t":"吾輩は猫である","a":"夏目 漱石","tk":"わがはいはねこである","ak":"なつめ","d":"1999-09-21","k":1,"c":1,"r":1,"ndc":"NDC 913","norm":"吾輩は猫であるわがはいはねこである夏目漱石なつめ","x":"cards/000148/files/789_ruby_5639/789_ruby_5639.txt"}];
+    filterWorks();renderHome();return;
+  }
+
+  const safeCatalog=await loadCachedCatalog();
+  if(safeCatalog.length){
+    allWorks=safeCatalog;
+    filterWorks();
+    renderHome();
+    void refreshCatalogInBackground();
+    return;
+  }
+
+  // 初回は同一オリジンの自動生成カタログを取得。
+  try{
+    const res=await secureFetch('./catalog.json?'+Date.now(),{signal:sig(8000),cache:'no-store'});
+    if(res.ok){
+      const data=await res.json();
+      const parsed=sanitizeCatalogRecords(data);
+      if(parsed.length>=100){
+        allWorks=parsed;
+        await idb.set('k',CATALOG_CACHE_KEY,parsed);
+        filterWorks();renderHome();
+        return;
       }
     }
   }catch(err){console.debug('same-origin catalog unavailable',err);}
 
+  // 初回の自動取得だけは、そのまま裏で全配信元を試す。
   filterWorks();renderHome();
-  showBanner('作品カタログがまだありません。「設定」からカタログを読み込めます。');
+  void fetchCatalog({background:true,notifyOnFail:true});
 }
 function filterWorks(){
   works = allWorks.filter(w => !dead.has(w.id) && isPublicWork(w));
@@ -757,22 +778,20 @@ function openCatalogIntro(){
   $('c-file').onchange=e=>parseFile(e.target.files[0]);
 }
 
-async function fetchCatalog(){
-  if(catalogBusy)return;
+async function fetchCatalog({background=false,notifyOnFail=false}={}){
+  if(catalogBusy)return false;
   catalogBusy=true;
   const trigger=document.querySelector('[data-act="cat-auto"]');
-  trigger?.setAttribute('disabled','true');
-  const bar=$('c-bar'), log=$('c-log');
-  bar?.classList.add('loading-bar-live');
-  if(log)log.textContent='配信元へ接続中…';
-  if(bar)bar.style.width='20%';
+  if(!background)trigger?.setAttribute('disabled','true');
+  const bar=$('c-bar'),log=$('c-log');
+  if(!background)bar?.classList.add('loading-bar-live');
+  if(!background&&log)log.textContent='配信元へ接続中…';
+  if(!background&&bar)bar.style.width='20%';
   try{
-    let buf=null, csvText=null;
-    // 配信元を順番に試すが、1回のカタログ取得全体にも上限を設ける。
-    // どの配信元も応答しない環境で、初期設定が長時間固まらないようにする。
+    let buf=null,csvText=null;
     const catalogDeadline=Date.now()+45000;
     for(let i=0;i<URLS.length&&Date.now()<catalogDeadline;i++){
-      if(log)log.textContent=`配信元へ接続中… (${i+1}/${URLS.length})`;
+      if(!background&&log)log.textContent='配信元へ接続中… ('+(i+1)+'/'+URLS.length+')';
       try{
         const remain=Math.max(1000,Math.min(30000,catalogDeadline-Date.now()));
         const res=await secureFetch(URLS[i],{signal:sig(remain)});
@@ -780,30 +799,25 @@ async function fetchCatalog(){
         const b=await readResponseBytes(res,SEC.maxCatalogBytes);
         if(!b||!b.byteLength)continue;
         const u8=new Uint8Array(b);
-        // まずZIPを優先。公式配布物とGitHubミラーの両方に対応。
-        if(u8.length>=4&&u8[0]===0x50&&u8[1]===0x4b&&[0x03,0x05,0x07].includes(u8[2])){
-          buf=b;break;
-        }
-        // CSVミラーにも対応。CORSやZIP配信の制限がある環境でも復旧できる。
-        const text=new TextDecoder('utf-8').decode(b).replace(/^\\uFEFF/,'');
-        if(text.includes('作品ID')&&text.includes('作品名')&&text.includes('テキストファイルURL')){
-          csvText=text;break;
-        }
-      }catch(err){ console.debug('catalog source failed',URLS[i],err); }
+        if(u8.length>=4&&u8[0]===0x50&&u8[1]===0x4b&&[0x03,0x05,0x07].includes(u8[2])){buf=b;break;}
+        const textBody=new TextDecoder('utf-8').decode(b).replace(/^\\uFEFF/,'');
+        if(textBody.includes('作品ID')&&textBody.includes('作品名')&&textBody.includes('テキストファイルURL')){csvText=textBody;break;}
+      }catch(err){console.debug('catalog source failed',URLS[i],err);}
     }
     if(!buf&&!csvText){
-      if(log)log.textContent='自動取得に失敗しました。ファイルを選択してください。';
-      toast('自動取得元に接続できませんでした。別の配信元を試しました。');
-      return;
+      if(!background&&log)log.textContent='自動取得に失敗しました。ファイルを選択してください。';
+      if(notifyOnFail)showCatalogManualNotice();
+      else if(!background)toast('自動取得元に接続できませんでした。別の配信元を試しました。');
+      return false;
     }
     if(csvText){
-      if(bar)bar.style.width='70%';
-      if(log)log.textContent='CSVを解析中…';
+      if(!background&&bar)bar.style.width='70%';
+      if(!background&&log)log.textContent='CSVを解析中…';
       await parseCsv(csvText);
-      return;
+      return true;
     }
-    if(bar)bar.style.width='50%';
-    if(log)log.textContent='解凍中…';
+    if(!background&&bar)bar.style.width='50%';
+    if(!background&&log)log.textContent='解凍中…';
     const z=await JSZip.loadAsync(buf,{checkCRC32:true});
     const names=Object.keys(z.files);
     const totalUncompressed=names.reduce((sum,n)=>sum+Number(z.files[n]?._data?.uncompressedSize||0),0);
@@ -814,14 +828,17 @@ async function fetchCatalog(){
     csvText=await z.files[cf].async('string');
     if(csvText.length>SEC.maxCatalogText)throw new Error('catalog-text-too-large');
     await parseCsv(csvText);
+    return true;
   }catch(e){
     console.warn('catalog fetch rejected:',e);
-    if(log)log.textContent='カタログの読み込みに失敗しました。';
-    toast('カタログを読み込めませんでした。時間を置いて再試行してください');
+    if(!background&&log)log.textContent='カタログの読み込みに失敗しました。';
+    if(notifyOnFail)showCatalogManualNotice();
+    else if(!background)toast('カタログを読み込めませんでした。時間を置いて再試行してください');
+    return false;
   }finally{
-    bar?.classList.remove('loading-bar-live');
+    if(!background)bar?.classList.remove('loading-bar-live');
     catalogBusy=false;
-    trigger?.removeAttribute('disabled');
+    if(!background)trigger?.removeAttribute('disabled');
   }
 }
 function parseFile(file){
