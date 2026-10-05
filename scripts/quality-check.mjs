@@ -142,10 +142,19 @@ ok(app.includes('専用に即時処理し、Android WebView等でclick合成が�
 ok(html.includes('id="reader-loading-layer"'),'desktop reader loading layer missing');
 ok(html.includes('id="phone-reader-loading-layer"'),'smartphone reader loading layer missing');
 ok(app.includes('function renderReaderBody'),'reader body renderer missing');
+ok(app.includes('function splitReaderHtml'),'reader chunk splitter missing');
+ok(app.includes('readerRenderYield'),'reader cooperative rendering yield missing');
+ok(app.includes("root?.closest?.('#body,#phone-reader-body')"),'reader DOM mutation observer still scans article content');
+ok(app.includes("history.replaceState(baseState,'',location.href)"),'reader opening from sheet does not normalize overlay history');
+ok(app.includes('cancelReaderRender();'),'reader render cancellation missing');
+ok(app.includes('cancelReaderParser();'),'reader parser cancellation missing');
+ok(html.includes('#reader.open { display: flex; animation: none!important;'),'reader still fades the full overlay over the previous UI');
+ok(html.includes('background:var(--bg)!important;'),'reader loading layer is not opaque');
+
 ok(app.includes("body.classList.add('reader-building')"),'reader build isolation missing');
 ok(app.includes('readerTok++;'),'reader close does not invalidate pending work');
 ok(!app.includes("body.innerHTML=readerLoaderMarkup()"),'reader loader must not be injected into article body');
-ok(html.includes('app.js?v=reader-worker-scroll-paging-v20261005'),'reader worker cache-bust version missing');
+ok(html.includes('app.js?v=reader-stability-chunked-v20261005'),'reader stability cache-bust version missing');
 ok(smoke.includes('loader did not hide after render'),'browser smoke does not verify loader lifecycle');
 ok(app.includes('const count=2200'),'browser smoke is not exercising long reader content');
 
