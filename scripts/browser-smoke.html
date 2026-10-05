@@ -6,14 +6,21 @@
 <script>
 const qs=new URLSearchParams(location.search);
 const mode=qs.get('mode')||'desktop';
-const frame=document.getElementById('app-frame');
-const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+// テスト全体を有限時間で終了させる。個別waitForの合計が膨らんでも90秒を超えてハングしない。
+const TEST_TIMEOUT=90000;
+const TEST_DEADLINE=Date.now()+TEST_TIMEOUT;
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,Math.min(ms,Math.max(0,TEST_DEADLINE-Date.now()))));
+const remaining=()=>Math.max(0,TEST_DEADLINE-Date.now());
+function deadlineError(){return new Error('browser smoke global timeout ('+TEST_TIMEOUT+'ms)');}
 async function waitFor(fn,timeout=12000,step=150){
-  const end=Date.now()+timeout;
-  while(Date.now()<end){
+  const localDeadline=Math.min(TEST_DEADLINE,Date.now()+timeout);
+  while(Date.now()<localDeadline){
     try{const value=fn();if(value)return value;}catch{}
-    await sleep(step);
+    const wait=Math.min(step,localDeadline-Date.now(),remaining());
+    if(wait<=0)break;
+    await sleep(wait);
   }
+  if(Date.now()>=TEST_DEADLINE)throw deadlineError();
   throw new Error('timeout');
 }
 function fail(message){throw new Error(message);}
@@ -31,8 +38,15 @@ function readerText(d){
 (async()=>{
   frame.src='../index.html?browser-smoke='+Date.now();
   await new Promise((resolve,reject)=>{
-    frame.addEventListener('load',resolve,{once:true});
-    frame.addEventListener('error',()=>reject(new Error('iframe load failed')),{once:true});
+    let timer=0;
+    const finish=(fn,value)=>{clearTimeout(timer);frame.removeEventListener('load',onload);frame.removeEventListener('error',onerror);fn(value);};
+    const onload=()=>finish(resolve);
+    const onerror=()=>finish(reject,new Error('iframe load failed'));
+    const limit=Math.min(10000,remaining());
+    if(limit<=0)return reject(deadlineError());
+    timer=setTimeout(()=>reject(Date.now()>=TEST_DEADLINE?deadlineError():new Error('iframe load timeout')),limit);
+    frame.addEventListener('load',onload,{once:true});
+    frame.addEventListener('error',onerror,{once:true});
   });
   const d=frame.contentDocument;
   await waitFor(()=>d?.documentElement?.dataset?.device,10000);
