@@ -1842,7 +1842,8 @@ function parseAozoraAsync(buffer){
     cancelReaderParser();
     const id=++readerParseSeq;
     let settled=false,worker=null,timer=0;
-    const fallbackLimit=document.documentElement.dataset.device==='smartphone'?SEC.maxBookBytes:12*1024*1024;
+    const handheld=document.documentElement.dataset.device==='smartphone';
+    const fallbackLimit=handheld?SEC.maxBookBytes:12*1024*1024;
     const finish=(fn,val)=>{if(settled)return;settled=true;clearTimeout(timer);try{worker?.terminate()}catch{}if(activeReaderParserWorker===worker)activeReaderParserWorker=null;fn(val)};
     const fallbackOrReject=(err)=>{
       if(buffer.byteLength<=fallbackLimit){
@@ -1859,9 +1860,9 @@ function parseAozoraAsync(buffer){
     const timeoutMs=Math.max(30000,Math.min(90000,18000+Math.round(buffer.byteLength/100000)));
     timer=setTimeout(()=>fallbackOrReject(new Error('本文解析がタイムアウトしました')),timeoutMs);
     try{
-      // 4MB以下はWorker依存を避け、通常パーサーを優先する。
-      // 低スペック/古いWebViewではWorker初期化自体が不安定なため。
-      if(buffer.byteLength<=4*1024*1024){
+      // ハンドヘルドではWorker依存を避ける。古いWebView/iOSではWorker初期化や
+      // CSP・相対URL解決の差で本文だけ白画面になることがあるため、通常パーサーを使う。
+      if(handheld||buffer.byteLength<=4*1024*1024){
         setTimeout(()=>{
           try{
             const raw=new TextDecoder('shift_jis').decode(buffer);
@@ -2137,9 +2138,14 @@ async function openReaderInternal(w, fromDetail=false, bookmarkF=null){
       if(f<=0){
         const b=$('body');
         if(b){
-          // 縦書き/横書きのどちらでも、0%は必ず作品冒頭。
-          b.scrollLeft=0;
-          b.scrollTop=0;
+          // 縦書きは右端が作品冒頭。外側スクロール容器は通常のLTR座標に固定する。
+          if(b.classList.contains('v')){
+            b.scrollLeft=getVerticalScrollMetrics(b).max;
+            b.scrollTop=0;
+          }else{
+            b.scrollLeft=0;
+            b.scrollTop=0;
+          }
         }
         safeText('r-prog','0%');
         const slider=$('r-slider');
@@ -2351,10 +2357,13 @@ function ensureReaderBodyText(target=$('body'),doc=curDoc){
   const meaningful=Math.max(20,Math.floor(plain.length*0.75));
   if(text.length>=20 && text.length>=meaningful)return true;
   b.innerHTML='';
-  b.classList.remove('paper-paged','v','reader-building');
+  const flow=document.createElement('div');
+  flow.className='reader-flow'+(b.classList.contains('v')?' reader-vertical-flow':'');
+  flow.textContent=String(doc.plain||'');
+  b.appendChild(flow);
+  b.classList.remove('paper-paged','reader-building');
   b.classList.add('reader-plain-fallback');
   b.style.whiteSpace='pre-wrap';
-  b.textContent=String(doc.plain||'');
   b.style.visibility='visible';
   b.style.opacity='1';
   b.style.pointerEvents='auto';
@@ -2375,9 +2384,12 @@ async function renderReaderBody(isCurrent){
   body.innerHTML='';
   try{
     const chunks=splitReaderHtml(curDoc.html);
+    const flow=document.createElement('div');
+    flow.className='reader-flow'+(body.classList.contains('v')?' reader-vertical-flow':'');
+    body.appendChild(flow);
     for(let i=0;i<chunks.length;i++){
       if(seq!==readerRenderSeq||!isCurrent())return false;
-      body.insertAdjacentHTML('beforeend',chunks[i]);
+      flow.insertAdjacentHTML('beforeend',chunks[i]);
       if(i<chunks.length-1)await readerRenderYield();
     }
     if(seq!==readerRenderSeq||!isCurrent())return false;
@@ -2480,7 +2492,10 @@ function getReaderPageCount(){
 function getReaderPageIndex(){
   const b=$('body'),count=getReaderPageCount();if(!b||count<=1)return 0;
   const axis=getReaderAxis(),step=axis==='x'?Math.max(1,b.clientWidth):Math.max(1,b.clientHeight);
-  const raw=axis==='x'?Math.abs(Number(b.scrollLeft)||0):Math.max(0,Number(b.scrollTop)||0);
+  const maxTravel=axis==='x'?Math.max(0,b.scrollWidth-b.clientWidth):Math.max(0,b.scrollHeight-b.clientHeight);
+  const raw=axis==='x'
+    ?Math.max(0,maxTravel-(Number(b.scrollLeft)||0))
+    :Math.max(0,Number(b.scrollTop)||0);
   return Math.max(0,Math.min(count-1,Math.round(raw/step)));
 }
 function syncReaderPagination(preserveFraction=null){
@@ -2523,16 +2538,7 @@ function turnReaderPage(dir){
 function getVerticalScrollMetrics(b=$('body')){
   if(!b)return {max:0,sign:1};
   const max=Math.max(0,b.scrollWidth-b.clientWidth);
-  if(max<=0)return {max:0,sign:1};
-  const old=b.scrollLeft;
-  b.scrollLeft=0;
-  b.scrollLeft=1;
-  const positive=b.scrollLeft!==0;
-  b.scrollLeft=0;
-  b.scrollLeft=-1;
-  const negative=b.scrollLeft!==0;
-  b.scrollLeft=old;
-  return {max,sign:positive?1:(negative?-1:1)};
+  return {max,sign:1};
 }
 function scrollDesktopVerticalBy(delta,b=$('body')){
   if(!b?.classList.contains('v'))return false;
@@ -2540,9 +2546,7 @@ function scrollDesktopVerticalBy(delta,b=$('body')){
   if(m.max<=0)return false;
   const d=Number(delta)||0;
   if(!d)return false;
-  b.scrollLeft+=m.sign*d;
-  const clamped=Math.max(-m.max,Math.min(m.max,b.scrollLeft));
-  b.scrollLeft=clamped;
+  b.scrollLeft=Math.max(0,Math.min(m.max,b.scrollLeft-d));
   updateProgress(true);
   return true;
 }
@@ -2568,7 +2572,8 @@ function setReaderPage(index,animate=true){
   if(animate)playPaperTurn(clamped>getReaderPageIndex()?'next':'prev');
   if(axis==='x'){
     const m=getVerticalScrollMetrics(b);
-    b.scrollTo({left:b.classList.contains('v')?m.sign*target:target,top:0,behavior:'auto'});
+    const left=b.classList.contains('v')?Math.max(0,m.max-target):target;
+    b.scrollTo({left,top:0,behavior:'auto'});
   }else{
     b.scrollTo({left:0,top:target,behavior:'auto'});
   }
@@ -2583,7 +2588,9 @@ function playPaperTurn(direction){
   void overlay.offsetWidth;
   void body.offsetWidth;
   overlay.classList.add(direction==='next'?'next':'prev');
-  body.classList.add(direction==='next'?'paper-turning-next':'paper-turning-prev');
+  body.classList.remove('paper-turning-next','paper-turning-prev');
+  body.style.setProperty('transform','none','important');
+  body.style.setProperty('opacity','1','important');
   clearTimeout(window.__paperTurnTimer);
   window.__paperTurnTimer=setTimeout(()=>{
     overlay.classList.remove('next','prev');
@@ -4918,13 +4925,16 @@ window.addEventListener('DOMContentLoaded',()=>{
       // まず本文だけを即時表示。ローディング画面をここで閉じるので、
       // リッチHTMLの生成が遅くてもユーザーは読み始められる。
       body.innerHTML='';
+      const flow=document.createElement('div');
+      flow.className='reader-flow'+(state.readerVertical?' reader-vertical-flow':'');
+      flow.textContent=String(doc.plain||'');
+      body.appendChild(flow);
       body.classList.remove('reader-building');
       body.classList.add('reader-plain-fallback');
       body.style.whiteSpace='pre-wrap';
       body.style.visibility='visible';
       body.style.opacity='1';
       body.style.pointerEvents='auto';
-      body.textContent=String(doc.plain||'');
       if(!String(body.textContent||'').trim()){
         const e=new Error('本文を画面へ表示できませんでした');e.code='reader-display-empty';e.stage='render';throw e;
       }
@@ -5157,23 +5167,14 @@ window.addEventListener('DOMContentLoaded',()=>{
   function getPhoneVerticalMetrics(b=currentReaderBody()){
     if(!b)return {max:0,sign:1};
     const max=Math.max(0,b.scrollWidth-b.clientWidth);
-    if(max<=0)return {max:0,sign:1};
-    const old=b.scrollLeft;
-    b.scrollLeft=0;
-    b.scrollLeft=1;
-    const positive=b.scrollLeft!==0;
-    b.scrollLeft=0;
-    b.scrollLeft=-1;
-    const negative=b.scrollLeft!==0;
-    b.scrollLeft=old;
-    return {max,sign:positive?1:(negative?-1:1)};
+    return {max,sign:1};
   }
   function setPhoneVerticalFraction(f,b=currentReaderBody()){
     if(!b)return;
     const m=getPhoneVerticalMetrics(b);
     const p=Math.max(0,Math.min(1,Number(f)||0));
     b.scrollTop=0;
-    b.scrollLeft=m.sign<0?-p*m.max:p*m.max;
+    b.scrollLeft=Math.max(0,m.max-p*m.max);
   }
   function applyPhoneReaderDirection(){
     const b=currentReaderBody(),r=$p('#phone-reader');
@@ -5188,13 +5189,16 @@ window.addEventListener('DOMContentLoaded',()=>{
     b.style.setProperty('max-width',state.readerVertical?'none':'100%','important');
   }
   function togglePhoneReaderDirection(){
+    const oldFraction=fraction();
     state.readerVertical=!state.readerVertical;
     applyPhoneReaderDirection();
     const b=currentReaderBody();
     if(b){
-      b.scrollTop=0;
-      if(state.readerVertical)setPhoneVerticalFraction(0,b);
-      else b.scrollLeft=0;
+      if(state.readerVertical)setPhoneVerticalFraction(oldFraction,b);
+      else{
+        b.scrollLeft=0;
+        b.scrollTop=oldFraction*Math.max(0,b.scrollHeight-b.clientHeight);
+      }
       requestAnimationFrame(()=>saveReaderProgress());
     }
     toast(state.readerVertical?'縦読み':'横読み');
