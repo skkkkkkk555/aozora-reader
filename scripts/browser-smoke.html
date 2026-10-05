@@ -164,9 +164,9 @@ function assertDesktopReaderChrome(d,label){
     sheetClose.click();
     await waitFor(()=>!d.querySelector('#phone-sheet')?.classList.contains('open'),5000);
 
-    const detailGlobalBack=d.querySelector('#phone-global-back');
-    if(!detailGlobalBack||!visible(detailGlobalBack))fail('smartphone global back is not visible on detail');
-    detailGlobalBack.click();
+    const detailBackButton=d.querySelector('#phone-detail [data-phone-action="detail-back"]');
+    if(!detailBackButton||!visible(detailBackButton))fail('smartphone detail back button is not visible');
+    detailBackButton.click();
     await sleep(100);
     await waitFor(()=>!visible(d.querySelector('#phone-detail')),4000);
     // 再び同じ作品を開き、続くreader検証へ戻る。
@@ -241,8 +241,9 @@ function assertDesktopReaderChrome(d,label){
     assertNoRuntimeErrors(d,'mobile after reader search close');
     clearRuntimeErrors(d);
 
-    const globalBack=d.querySelector('#phone-global-back');
-    if(!globalBack||!visible(globalBack))fail('smartphone global back button is not visible in reader');
+    // グローバル戻るはオーバーレイしない設計。実際のヘッダー戻るを検査する。
+    const readerHeaderBack=d.querySelector('#phone-reader [data-phone-action="reader-back"]');
+    if(!readerHeaderBack||!visible(readerHeaderBack))fail('smartphone reader header back button is not visible');
 
     const readerGlobalBack=d.querySelector('#phone-global-back');
     if(!readerGlobalBack||!visible(readerGlobalBack))fail('smartphone global back is not visible in reader');
@@ -253,6 +254,14 @@ function assertDesktopReaderChrome(d,label){
     // readerを再度開いて、個別の戻るボタン経路も検証する。
     d.querySelector('#phone-detail [data-phone-action="detail-read"]').click();
     await waitFor(()=>visible(d.querySelector('#phone-reader'))&&d.querySelector('#phone-reader').classList.contains('phone-open'),5000);
+    await waitFor(()=>readerRendered(d,'#phone-reader-body'),20000);
+    // Android実機の戻るを history.back() で再現。読書→作品詳細へ戻れることを検証する。
+    d.defaultView.history.back();
+    await waitFor(()=>!d.querySelector('#phone-reader')?.classList.contains('phone-open'),5000);
+    await waitFor(()=>visible(d.querySelector('#phone-detail')),4000);
+    // 読書画面を再度開き、画面内の戻るボタンも別経路として検証する。
+    d.querySelector('#phone-detail [data-phone-action="detail-read"]')?.click();
+    await waitFor(()=>d.querySelector('#phone-reader')?.classList.contains('phone-open'),5000);
     await waitFor(()=>readerRendered(d,'#phone-reader-body'),20000);
     const readerBack=await waitFor(()=>d.querySelector('#phone-reader [data-phone-action="reader-back"]'),4000);
     clearRuntimeErrors(d);
@@ -280,9 +289,27 @@ function assertDesktopReaderChrome(d,label){
     input.dispatchEvent(new Event('input',{bubbles:true}));
     await waitFor(()=>d.querySelector('#phone-search-results [data-phone-work]'),12000);
 
+    // Android戻るで通常タブの履歴も1段ずつ戻れることを確認。
+    const searchTabForHistory=await waitFor(()=>d.querySelector('[data-phone-tab="search"]'),4000);
+    searchTabForHistory.click();
+    await waitFor(()=>d.querySelector('#phone-search-input'),5000);
+    const shelfTabForHistory=await waitFor(()=>d.querySelector('[data-phone-tab="shelf"]'),4000);
+    shelfTabForHistory.click();
+    await waitFor(()=>d.querySelector('#phone-title')&&textOf(d.querySelector('#phone-title'))==='本棚',4000);
     const settings=await waitFor(()=>d.querySelector('[data-phone-tab="settings"]'),4000);
     settings.click();
     await waitFor(()=>d.querySelector('#phone-content [data-phone-action="theme"]'),5000);
+    d.defaultView.history.back();
+    await waitFor(()=>textOf(d.querySelector('#phone-title'))==='本棚',5000);
+    d.defaultView.history.back();
+    await waitFor(()=>textOf(d.querySelector('#phone-title'))==='探す',5000);
+    d.defaultView.history.back();
+    await waitFor(()=>textOf(d.querySelector('#phone-title'))==='今読む',5000);
+    const toastProbe=new Error('通知サイズ検査');
+    d.defaultView.toast?.('通知サイズ検査');
+    await sleep(80);
+    const toastRect=d.querySelector('#toast')?.getBoundingClientRect();
+    if(toastRect&&toastRect.width>320)fail('smartphone toast is oversized: '+toastRect.width);
     d.querySelector('#phone-content [data-phone-action="theme"]').click();
     await waitFor(()=>d.querySelector('#phone-content [data-phone-action="reader-font"]'),4000);
     d.querySelector('#phone-content [data-phone-action="reader-font"]').click();
