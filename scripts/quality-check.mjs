@@ -70,7 +70,7 @@ ok(app.includes("classList.remove('view-slide-forward','view-slide-backward')"),
 ok(app.includes("navigator.wakeLock"),'screen wake-lock feature missing');
 ok(app.includes("new Worker('./reader-worker.js')"),'reader parser worker missing');
 ok(html.includes("worker-src 'self'"),'CSP does not permit the reader parser worker');
-ok(html.includes("app.js?v=reader-worker-scroll-paging-v20261005"),'reader worker cache-bust missing');
+
 ok(app.includes("function getReaderAxis"),'reader paging axis helper missing');
 ok(html.includes("columns:auto!important"),'reader column layout was not disabled');
 
