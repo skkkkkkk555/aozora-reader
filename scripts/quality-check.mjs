@@ -12,6 +12,7 @@ const workflow=readFileSync(new URL('../.github/workflows/quality.yml',import.me
 const rightsManifest=readFileSync(new URL('../rights-allowlist.json',import.meta.url),'utf8');
 
 const fail=[];
+const ok=(condition,message)=>{if(!condition)fail.push(message);};
 ok(app.includes('let readerPositionReady=false'),'reader initial-position guard missing');
 ok(app.includes('!readerPositionReady'),'progress guard is not tied to initial-position readiness');
 ok(app.includes('const READER_PROGRESS_VERSION=2'),'reader progress schema version missing');
@@ -22,7 +23,7 @@ ok(html.includes('app.js?v=reader-mobile-zero-bug-v20261005-40'),'reader cache v
 ok(smoke.includes("desktop fresh reader progress is"),'desktop first-open progress smoke test missing');
 ok(smoke.includes("desktop horizontal reader did not respond to real wheel event"),'desktop real-wheel smoke test missing');
 ok(smoke.includes("smartphone reader did not move on vertical scroll"),'smartphone real scroll smoke test missing');
-const ok=(condition,message)=>{if(!condition)fail.push(message);};
+
 
 try{new Function(app);ok(true,'');}catch(e){fail.push('app.js syntax error: '+e.message);}
 
