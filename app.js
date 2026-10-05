@@ -395,8 +395,9 @@ window.addEventListener('error',(event)=>{
 window.addEventListener('unhandledrejection',(event)=>{
   const item=recordRuntimeError('unhandledrejection',event.reason);
   event.preventDefault();
-  // 旧版の「再読み込みしてください」だけでは原因が分からないため、診断情報を保持した上で通知。
-  showBanner('一部の機能でエラーが発生しました。診断情報を確認してください。');
+  // 未処理Promiseはアプリを壊さず記録する。ただし、画面上では原因段階を示す。
+  const msg=String(item.message||'').slice(0,120);
+  showBanner('内部エラーを検出しました'+(msg?'：'+msg:''));
 });
 
 /* ==================== 2. レンダリング共通 ==================== */
@@ -1987,7 +1988,7 @@ function toggleReaderChrome(){
 let lastUserActivityTime=Date.now();
 let inBookSearchResults=[], inBookSearchIdx=0;
 
-async function openReader(w, fromDetail=false, bookmarkF=null){
+async function openReaderInternal(w, fromDetail=false, bookmarkF=null){
   if(!w||typeof w.id!=='string')return;
   const readerEl=$('reader');
   const currentId=readerLoadingWorkId;
@@ -1995,8 +1996,13 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
   readerLoadingWorkId=w.id;
   if(document.documentElement.dataset.device==='smartphone'&&typeof window.__aozoraPhoneOpenReader==='function'){
     const phoneTask=window.__aozoraPhoneOpenReader(w,fromDetail,bookmarkF);
-    if(phoneTask&&typeof phoneTask.finally==='function')phoneTask.finally(()=>{if(readerLoadingWorkId===w.id)readerLoadingWorkId=''});
-    else if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
+    if(phoneTask&&typeof phoneTask.finally==='function'){
+      // finally() の戻り値もPromiseなので、捨てると再びunhandledrejectionになる。
+      void phoneTask.finally(()=>{if(readerLoadingWorkId===w.id)readerLoadingWorkId=''}).catch(err=>{
+        if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
+        console.warn('phone reader task rejected after finalizer:',err);
+      });
+    }else if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
     return;
   }
   if($('sheet')?.classList.contains('open')){
@@ -2099,6 +2105,26 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
       $('body').setAttribute('aria-busy','false');
     }
   }
+}
+
+
+/* UIイベントからasync readerを呼ぶための最終防波堤。
+   関数冒頭のDOM/history処理で例外が出ても、未処理Promiseにしない。 */
+function openReader(w,fromDetail=false,bookmarkF=null){
+  return openReaderInternal(w,fromDetail,bookmarkF).catch(err=>{
+    console.error('Unhandled reader open failure:',err);
+    desktopReaderContentReady=false;
+    try{
+      setReaderLoading(false);
+      if(readerLoadingWorkId===w?.id)readerLoadingWorkId='';
+      const body=$('body');
+      if(body){
+        body.innerHTML='<div class="reader-error-state"><div class="reader-error-icon">!</div><div class="reader-error-title">読書画面を開けませんでした</div><div class="reader-error-text">内部エラーを検出しました。再試行してください。</div>'+readerDiagnosticHtml(err)+'<button class="primary" data-act="r-retry" style="margin-top:16px">再試行</button></div>';
+        body.setAttribute('aria-busy','false');
+      }
+    }catch(uiErr){console.error('reader error UI failed:',uiErr);}
+    return false;
+  });
 }
 
 
