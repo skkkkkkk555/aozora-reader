@@ -2292,8 +2292,10 @@ function ensureReaderBodyText(target=$('body'),doc=curDoc){
   if(!b||!doc)return false;
   const text=(b.textContent||'').replace(/\s+/g,'').trim();
   const plain=String(doc.plain||'').replace(/\s+/g,'').trim();
-  if(text.length>=20)return true;
   if(plain.length<1)return false;
+  // 見出しだけ描画され本文が欠落した状態を成功扱いにしない。
+  const meaningful=Math.max(20,Math.min(400,Math.floor(plain.length*0.08)));
+  if(text.length>=20 && text.length>=meaningful)return true;
   b.innerHTML='';
   b.classList.remove('paper-paged','v','reader-building');
   b.classList.add('reader-plain-fallback');
@@ -2303,7 +2305,7 @@ function ensureReaderBodyText(target=$('body'),doc=curDoc){
   b.style.opacity='1';
   b.style.pointerEvents='auto';
   b.removeAttribute('aria-busy');
-  return true;
+  return !!String(b.textContent||'').trim();
 }
 
 async function renderReaderBody(isCurrent){
@@ -2350,17 +2352,31 @@ async function renderPhoneReaderBody(body,html,isCurrent){
   body.classList.remove('reader-plain-fallback');
   body.style.removeProperty('white-space');
   body.innerHTML='';
+  let revealed=false;
+  const revealWhenReady=()=>{
+    if(revealed)return;
+    const text=String(body.textContent||'').replace(/\s+/g,'').trim();
+    if(text.length>=20){
+      // 長い作品でも全件描画完了まで本文を真っ白にしない。
+      body.classList.remove('reader-building');
+      body.style.visibility='visible';
+      revealed=true;
+    }
+  };
   try{
     const chunks=splitReaderHtml(html);
     for(let i=0;i<chunks.length;i++){
       if(seq!==readerRenderSeq||!isCurrent())return false;
       body.insertAdjacentHTML('beforeend',chunks[i]);
+      revealWhenReady();
       if(i<chunks.length-1)await readerRenderYield();
     }
     if(seq!==readerRenderSeq||!isCurrent())return false;
     await new Promise(requestAnimationFrame);
     if(seq!==readerRenderSeq||!isCurrent())return false;
+    revealWhenReady();
     body.classList.remove('reader-building');
+    body.style.visibility='visible';
     return true;
   }catch(err){
     console.warn('Phone reader HTML render failed; falling back to plain text',err);
@@ -2370,6 +2386,7 @@ async function renderPhoneReaderBody(body,html,isCurrent){
     body.style.whiteSpace='pre-wrap';
     body.textContent=String(html||'').replace(/<[^>]*>/g,'');
     body.classList.remove('reader-building');
+    body.style.visibility='visible';
     return true;
   }
 }
@@ -3442,7 +3459,23 @@ document.addEventListener('click',e=>{
   }
   else if(act==='r-vt'){ st.v=st.v===false; applyReaderConfig(); updateProgress(); save(); }
   else if(act==='r-mode-sheet'){ openModeSelectSheet(); }
-  else if(act==='r-ui-toggle'){ toggleReaderChrome(); }
+  else if(act==='r-ui-toggle'){
+    // PCでは表示UIを即座に強制復帰させる。
+    const r=$('reader'),els=[$('r-top'),$('r-dock'),$('r-bottom-info')].filter(Boolean);
+    if(r&&document.documentElement.dataset.device==='desktop'){
+      r.classList.remove('chrome-hidden','mode-focus');
+      els.forEach(el=>{
+        el.classList.remove('hide');
+        el.classList.add('show-temp');
+        el.style.display=el.id==='r-dock'?'grid':'flex';
+        el.style.visibility='visible';
+        el.style.opacity='1';
+        el.style.pointerEvents='auto';
+        el.style.transform='none';
+      });
+      $('r-ui-toggle')?.classList.add('pc-ui-confirmed');
+    }else toggleReaderChrome();
+  }
   else if(act==='set-read-mode'){
     st.rMode=b.dataset.m;
     applyReaderMode();
@@ -4540,7 +4573,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     d.innerHTML='<div class="phone-detail-nav">'+
       '<button class="phone-icon-button" data-phone-action="detail-back" aria-label="戻る"><svg class="phone-svg" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>'+
       '<b style="font-size:14px">作品詳細</b>'+
-      '<button class="phone-icon-button" data-phone-action="detail-more" aria-label="その他">•••</button>'+
+      '<button type="button" class="phone-icon-button" data-phone-action="detail-more" aria-label="その他">•••</button>'+
     '</div>'+
       bookVisual(w,'phone-detail-cover',true)+
       '<div class="phone-detail-title">'+escP(wt(w))+'</div>'+
@@ -4863,6 +4896,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     const id=el.dataset.phoneWork;
     if(id!=null){const w=getWork(id);if(w)openDetail(w);return}
     const act=el.dataset.phoneAction;if(!act)return;
+    if(el.tagName==='BUTTON')el.type='button';
     if(act==='sheet-close'){closePhoneSheet();return}
     if(state.sheetOpen){
       if(act==='reader-jump'){
