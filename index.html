@@ -7868,6 +7868,110 @@ html[data-device="smartphone"] .phone-sheet-row{
 }
 </style>
 
+<style id="aozora-stability-pass">
+/* ===== 2026-10-05 stability pass: mobile/desktop reader hardening ===== */
+html[data-device="smartphone"] #phone-app{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow:hidden!important;
+}
+html[data-device="smartphone"] #phone-content,
+html[data-device="smartphone"] #phone-detail,
+html[data-device="smartphone"] #phone-reader{
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+html[data-device="smartphone"] .phone-reader{
+  width:100%!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+}
+html[data-device="smartphone"] .phone-reader-body{
+  display:block!important;
+  flex:1 1 auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  box-sizing:border-box!important;
+  color:inherit!important;
+  visibility:visible;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  contain:layout style;
+}
+html[data-device="smartphone"] .phone-reader-body.reader-building{
+  visibility:hidden!important;
+}
+html[data-device="smartphone"] .phone-reader-body > *{
+  max-width:100%!important;
+  box-sizing:border-box;
+}
+html[data-device="smartphone"] .phone-reader-body pre,
+html[data-device="smartphone"] .phone-reader-body section{
+  max-width:100%!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+}
+html[data-device="smartphone"] .phone-reader-header,
+html[data-device="smartphone"] .phone-reader-toolbar,
+html[data-device="smartphone"] .phone-reader-progress{
+  max-width:100%;
+  box-sizing:border-box;
+}
+html[data-device="smartphone"] .phone-reader-toolbar{
+  bottom:calc(58px + env(safe-area-inset-bottom))!important;
+}
+html[data-device="smartphone"] .phone-reader-ui-toggle{
+  pointer-events:auto!important;
+  z-index:500!important;
+}
+html[data-device="smartphone"] .phone-reader.reader-chrome-hidden .phone-reader-ui-toggle{
+  visibility:visible!important;
+  opacity:1!important;
+}
+html[data-device="desktop"] #reader .r-bar,
+html[data-device="desktop"] #reader .r-dock,
+html[data-device="desktop"] #reader .r-bottom-bar{
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+html[data-device="desktop"] #reader .r-bar.hide,
+html[data-device="desktop"] #reader .r-dock.hide,
+html[data-device="desktop"] #reader .r-bottom-bar.hide{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  transform:none!important;
+  pointer-events:auto!important;
+}
+html[data-device="desktop"] #reader .r-dock.hide{
+  display:grid!important;
+}
+html[data-device="desktop"] #r-ui-toggle{
+  z-index:1000!important;
+  pointer-events:auto!important;
+  visibility:visible!important;
+}
+@media(max-width:899px){
+  html[data-device="smartphone"] #phone-app .phone-grid,
+  html[data-device="smartphone"] #phone-app .phone-quick-grid,
+  html[data-device="smartphone"] #phone-app .phone-stat-row{
+    width:100%;
+    min-width:0;
+  }
+  html[data-device="smartphone"] #phone-app img,
+  html[data-device="smartphone"] #phone-app video,
+  html[data-device="smartphone"] #phone-app iframe{
+    max-width:100%!important;
+  }
+}
+</style>
 </head>
 <body>
 <!-- Dedicated smartphone application shell -->
