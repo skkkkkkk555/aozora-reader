@@ -105,7 +105,7 @@ function readerScrollable(d,selector){
     const searchTab=await waitFor(()=>d.querySelector('[data-phone-tab="search"]'),4000);
     searchTab.click();
     const input=await waitFor(()=>d.querySelector('#phone-search-input'),5000);
-    input.value=testTitle;
+    input.value='吾輩は猫である';
     input.dispatchEvent(new Event('input',{bubbles:true}));
     await waitFor(()=>d.querySelector('#phone-search-results [data-phone-work]'),12000);
 
