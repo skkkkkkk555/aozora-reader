@@ -5026,7 +5026,6 @@ window.addEventListener('DOMContentLoaded',()=>{
     const body=currentReaderBody();if(!body)return;
     bindReaderChrome();
     bindPhoneReaderAxisScroll();
-    bindPhoneBackControl($p('#phone-reader [data-phone-action="reader-back"]'));
     const reader=$p('#phone-reader');reader?.classList.remove('reader-chrome-hidden');
     body.style.setProperty('--phone-reader-fs',state.readerFs+'px');
     body.style.setProperty('--phone-reader-lh',state.readerLh);
