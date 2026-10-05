@@ -2877,6 +2877,23 @@ img,svg,canvas,video{max-width:100%}
 }
 #body.paper-paged::selection{background:rgba(0,122,255,.22)}
 
+/* 横書きは通常の縦スクロールを優先。CSS多段組を使うと縦スクロール量が消えて
+   「本文は表示されるのに下へ進めない」状態になるため、横書きでは単一本文に戻す。 */
+#body.paper-paged:not(.v){
+  column-width:auto!important;
+  column-count:auto!important;
+  column-gap:0!important;
+  column-fill:auto!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  touch-action:pan-y!important;
+}
+#body.paper-paged:not(.v)>*{
+  break-inside:auto!important;
+  break-after:auto!important;
+}
+
 #r-page-turn{
   position:fixed;
   inset:0;
