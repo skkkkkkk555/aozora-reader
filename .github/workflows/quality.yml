@@ -38,6 +38,13 @@ jobs:
           timeout 120s "$BROWSER"             --headless             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --window-size=412,915             --user-agent='Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36'             --timeout=25000             --dump-dom             'http://127.0.0.1:4173/scripts/browser-smoke.html?mode=mobile'             > /tmp/mobile-smoke.html
           grep -q 'SMOKE_OK' /tmp/mobile-smoke.html || { cat /tmp/mobile-smoke.html; exit 1; }
 
+      - name: Run live Aozora reader smartphone smoke test
+        run: |
+          BROWSER="$(command -v chromium || command -v google-chrome || command -v chromium-browser || true)"
+          test -n "$BROWSER"
+          timeout 120s "$BROWSER"             --headless             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --window-size=412,915             --user-agent='Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 Chrome/140.0.0.0 Mobile Safari/537.36'             --timeout=70000             --dump-dom             'http://127.0.0.1:4173/scripts/browser-smoke.html?mode=live-mobile'             > /tmp/live-mobile-smoke.html
+          grep -q 'LIVE_MOBILE_SMOKE_OK' /tmp/live-mobile-smoke.html || { cat /tmp/live-mobile-smoke.html; exit 1; }
+
       - name: Run live Aozora reader smoke test
         run: |
           BROWSER="$(command -v chromium || command -v google-chrome || command -v chromium-browser || true)"
