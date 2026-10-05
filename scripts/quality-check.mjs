@@ -91,12 +91,12 @@ ok(license.includes('MIT License'),'LICENSE.md is missing MIT License');
 ok(license.includes('catalog.json'),'LICENSE.md does not separate catalog.json licensing');
 ok(readme.includes('CC BY 4.0'),'README.md is missing CC BY 4.0 information');
 ok(html.includes('青空文庫リーダー（非公式）'),'index.html title is missing unofficial designation');
-ok(app.includes("if(Number(raw.c)!==1)continue;"),'catalog sanitizer does not remove protected works before catalog exposure');
+ok(app.includes("if(Number(raw.c)!==1||Number(raw.r)!==1)continue;"),'catalog sanitizer does not remove unverified works before catalog exposure');
 ok(app.includes('rightsReady&&rightsAllowlist.has')||app.includes('rightsReady && rightsAllowlist.has'),'reader public-work guard does not require copyright allowlist verification');
 ok(app.includes("const CATALOG_CACHE_KEY='cat-rights-v4'"),'legacy unverified catalog cache key is still in use');
 ok(app.includes("const authorRightsFlag = cols[26]"),'CSV import does not inspect person copyright flag');
 
-ok(app.includes('// 許諾・保護中の作品は、この時点で取り込み対象から完全に除外する。'),'CSV import does not explicitly exclude protected works');
+ok(app.includes('m.delete(id); blocked.add(id); continue;'),'CSV import does not permanently exclude a work after any protected author row');
 ok(app.includes("if(!w||!isPublicWork(w))throw new Error('protected-work')"),'fetchBody public-work guard missing');
 ok(app.includes("if(!w||!isPublicWork(w))return 'この作品はアプリの公開対象外です。';"),'fetchHead public-work guard missing');
 ok(app.includes('青空文庫 作品情報'),'Aozora source metadata rendering is missing');
