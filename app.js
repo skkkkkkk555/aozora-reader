@@ -1572,6 +1572,10 @@ async function fetchHead(w){
 
 let readerTok=0;
 let readerLoadingWorkId='';
+/* 本文が正常に描画された読書セッションだけ進捗を保存する。
+   取得失敗時のエラー画面を「100%読了」として保存しない。 */
+let desktopReaderContentReady=false;
+let phoneReaderContentReady=false;
 function buildBodyUrlCandidates(w){
   if(!w||typeof w.x!=='string')return [];
   const path=String(w.x).replace(/^\/+|\s+$/g,'');
@@ -1862,6 +1866,7 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
   lastProgressSave=0;
   if(progressRaf!==null){cancelAnimationFrame(progressRaf);progressRaf=null;}
   const tId=++readerTok;
+  desktopReaderContentReady=false;
   $('r-title').textContent=w.t;
   setReaderLoading(true);
   $('reader').classList.add('open','paper-reader');
@@ -1877,6 +1882,7 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
     const rendered=await renderReaderBody(()=>tId===readerTok&&curWork?.id===w.id&&$('reader')?.classList.contains('open'));
     if(!rendered)return;
     if(tId!==readerTok||!$('reader')?.classList.contains('open'))return;
+    desktopReaderContentReady=true;
     setReaderLoading(false);
     applyReaderConfig(null);
 
@@ -1916,6 +1922,7 @@ async function openReader(w, fromDetail=false, bookmarkF=null){
       });
     }
   } catch(e){
+    desktopReaderContentReady=false;
     setReaderLoading(false);
     if(readerLoadingWorkId===w.id)readerLoadingWorkId='';
     if(e.dead)toast('取得できない作品のため除外しました');
@@ -2184,9 +2191,10 @@ async function closeReader(fromPop=false){
   cancelReaderParser();
   readerTok++;
   readerLoadingWorkId='';
-  if(curWork){
+  if(curWork && desktopReaderContentReady){
     try{updateProgress(true);}catch{}
   }
+  desktopReaderContentReady=false;
   $('reader').classList.remove('open','paper-reader','paper-first-open','reader-is-loading');
   $('reader').classList.remove('reader-night','mode-focus');
   setLayerLoading($('reader-loading-layer'),false);
@@ -2207,7 +2215,7 @@ let lastProgressPct=-1;
 let lastProgressSave=0;
 
 function updateProgress(force=false){
-  if(!curWork) return;
+  if(!curWork || !desktopReaderContentReady) return;
   const b=$('body');
   if(b?.getAttribute('aria-busy')==='true'||b?.classList.contains('reader-building'))return;
   const count=getReaderPageCount();
@@ -2308,7 +2316,7 @@ $('body').onscroll=()=>{
 };
 window.addEventListener('pagehide',()=>{
   try{
-    if(curWork&&$('reader')?.classList.contains('open')){
+    if(curWork&&desktopReaderContentReady&&$('reader')?.classList.contains('open')){
       updateProgress(true);
       save();
     }
@@ -4262,7 +4270,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     return plain.slice(i,i+90).replace(/\s+/g,' ').trim()||wt(w);
   }
   function saveReaderProgress(){
-    if(!state.work)return;
+    if(!state.work || !phoneReaderContentReady)return;
     const f=fraction();
     pos[state.work.id]={f,t:Date.now()};
     hist=hist.filter(x=>String(x.id)!==String(state.work.id));
@@ -4275,6 +4283,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
   async function openReader(w,fromDetail=false){
     if(!w)return;
+    phoneReaderContentReady=false;
     state.work=w;curWork=w;state.reader=true;state.readerDoc=null;state.readerFromDetail=!!fromDetail;
     if(history.state?.phoneLayer!=='phone-reader')history.pushState({...history.state,phoneLayer:'phone-reader'},'',location.href);
     syncScreens('reader','forward');
@@ -4294,6 +4303,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       const rendered=await renderPhoneReaderBody(body,doc.html,()=>state.reader&&String(state.work?.id)===String(w.id)&&$p('#phone-reader')?.classList.contains('phone-open'));
       if(!rendered)return;
       if(!state.reader||String(state.work?.id)!==String(w.id))return;
+      phoneReaderContentReady=true;
       setPhoneReaderLoading(false);
       body.scrollTop=0;
       let progressRaf=0;
@@ -4308,6 +4318,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       requestAnimationFrame(()=>{const f=progressOf(w);body.scrollTop=f*Math.max(0,body.scrollHeight-body.clientHeight);saveReaderProgress();});
       hist=hist.filter(x=>String(x.id)!==String(w.id));hist.unshift({id:w.id,t:Date.now()});hist=hist.slice(0,200);save();
     }catch(err){
+      phoneReaderContentReady=false;
       setPhoneReaderLoading(false);
       body.innerHTML='<div class="phone-empty"><b>本文を読み込めませんでした</b><br><span style="font-size:12px">通信状態または作品の公開先を確認してください。</span><button class="phone-primary" data-phone-action="reader-retry" style="margin-top:18px">もう一度読み込む</button></div>';
       body.setAttribute('aria-busy','false');
@@ -4318,7 +4329,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   function closeReader(fromHistory=false){
     cancelReaderRender();
     cancelReaderParser();
-    saveReaderProgress();
+    if(phoneReaderContentReady)saveReaderProgress();
     const b=currentReaderBody();
     if(!fromHistory&&history.state?.phoneLayer==='phone-reader'){
       history.back();
