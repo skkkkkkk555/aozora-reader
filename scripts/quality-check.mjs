@@ -38,7 +38,7 @@ for(const [id,count] of idCounts)ok(count===1,`duplicate id: ${id}`);
 for(const id of ['phone-app','phone-content','phone-detail','phone-reader','phone-reader-body','phone-reader-progress','phone-sheet','phone-sheet-body','phone-sheet-scrim'])ok(new RegExp(`id=["']${id}["']`).test(html),`smartphone shell id missing: ${id}`);
 ok(inlineScripts.length===0,'inline script remains and may be blocked by CSP');
 ok(html.includes('touch-action:pan-y!important'),'smartphone reader body does not allow vertical touch scrolling');
-ok(html.includes('app.js?v=ios-deep-20261005-5'),'app.js cache-bust was not refreshed');
+ok(html.includes('app.js?v=ios-deep-20261005-6'),'app.js cache-bust was not refreshed');
 ok(app.includes("reader.classList.add('phone-open')"),'smartphone reader open class lifecycle missing');
 ok(html.includes('.phone-reader.phone-open{display:flex!important}'),'smartphone reader display rule missing');
 ok(app.includes('__aozoraPhoneOpenSheet=openPhoneSheet'),'global sheet bridge missing');
