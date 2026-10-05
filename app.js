@@ -4868,6 +4868,12 @@ window.addEventListener('DOMContentLoaded',()=>{
         phoneLayer:'phone-main',
         phoneScreen:name
       },'',location.href);
+    }else if(!fromHistory && direction==='back'){
+      history.replaceState({
+        ...(history.state||{}),
+        phoneLayer:'phone-main',
+        phoneScreen:name
+      },'',location.href);
     }
 
     state.screen=name;
@@ -5052,7 +5058,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     else{delete nextState.phoneLayer;delete nextState.phoneParent;}
     history.replaceState(nextState,'',location.href);
     if(fromDetail&&w)openDetail(w,'back',true);
-    else{state.work=null;showScreen(state.screen,'back');}
+    else{state.work=null;showScreen(state.screen,'back',fromHistory);}
     void releaseScreenWakeLock();
   }
 
